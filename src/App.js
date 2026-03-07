@@ -1992,8 +1992,10 @@ function BusinessProfile({ navigate }) {
           <SectionLabel>Booking Link</SectionLabel>
           <Card style={{ padding: 16, marginBottom: 20 }}>
             <div style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>Share this link so clients can book directly</div>
-            <div style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 13, color: C.accent, fontWeight: 600, wordBreak: "break-all" }}>omar51128102008-cloud.github.io/pocketflow</div>
-            <BtnPrimary onClick={() => navigator.clipboard?.writeText("https://omar51128102008-cloud.github.io/pocketflow")} style={{ width: "100%", padding: 12, marginTop: 12, fontSize: 13 }}>Copy Link</BtnPrimary>
+            <div style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 11, color: C.accent, fontWeight: 600, wordBreak: "break-all" }}>
+              {userId ? `omar51128102008-cloud.github.io/pocketflow/book?id=${userId}` : "Loading..."}
+            </div>
+            <BtnPrimary onClick={() => userId && navigator.clipboard?.writeText(`https://omar51128102008-cloud.github.io/pocketflow/book?id=${userId}`)} style={{ width: "100%", padding: 12, marginTop: 12, fontSize: 13 }}>Copy Link</BtnPrimary>
           </Card>
           {saved
             ? <div style={{ width: "100%", padding: 14, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Saved!</div>
@@ -2086,8 +2088,30 @@ function Subscription({ navigate }) {
 // ── SHARE LINK ─────────────────────────────────────────────────────────────────
 function ShareLink({ navigate }) {
   const [copied, setCopied] = useState(false);
-  const link = "https://omar51128102008-cloud.github.io/pocketflow";
-  const copy = () => { navigator.clipboard?.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2500); };
+  const [link, setLink] = useState("Loading your link...");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setLink(`https://omar51128102008-cloud.github.io/pocketflow/book?id=${session.user.id}`);
+    });
+  }, []);
+
+  const copy = () => {
+    if (link.startsWith("Loading")) return;
+    navigator.clipboard?.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const shareVia = (platform) => {
+    if (link.startsWith("Loading")) return;
+    const text = `Book your appointment here: ${link}`;
+    if (platform === "whatsapp") window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+    else if (platform === "sms") window.open(`sms:?body=${encodeURIComponent(text)}`);
+    else if (platform === "email") window.open(`mailto:?subject=Book an appointment&body=${encodeURIComponent(text)}`);
+    else copy();
+  };
+
   return (
     <div style={{ paddingBottom: 80 }}>
       <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
@@ -2100,23 +2124,28 @@ function ShareLink({ navigate }) {
         <div style={{ textAlign: "center", padding: "20px 0 28px" }}>
           <div style={{ fontSize: 60, marginBottom: 12 }}>🔗</div>
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Your booking page is live</div>
-          <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.6 }}>Share this link so clients can book directly — no back and forth needed.</div>
+          <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.6 }}>Share this link with clients — it's unique to your business and goes straight to your booking page.</div>
         </div>
         <Card style={{ padding: 18, marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Your Link</div>
-          <div style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 12, color: C.accent, fontWeight: 600, wordBreak: "break-all", marginBottom: 12, lineHeight: 1.5 }}>{link}</div>
+          <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Your Unique Link</div>
+          <div style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 11, color: C.accent, fontWeight: 600, wordBreak: "break-all", marginBottom: 12, lineHeight: 1.6 }}>{link}</div>
           <BtnPrimary onClick={copy} style={{ width: "100%", padding: 13 }}>{copied ? "✓ Copied!" : "Copy Link"}</BtnPrimary>
         </Card>
         <SectionLabel>Share Via</SectionLabel>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {[{ icon: "💬", label: "WhatsApp", color: "#25D366" }, { icon: "📸", label: "Instagram", color: "#E1306C" }, { icon: "✉️", label: "Email", color: C.blue }, { icon: "💬", label: "SMS", color: C.accent }].map((s, i) => (
-            <Card key={i} onClick={copy} style={{ padding: 16, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+          {[
+            { icon: "💬", label: "WhatsApp", color: "#25D366", key: "whatsapp" },
+            { icon: "💬", label: "SMS", color: C.accent, key: "sms" },
+            { icon: "✉️", label: "Email", color: C.blue, key: "email" },
+            { icon: "📋", label: "Copy", color: C.mid, key: "copy" },
+          ].map((s, i) => (
+            <Card key={i} onClick={() => shareVia(s.key)} style={{ padding: 16, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
               <span style={{ fontSize: 22 }}>{s.icon}</span>
               <span style={{ fontSize: 14, fontWeight: 600, color: s.color }}>{s.label}</span>
             </Card>
           ))}
         </div>
-        <div style={{ marginTop: 20, background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 16, padding: 14, fontSize: 13, color: C.mid, lineHeight: 1.7 }}>✦ When clients use this link, AI will automatically confirm their booking, collect the deposit, and add them to your schedule.</div>
+        <div style={{ marginTop: 20, background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 16, padding: 14, fontSize: 13, color: C.mid, lineHeight: 1.7 }}>✦ Every business on Pocketflow gets their own unique link. When clients book through yours, appointments go straight to your dashboard.</div>
       </div>
       <BottomNav active="home" navigate={navigate} />
     </div>
