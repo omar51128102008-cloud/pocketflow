@@ -1299,13 +1299,64 @@ function Loyalty({ navigate }) {
   const [rewardType, setRewardType] = useState("discount");
   const [birthdayOn, setBirthdayOn] = useState(true);
   const [rebookOn, setRebookOn] = useState(true);
-  const [rebookDays, setRebookDays] = useState("21");
-  const [reviewOn, setReviewOn] = useState(true);
   const [winbackOn, setWinbackOn] = useState(true);
-  const [reviews, setReviews] = useState([
+  const [reviewOn, setReviewOn] = useState(true);
+
+  // Discount codes
+  const [codes, setCodes] = useState([]);
+  const [loadingCodes, setLoadingCodes] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newCode, setNewCode] = useState({ code: "", type: "percent", value: "", limit: "", firstOnly: false });
+  const [saving, setSaving] = useState(false);
+  const [userId, setUserId] = useState(null);
+
+  const reviews = [
     { name: "Jasmine R.", rating: 5, text: "Best braider in Atlanta! My hair lasted 8 weeks 😍", date: "2 days ago", replied: true },
     { name: "Tasha M.", rating: 5, text: "Always on time and my silk press was PERFECT", date: "1 week ago", replied: false },
-  ]);
+  ];
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      setUserId(session.user.id);
+      const { data } = await supabase.from("discount_codes").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: false });
+      setCodes(data || []);
+      setLoadingCodes(false);
+    };
+    load();
+  }, []);
+
+  const saveCode = async () => {
+    if (!newCode.code.trim() || !newCode.value) return;
+    setSaving(true);
+    const { data, error } = await supabase.from("discount_codes").insert([{
+      owner_id: userId,
+      code: newCode.code.trim().toUpperCase(),
+      type: newCode.type,
+      value: parseFloat(newCode.value),
+      usage_limit: newCode.limit ? parseInt(newCode.limit) : null,
+      first_time_only: newCode.firstOnly,
+      times_used: 0,
+      active: true,
+    }]).select().single();
+    if (!error && data) {
+      setCodes(p => [data, ...p]);
+      setNewCode({ code: "", type: "percent", value: "", limit: "", firstOnly: false });
+      setShowCreate(false);
+    }
+    setSaving(false);
+  };
+
+  const toggleCode = async (id, active) => {
+    await supabase.from("discount_codes").update({ active: !active }).eq("id", id);
+    setCodes(p => p.map(c => c.id === id ? { ...c, active: !active } : c));
+  };
+
+  const deleteCode = async (id) => {
+    await supabase.from("discount_codes").delete().eq("id", id);
+    setCodes(p => p.filter(c => c.id !== id));
+  };
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -1316,14 +1367,101 @@ function Loyalty({ navigate }) {
         </div>
       </div>
       <div style={{ padding: "0 20px" }}>
+
+        {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
-          {[{ label: "Repeat clients", value: "68%", color: C.accent }, { label: "Avg. review", value: "4.9 ⭐", color: C.gold }].map((s, i) => (
+          {[{ label: "Active codes", value: String(codes.filter(c => c.active).length), color: C.accent }, { label: "Times redeemed", value: String(codes.reduce((s, c) => s + (c.times_used || 0), 0)), color: C.gold }].map((s, i) => (
             <Card key={i} style={{ padding: 16, textAlign: "center" }}>
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, color: s.color }}>{s.value}</div>
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
               <div style={{ fontSize: 11, color: C.dim, marginTop: 4 }}>{s.label}</div>
             </Card>
           ))}
         </div>
+
+        {/* Discount Codes */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "20px 0 10px" }}>
+          <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>Discount Codes</div>
+          <BtnPrimary onClick={() => setShowCreate(p => !p)} style={{ padding: "8px 16px", fontSize: 12 }}>{showCreate ? "Cancel" : "+ New Code"}</BtnPrimary>
+        </div>
+
+        {/* Create code form */}
+        {showCreate && (
+          <Card style={{ padding: 18, marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Create Discount Code</div>
+            <input
+              value={newCode.code}
+              onChange={e => setNewCode(p => ({ ...p, code: e.target.value.toUpperCase().replace(/\s/g, "") }))}
+              placeholder="Code (e.g. WELCOME10)"
+              maxLength={20}
+              style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 10, letterSpacing: 1 }}
+            />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              {["percent", "fixed"].map(t => (
+                <div key={t} onClick={() => setNewCode(p => ({ ...p, type: t }))} style={{ padding: "11px", borderRadius: 12, background: newCode.type === t ? C.accentSoft : C.surfaceHigh, border: `1px solid ${newCode.type === t ? C.accent : C.border}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: newCode.type === t ? C.accent : C.mid, cursor: "pointer" }}>
+                  {t === "percent" ? "% Off" : "$ Off"}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <input
+                value={newCode.value}
+                onChange={e => setNewCode(p => ({ ...p, value: e.target.value.replace(/\D/g, "") }))}
+                placeholder={newCode.type === "percent" ? "e.g. 10 (10%)" : "e.g. 20 ($20)"}
+                style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }}
+              />
+              <input
+                value={newCode.limit}
+                onChange={e => setNewCode(p => ({ ...p, limit: e.target.value.replace(/\D/g, "") }))}
+                placeholder="Usage limit (optional)"
+                style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }}
+              />
+            </div>
+            <div onClick={() => setNewCode(p => ({ ...p, firstOnly: !p.firstOnly }))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", cursor: "pointer", marginBottom: 14 }}>
+              <div style={{ width: 20, height: 20, borderRadius: 6, background: newCode.firstOnly ? C.accent : C.surfaceHigh, border: `1px solid ${newCode.firstOnly ? C.accent : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                {newCode.firstOnly && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>First-time clients only</div>
+                <div style={{ fontSize: 11, color: C.dim }}>Code won't work for returning clients</div>
+              </div>
+            </div>
+            <BtnPrimary onClick={saveCode} disabled={saving || !newCode.code.trim() || !newCode.value} style={{ width: "100%", padding: 13 }}>
+              {saving ? "Saving..." : `Create ${newCode.code || "Code"} · ${newCode.value || "0"}${newCode.type === "percent" ? "% off" : "$ off"}`}
+            </BtnPrimary>
+          </Card>
+        )}
+
+        {/* Codes list */}
+        {loadingCodes ? (
+          <div style={{ textAlign: "center", padding: 32, color: C.dim, fontSize: 13 }}>Loading codes...</div>
+        ) : codes.length === 0 ? (
+          <Card style={{ padding: 28, textAlign: "center" }}>
+            <div style={{ fontSize: 32, marginBottom: 10 }}>🎟️</div>
+            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>No discount codes yet</div>
+            <div style={{ fontSize: 13, color: C.mid }}>Create your first code — clients can enter it on the booking page before paying.</div>
+          </Card>
+        ) : (
+          codes.map(c => (
+            <Card key={c.id} style={{ padding: 16, marginBottom: 10, borderColor: c.active ? C.border : C.borderHigh, opacity: c.active ? 1 : 0.5 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ background: C.accentSoft, border: `1px solid ${C.accent}33`, borderRadius: 10, padding: "5px 12px", fontSize: 13, fontWeight: 800, color: C.accent, letterSpacing: 1 }}>{c.code}</div>
+                  {c.first_time_only && <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, background: `${C.gold}18`, borderRadius: 6, padding: "3px 7px" }}>1ST ONLY</div>}
+                </div>
+                <Toggle on={c.active} onToggle={() => toggleCode(c.id, c.active)} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontSize: 13, color: C.mid }}>
+                  <span style={{ color: C.green, fontWeight: 700 }}>{c.type === "percent" ? `${c.value}% off` : `$${c.value} off`}</span>
+                  {c.usage_limit ? ` · ${c.times_used}/${c.usage_limit} used` : ` · ${c.times_used || 0} times used`}
+                </div>
+                <button onClick={() => deleteCode(c.id)} style={{ background: "none", border: "none", color: C.dim, cursor: "pointer", fontSize: 18, padding: "0 4px" }}>×</button>
+              </div>
+            </Card>
+          ))
+        )}
+
+        {/* Loyalty program */}
         <SectionLabel>Loyalty Program</SectionLabel>
         <Card style={{ marginBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: loyaltyOn ? `1px solid ${C.border}` : "none" }}>
@@ -1335,42 +1473,44 @@ function Loyalty({ navigate }) {
               <div style={{ background: C.surfaceHigh, border: `1px solid ${C.borderHigh}`, borderRadius: 14, padding: 14 }}>
                 <div style={{ fontSize: 12, color: C.mid, marginBottom: 10 }}>Reward after how many visits?</div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                  {["3", "5", "8", "10"].map(v => <div key={v} onClick={() => setVisitsForReward(v)} style={{ flex: 1, padding: "9px", borderRadius: 10, background: visitsForReward === v ? C.accentSoft : C.surface, border: `1px solid ${visitsForReward === v ? C.accent : C.border}`, textAlign: "center", fontSize: 13, fontWeight: 700, color: visitsForReward === v ? C.accent : C.mid, cursor: "pointer" }}>{v}</div>)}
+                  {["3","5","8","10"].map(v => <div key={v} onClick={() => setVisitsForReward(v)} style={{ flex: 1, padding: "9px", borderRadius: 10, background: visitsForReward === v ? C.accentSoft : C.surface, border: `1px solid ${visitsForReward === v ? C.accent : C.border}`, textAlign: "center", fontSize: 13, fontWeight: 700, color: visitsForReward === v ? C.accent : C.mid, cursor: "pointer" }}>{v}</div>)}
                 </div>
                 <div style={{ fontSize: 12, color: C.mid, marginBottom: 10 }}>Reward type</div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  {["discount", "free service"].map(t => <div key={t} onClick={() => setRewardType(t)} style={{ flex: 1, padding: "9px", borderRadius: 10, background: rewardType === t ? C.accentSoft : C.surface, border: `1px solid ${rewardType === t ? C.accent : C.border}`, textAlign: "center", fontSize: 12, fontWeight: 600, color: rewardType === t ? C.accent : C.mid, cursor: "pointer", textTransform: "capitalize" }}>{t}</div>)}
+                  {["discount","free service"].map(t => <div key={t} onClick={() => setRewardType(t)} style={{ flex: 1, padding: "9px", borderRadius: 10, background: rewardType === t ? C.accentSoft : C.surface, border: `1px solid ${rewardType === t ? C.accent : C.border}`, textAlign: "center", fontSize: 12, fontWeight: 600, color: rewardType === t ? C.accent : C.mid, cursor: "pointer", textTransform: "capitalize" }}>{t}</div>)}
                 </div>
               </div>
             </div>
           )}
         </Card>
+
         <SectionLabel>Automated Messages</SectionLabel>
         <Card style={{ marginBottom: 8 }}>
-          {[["🎂", "Birthday message", "AI sends a special message on their birthday", birthdayOn, setBirthdayOn], ["🔁", "Rebook reminder", `Message clients after ${rebookDays} days with no appointment`, rebookOn, setRebookOn], ["⭐", "Review request", "Ask for a review after every appointment", reviewOn, setReviewOn], ["💔", "Win-back campaign", "Re-engage clients missing for 45+ days", winbackOn, setWinbackOn]].map(([icon, label, sub, val, set], i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 3 ? `1px solid ${C.border}` : "none" }}>
-              <span style={{ fontSize: 20 }}>{icon}</span>
-              <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{label}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{sub}</div></div>
-              <Toggle on={val} onToggle={() => set(p => !p)} />
+          {[["🎂","Birthday message","Sent on their birthday",birthdayOn,setBirthdayOn],["🔁","Rebook reminder","After 21 days with no appointment",rebookOn,setRebookOn],["⭐","Review request","After every completed appointment",reviewOn,setReviewOn],["💔","Win-back campaign","Re-engage clients gone 45+ days",winbackOn,setWinbackOn]].map(([icon,label,sub,val,set],i)=>(
+            <div key={i} style={{ display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderBottom:i<3?`1px solid ${C.border}`:"none" }}>
+              <span style={{ fontSize:20 }}>{icon}</span>
+              <div style={{ flex:1 }}><div style={{ fontSize:14,fontWeight:600 }}>{label}</div><div style={{ fontSize:12,color:C.mid,marginTop:2 }}>{sub}</div></div>
+              <Toggle on={val} onToggle={()=>set(p=>!p)} />
             </div>
           ))}
         </Card>
+
         <SectionLabel>Recent Reviews</SectionLabel>
-        {reviews.map((r, i) => (
-          <Card key={i} style={{ padding: 16, marginBottom: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-              <span style={{ fontSize: 14, fontWeight: 600 }}>{r.name}</span>
-              <span style={{ fontSize: 11, color: C.dim }}>{r.date}</span>
+        {reviews.map((r,i) => (
+          <Card key={i} style={{ padding:16,marginBottom:10 }}>
+            <div style={{ display:"flex",justifyContent:"space-between",marginBottom:8 }}>
+              <span style={{ fontSize:14,fontWeight:600 }}>{r.name}</span>
+              <span style={{ fontSize:11,color:C.dim }}>{r.date}</span>
             </div>
-            <div style={{ fontSize: 16, marginBottom: 8 }}>{"⭐".repeat(r.rating)}</div>
-            <div style={{ fontSize: 13, color: C.mid, lineHeight: 1.5, marginBottom: r.replied ? 10 : 0 }}>"{r.text}"</div>
+            <div style={{ fontSize:16,marginBottom:8 }}>{"⭐".repeat(r.rating)}</div>
+            <div style={{ fontSize:13,color:C.mid,lineHeight:1.5,marginBottom:r.replied?10:0 }}>"{r.text}"</div>
             {r.replied
-              ? <div style={{ background: "#10b98111", border: "1px solid #10b98122", borderRadius: 10, padding: "8px 12px", fontSize: 12, color: "#6ee7b7" }}>✓ AI replied</div>
-              : <BtnPrimary onClick={() => setReviews(prev => prev.map((x, j) => j === i ? { ...x, replied: true } : x))} style={{ width: "100%", marginTop: 10, padding: 10, fontSize: 13 }}>Reply with AI</BtnPrimary>
-            }
+              ? <div style={{ background:"#10b98111",border:"1px solid #10b98122",borderRadius:10,padding:"8px 12px",fontSize:12,color:"#6ee7b7" }}>✓ AI replied</div>
+              : <BtnPrimary style={{ width:"100%",marginTop:10,padding:10,fontSize:13 }}>Reply with AI</BtnPrimary>}
           </Card>
         ))}
       </div>
+      <BottomNav active="home" navigate={navigate} />
     </div>
   );
 }
