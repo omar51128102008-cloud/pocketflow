@@ -782,12 +782,21 @@ function Assistant({ navigate }) {
       const data = await res.json();
       const reply = data.choices?.[0]?.message?.content || "On it.";
       setChatHistory(p => [...p, { role: "assistant", text: reply }]);
-      // Speak reply if voice was used
-      if (voiceSupported && window.speechSynthesis) {
-        const utt = new SpeechSynthesisUtterance(reply);
-        utt.rate = 1.05; utt.pitch = 1.1;
-        window.speechSynthesis.speak(utt);
-      }
+      // Speak with ElevenLabs
+      try {
+        const audioRes = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: reply })
+        });
+        if (audioRes.ok) {
+          const blob = await audioRes.blob();
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          audio.play();
+          audio.onended = () => URL.revokeObjectURL(url);
+        }
+      } catch { /* voice fails silently, chat still works */ }
     } catch {
       setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again in a second." }]);
     }
