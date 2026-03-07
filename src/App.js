@@ -229,7 +229,7 @@ function Onboarding({ navigate }) {
           </div>
         ))}
       </Card>
-      <BtnPrimary onClick={() => navigate("home")} style={{ width: "100%", padding: 16 }}>Go to Dashboard →</BtnPrimary>
+      <BtnPrimary onClick={async () => { const { data: { session } } = await supabase.auth.getSession(); if (session) localStorage.setItem("pocketflow_onboarded_" + session.user.id, "true"); navigate("home"); }} style={{ width: "100%", padding: 16 }}>Go to Dashboard →</BtnPrimary>
     </div>
   );
 
@@ -434,7 +434,7 @@ function Home({ navigate }) {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
           {[{ icon: "💳", label: "Payments", screen: "payments" }, { icon: "⚙️", label: "Settings", screen: "settings" }, { icon: "🎁", label: "Loyalty", screen: "loyalty" }, { icon: "📊", label: "Analytics", screen: "analytics" }, { icon: "📣", label: "Promotions", screen: "promotions" }, { icon: "👥", label: "Staff", screen: "staff" }, { icon: "⏳", label: "Waitlist", screen: "waitlist" }, { icon: "🔗", label: "Share Booking Link", screen: "sharelink" }].map(item => (
-            <Card key={item.screen} onClick={() => item.screen === "sharelink" ? alert("Your booking link:\npocketflow.app/book/luxe-hair-studio\n\nShare this with clients so they can book directly!") : navigate(item.screen)} style={{ padding: "16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+            <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
               <span style={{ fontSize: 22 }}>{item.icon}</span>
               <span style={{ fontSize: 14, fontWeight: 600 }}>{item.label}</span>
             </Card>
@@ -521,8 +521,8 @@ function Schedule({ navigate }) {
               ))}
             </Card>
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => { alert(`Reschedule request sent to ${selectedAppt.name}. They'll receive a message to pick a new time.`); setSelectedAppt(null); }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Reschedule</button>
-              <BtnPrimary onClick={() => { alert(`Reminder sent to ${selectedAppt.name} for their ${selectedAppt.time} appointment! 💕`); setSelectedAppt(null); }} style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
+              <button onClick={() => { setSelectedAppt(null); }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Reschedule</button>
+              <BtnPrimary onClick={() => { setSelectedAppt(null); }} style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
             </div>
           </div>
         </div>
@@ -706,7 +706,7 @@ function NoteTab({ client, onNoteUpdate }) {
 function Clients({ navigate }) {
   const [selectedClient, setSelectedClient] = useState(null);
   const [activeTab, setActiveTab] = useState("history");
-  const [clients, setClients] = useState(CLIENTS_DATA);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
@@ -718,7 +718,7 @@ function Clients({ navigate }) {
   useEffect(() => {
     const loadClients = async () => {
       const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         setClients(data.map(c => ({
           ...c,
           totalVisits: c.total_visits,
@@ -972,8 +972,8 @@ function Payments({ navigate }) {
             </Card>
             {selectedInvoice.status !== "paid" && (
               <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => { alert(`Reminder sent to ${selectedInvoice.name} via WhatsApp!`); setSelectedInvoice(null); }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Send Reminder</button>
-                <BtnPrimary onClick={() => { alert(`Payment request sent to ${selectedInvoice.name}. They'll receive a Stripe link to pay ${selectedInvoice.amount}.`); setSelectedInvoice(null); }} style={{ flex: 1, padding: 13 }}>Charge Now</BtnPrimary>
+                <button onClick={() => { setSelectedInvoice(null); }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Send Reminder</button>
+                <BtnPrimary onClick={() => { setSelectedInvoice(null); }} style={{ flex: 1, padding: 13 }}>Charge Now</BtnPrimary>
               </div>
             )}
           </div>
@@ -1055,7 +1055,7 @@ function Settings({ navigate }) {
               <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{p.label}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{p.sub}</div></div>
               {p.connected
                 ? <span style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>Connected ✓</span>
-                : <BtnPrimary onClick={() => alert(`${p.label} connection coming soon! This will let your clients pay you directly.`)} style={{ padding: "8px 14px", fontSize: 12 }}>Connect</BtnPrimary>}
+                : <BtnPrimary onClick={() => navigate("subscription")} style={{ padding: "8px 14px", fontSize: 12 }}>Connect</BtnPrimary>}
             </div>
           ))}
         </Card>
@@ -1065,8 +1065,8 @@ function Settings({ navigate }) {
             { icon: "👤", label: "Business Profile", sub: "Luxe Hair Studio · Atlanta, GA", screen: "profile" },
             { icon: "🔗", label: "Connected Accounts", sub: "WhatsApp, Instagram, Google", screen: "connections" },
             { icon: "💳", label: "Subscription", sub: "Pro Plan · $29/mo", screen: "subscription" },
-          ].map(({ icon, label, sub }, i) => (
-            <div key={i} onClick={() => alert(`${label} settings — coming soon!`)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 2 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
+          ].map(({ icon, label, sub, screen }, i) => (
+            <div key={i} onClick={() => navigate(screen)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 2 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
               <span style={{ fontSize: 20 }}>{icon}</span>
               <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{label}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{sub}</div></div>
               <span style={{ fontSize: 12, color: C.mid }}>›</span>
@@ -1369,7 +1369,7 @@ function Promotions({ navigate }) {
               <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.6, marginBottom: 12 }}>You have 3 open slots this Friday. Want me to send a flash promo to your last 30 clients?</div>
               <div style={{ display: "flex", gap: 8 }}>
                 <BtnPrimary onClick={() => setCreating(true)} style={{ flex: 1, padding: 11, fontSize: 13 }}>Yes, create it</BtnPrimary>
-                <button onClick={() => alert("Got it! I'll remind you next time there's a slow day.")} style={{ flex: 1, padding: 11, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif", fontWeight: 600 }}>Not now</button>
+                <button onClick={() => {}} style={{ flex: 1, padding: 11, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif", fontWeight: 600 }}>Not now</button>
               </div>
             </div>
             <SectionLabel>Past Promotions</SectionLabel>
@@ -1703,7 +1703,7 @@ function Staff({ navigate }) {
           <button onClick={() => { setStaff(p => p.map(s => s.id === selectedStaff.id ? { ...s, status: s.status === "active" ? "day-off" : "active" } : s)); setSelectedStaff(p => ({ ...p, status: p.status === "active" ? "day-off" : "active" })); }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>
             {selectedStaff.status === "active" ? "Mark Day Off" : "Mark Active"}
           </button>
-          <BtnPrimary onClick={() => alert(`Message sent to ${selectedStaff.name}!`)} style={{ flex: 1, padding: 13 }}>Send Message</BtnPrimary>
+          <BtnPrimary onClick={() => navigate("inbox")} style={{ flex: 1, padding: 13 }}>Send Message</BtnPrimary>
         </div>
       </div>
     </div>
@@ -1779,7 +1779,7 @@ function Waitlist({ navigate }) {
 
   const notify = (id) => {
     setWaitlist(p => p.map(w => w.id === id ? { ...w, notified: true } : w));
-    alert("Slot offer sent! The client has 2 hours to confirm before it goes to the next person.");
+    setWaitlist(p => p.map(w => w.id === id ? { ...w, notified: true } : w));
   };
 
   const remove = (id) => setWaitlist(p => p.filter(w => w.id !== id));
@@ -1849,6 +1849,171 @@ function Waitlist({ navigate }) {
     </div>
   );
 }
+// ── BUSINESS PROFILE ──────────────────────────────────────────────────────────
+function BusinessProfile({ navigate }) {
+  const [bizName, setBizName] = useState("Luxe Hair Studio");
+  const [location, setLocation] = useState("Atlanta, GA");
+  const [phone, setPhone] = useState("+1 (404) 555-0100");
+  const [bio, setBio] = useState("Premium natural hair care. Braids, silk press, locs & more.");
+  const [saved, setSaved] = useState(false);
+
+  return (
+    <div style={{ paddingBottom: 80 }}>
+      <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <BackBtn onBack={() => navigate("settings")} />
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Business Profile</div>
+        </div>
+      </div>
+      <div style={{ padding: "0 20px" }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ width: 80, height: 80, borderRadius: 24, background: C.accentSoft, border: `1px solid ${C.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, margin: "0 auto 12px" }}>✦</div>
+          <div style={{ fontSize: 13, color: C.accent, cursor: "pointer", fontWeight: 600 }}>Change logo</div>
+        </div>
+        <SectionLabel>Business Info</SectionLabel>
+        <Card style={{ padding: 16, marginBottom: 16 }}>
+          {[["Business name", bizName, setBizName], ["Location", location, setLocation], ["Phone number", phone, setPhone]].map(([label, val, set], i) => (
+            <div key={i} style={{ marginBottom: i < 2 ? 16 : 0 }}>
+              <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
+              <input value={val} onChange={e => { set(e.target.value); setSaved(false); }} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+            </div>
+          ))}
+        </Card>
+        <SectionLabel>Bio</SectionLabel>
+        <textarea value={bio} onChange={e => { setBio(e.target.value); setSaved(false); }} rows={3} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", resize: "none", marginBottom: 20 }} />
+        <SectionLabel>Booking Link</SectionLabel>
+        <Card style={{ padding: 16, marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>Share this link so clients can book directly</div>
+          <div style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 13, color: C.accent, fontWeight: 600, wordBreak: "break-all" }}>omar51128102008-cloud.github.io/pocketflow</div>
+          <BtnPrimary onClick={() => navigator.clipboard?.writeText("https://omar51128102008-cloud.github.io/pocketflow")} style={{ width: "100%", padding: 12, marginTop: 12, fontSize: 13 }}>Copy Link</BtnPrimary>
+        </Card>
+        {saved
+          ? <div style={{ width: "100%", padding: 14, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Saved!</div>
+          : <BtnPrimary onClick={() => setSaved(true)} style={{ width: "100%", padding: 14 }}>Save Changes</BtnPrimary>
+        }
+      </div>
+      <BottomNav active="settings" navigate={navigate} />
+    </div>
+  );
+}
+
+// ── CONNECTED ACCOUNTS ─────────────────────────────────────────────────────────
+function ConnectedAccounts({ navigate }) {
+  const [connections, setConnections] = useState({ whatsapp: false, instagram: false, google: true, facebook: false });
+  const toggle = key => setConnections(p => ({ ...p, [key]: !p[key] }));
+  const accounts = [
+    { key: "whatsapp", icon: "💬", label: "WhatsApp Business", sub: "Auto-reply to client messages", color: "#25D366" },
+    { key: "instagram", icon: "📸", label: "Instagram DMs", sub: "Reply to DMs automatically", color: "#E1306C" },
+    { key: "google", icon: "📅", label: "Google Calendar", sub: "Sync appointments automatically", color: "#4285F4" },
+    { key: "facebook", icon: "👥", label: "Facebook Messenger", sub: "Handle Facebook inquiries", color: "#1877F2" },
+  ];
+  return (
+    <div style={{ paddingBottom: 80 }}>
+      <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <BackBtn onBack={() => navigate("settings")} />
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Connected Accounts</div>
+        </div>
+      </div>
+      <div style={{ padding: "0 20px" }}>
+        <div style={{ background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 16, padding: 14, marginBottom: 20, fontSize: 13, color: C.mid, lineHeight: 1.6 }}>✦ Connect your accounts so AI can reply to clients, confirm bookings, and send reminders automatically.</div>
+        <SectionLabel>Messaging & Booking</SectionLabel>
+        <Card>
+          {accounts.map((a, i) => (
+            <div key={a.key} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px", borderBottom: i < accounts.length - 1 ? `1px solid ${C.border}` : "none" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: a.color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{a.icon}</div>
+              <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{a.label}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{a.sub}</div></div>
+              <Toggle on={connections[a.key]} onToggle={() => toggle(a.key)} />
+            </div>
+          ))}
+        </Card>
+        <div style={{ fontSize: 12, color: C.dim, textAlign: "center", padding: "16px 0" }}>Full API integration available on Pro plan</div>
+      </div>
+      <BottomNav active="settings" navigate={navigate} />
+    </div>
+  );
+}
+
+// ── SUBSCRIPTION ───────────────────────────────────────────────────────────────
+function Subscription({ navigate }) {
+  const plans = [
+    { name: "Starter", price: "$0", period: "/mo", features: ["Up to 20 clients", "Basic AI replies", "1 staff member"], current: false },
+    { name: "Pro", price: "$29", period: "/mo", features: ["Unlimited clients", "Full AI automation", "Up to 5 staff", "Analytics & reports", "Loyalty program", "Priority support"], current: true },
+    { name: "Agency", price: "$79", period: "/mo", features: ["Everything in Pro", "Up to 20 staff", "Multi-location", "White-label booking page", "Dedicated account manager"], current: false },
+  ];
+  return (
+    <div style={{ paddingBottom: 80 }}>
+      <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <BackBtn onBack={() => navigate("settings")} />
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Subscription</div>
+        </div>
+      </div>
+      <div style={{ padding: "0 20px" }}>
+        <Card style={{ padding: 18, marginBottom: 20, background: "linear-gradient(135deg,#16103a,#1a0f3a)", border: `1px solid ${C.accent}33` }}>
+          <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, letterSpacing: 1.5, marginBottom: 6 }}>CURRENT PLAN</div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Pro Plan</div>
+          <div style={{ fontSize: 13, color: C.mid }}>Renews April 7, 2026 · $29/mo</div>
+          <div style={{ marginTop: 14 }}><div style={{ background: C.green + "18", border: `1px solid ${C.green}33`, borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: C.green, display: "inline-block" }}>Active ✓</div></div>
+        </Card>
+        <SectionLabel>All Plans</SectionLabel>
+        {plans.map((plan, i) => (
+          <Card key={i} style={{ padding: 18, marginBottom: 12, border: plan.current ? `1px solid ${C.accent}55` : `1px solid ${C.border}`, background: plan.current ? C.accentSoft : C.surface }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+              <div><div style={{ fontSize: 16, fontWeight: 700, color: plan.current ? C.accent : C.text }}>{plan.name}</div>{plan.current && <div style={{ fontSize: 11, color: C.accent, fontWeight: 600, marginTop: 2 }}>Your current plan</div>}</div>
+              <div style={{ textAlign: "right" }}><span style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800, color: plan.current ? C.accent : C.text }}>{plan.price}</span><span style={{ fontSize: 12, color: C.mid }}>{plan.period}</span></div>
+            </div>
+            {plan.features.map((f, j) => (<div key={j} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}><span style={{ color: C.green, fontSize: 12 }}>✓</span><span style={{ fontSize: 13, color: C.mid }}>{f}</span></div>))}
+            {!plan.current && <BtnPrimary onClick={() => {}} style={{ width: "100%", padding: 12, marginTop: 14, fontSize: 13 }}>{plan.name === "Starter" ? "Downgrade" : "Upgrade to " + plan.name}</BtnPrimary>}
+          </Card>
+        ))}
+        <div style={{ textAlign: "center", padding: "8px 0 16px" }}><span style={{ fontSize: 13, color: C.red, cursor: "pointer", fontWeight: 600 }}>Cancel subscription</span></div>
+      </div>
+      <BottomNav active="settings" navigate={navigate} />
+    </div>
+  );
+}
+
+// ── SHARE LINK ─────────────────────────────────────────────────────────────────
+function ShareLink({ navigate }) {
+  const [copied, setCopied] = useState(false);
+  const link = "https://omar51128102008-cloud.github.io/pocketflow";
+  const copy = () => { navigator.clipboard?.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2500); };
+  return (
+    <div style={{ paddingBottom: 80 }}>
+      <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <BackBtn onBack={() => navigate("home")} />
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Booking Link</div>
+        </div>
+      </div>
+      <div style={{ padding: "0 20px" }}>
+        <div style={{ textAlign: "center", padding: "20px 0 28px" }}>
+          <div style={{ fontSize: 60, marginBottom: 12 }}>🔗</div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Your booking page is live</div>
+          <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.6 }}>Share this link so clients can book directly — no back and forth needed.</div>
+        </div>
+        <Card style={{ padding: 18, marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Your Link</div>
+          <div style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 12, color: C.accent, fontWeight: 600, wordBreak: "break-all", marginBottom: 12, lineHeight: 1.5 }}>{link}</div>
+          <BtnPrimary onClick={copy} style={{ width: "100%", padding: 13 }}>{copied ? "✓ Copied!" : "Copy Link"}</BtnPrimary>
+        </Card>
+        <SectionLabel>Share Via</SectionLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {[{ icon: "💬", label: "WhatsApp", color: "#25D366" }, { icon: "📸", label: "Instagram", color: "#E1306C" }, { icon: "✉️", label: "Email", color: C.blue }, { icon: "💬", label: "SMS", color: C.accent }].map((s, i) => (
+            <Card key={i} onClick={copy} style={{ padding: 16, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+              <span style={{ fontSize: 22 }}>{s.icon}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: s.color }}>{s.label}</span>
+            </Card>
+          ))}
+        </div>
+        <div style={{ marginTop: 20, background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 16, padding: 14, fontSize: 13, color: C.mid, lineHeight: 1.7 }}>✦ When clients use this link, AI will automatically confirm their booking, collect the deposit, and add them to your schedule.</div>
+      </div>
+      <BottomNav active="home" navigate={navigate} />
+    </div>
+  );
+}
+
 // ── SIDEBAR (desktop only) ─────────────────────────────────────────────────────
 function Sidebar({ active, navigate }) {
   const mainNav = [
@@ -1931,10 +2096,19 @@ export default function App() {
   // Check for existing session on load
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setScreen("home");
+      if (session) {
+        const isNew = session.user.user_metadata?.is_new_user;
+        const hasOnboarded = localStorage.getItem("pocketflow_onboarded_" + session.user.id);
+        if (!hasOnboarded) setScreen("onboarding");
+        else setScreen("home");
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN") setScreen("home");
+      if (event === "SIGNED_IN") {
+        const hasOnboarded = localStorage.getItem("pocketflow_onboarded_" + session.user.id);
+        if (!hasOnboarded) setScreen("onboarding");
+        else setScreen("home");
+      }
       if (event === "SIGNED_OUT") setScreen("login");
     });
     return () => subscription.unsubscribe();
@@ -1945,7 +2119,7 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
-  const screens = { login: Login, onboarding: Onboarding, home: Home, schedule: Schedule, inbox: Inbox, assistant: Assistant, clients: Clients, payments: Payments, settings: Settings, loyalty: Loyalty, notifications: Notifications, analytics: Analytics, promotions: Promotions, booking: Booking, staff: Staff, waitlist: Waitlist };
+  const screens = { login: Login, onboarding: Onboarding, home: Home, schedule: Schedule, inbox: Inbox, assistant: Assistant, clients: Clients, payments: Payments, settings: Settings, loyalty: Loyalty, notifications: Notifications, analytics: Analytics, promotions: Promotions, booking: Booking, staff: Staff, waitlist: Waitlist, profile: BusinessProfile, connections: ConnectedAccounts, subscription: Subscription, sharelink: ShareLink };
   const Screen = screens[screen] || Home;
 
   const isAuthScreen = screen === "login" || screen === "onboarding" || screen === "booking";
