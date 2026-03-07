@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
 
 const GROQ_API_KEY = "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";
+
+const supabase = createClient(
+  "https://nrgecynqwibxdamrqopv.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yZ2VjeW5xd2lieGRhbXJxb3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MDM3OTksImV4cCI6MjA4ODQ3OTc5OX0.3Eg_uAWhGGlnB9CrPYpbDHjLjF8KEin64BidmdHbc3s"
+);
 
 const C = {
   bg: "#050508", surface: "#0e0e14", surfaceHigh: "#16161f",
@@ -630,21 +636,32 @@ function Assistant({ navigate }) {
 }
 
 // ── NOTE TAB (stateful sub-component for client notes) ─────────────────────────
-function NoteTab({ client }) {
+function NoteTab({ client, onNoteUpdate }) {
   const [note, setNote] = useState("");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!note.trim()) return;
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setSaving(true);
+    const { error } = await supabase
+      .from("clients")
+      .update({ note: (client.note ? client.note + "\n\n" : "") + note })
+      .eq("id", client.id);
+    setSaving(false);
+    if (!error) {
+      setSaved(true);
+      if (onNoteUpdate) onNoteUpdate(note);
+      setNote("");
+      setTimeout(() => setSaved(false), 2500);
+    }
   };
 
   return (
     <div>
       <Card style={{ padding: 16, marginBottom: 14 }}>
         <div style={{ fontSize: 12, color: C.accent, fontWeight: 700, marginBottom: 8 }}>✦ AI MEMORY</div>
-        <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7 }}>{client.note}</div>
+        <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7 }}>{client.note || "No notes yet."}</div>
       </Card>
       <textarea
         placeholder="Add a private note..."
@@ -655,7 +672,7 @@ function NoteTab({ client }) {
       />
       {saved
         ? <div style={{ width: "100%", padding: 13, marginTop: 10, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Note saved!</div>
-        : <BtnPrimary onClick={handleSave} style={{ width: "100%", padding: 13, marginTop: 10 }}>Save Note</BtnPrimary>
+        : <BtnPrimary onClick={handleSave} disabled={saving} style={{ width: "100%", padding: 13, marginTop: 10 }}>{saving ? "Saving..." : "Save Note"}</BtnPrimary>
       }
     </div>
   );
@@ -665,6 +682,48 @@ function NoteTab({ client }) {
 function Clients({ navigate }) {
   const [selectedClient, setSelectedClient] = useState(null);
   const [activeTab, setActiveTab] = useState("history");
+  const [clients, setClients] = useState(CLIENTS_DATA);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newInstagram, setNewInstagram] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    const loadClients = async () => {
+      const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+      if (!error && data && data.length > 0) {
+        setClients(data.map(c => ({
+          ...c,
+          totalVisits: c.total_visits,
+          totalSpent: "$" + (c.total_spent || 0),
+          avgSpend: "$" + (c.total_visits > 0 ? Math.round(c.total_spent / c.total_visits) : 0),
+          lastVisit: c.last_visit || "N/A",
+        })));
+      }
+      setLoading(false);
+    };
+    loadClients();
+  }, []);
+
+  const addClient = async () => {
+    if (!newName.trim()) return;
+    setAdding(true);
+    const avatar = newName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+    const { data, error } = await supabase.from("clients").insert([{
+      name: newName, phone: newPhone, instagram: newInstagram,
+      avatar, total_visits: 0, total_spent: 0, joined: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })
+    }]).select();
+    if (!error && data) {
+      setClients(p => [{ ...data[0], totalVisits: 0, totalSpent: "$0", avgSpend: "$0", lastVisit: "N/A" }, ...p]);
+    }
+    setNewName(""); setNewPhone(""); setNewInstagram("");
+    setAdding(false); setShowAdd(false);
+  };
+
+  const filtered = clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
 
   const history = [
     { service: "Knotless Braids", date: "Today", price: "$220", status: "upcoming" },
@@ -711,15 +770,13 @@ function Clients({ navigate }) {
             ))}
           </Card>
         )}
-        {activeTab === "notes" && (
-          <NoteTab client={selectedClient} />
-        )}
+        {activeTab === "notes" && <NoteTab client={selectedClient} onNoteUpdate={(note) => setSelectedClient(p => ({ ...p, note: (p.note ? p.note + "\n\n" : "") + note }))} />}
         {activeTab === "contact" && (
           <Card>
             {[["📱", "Phone", selectedClient.phone], ["📸", "Instagram", selectedClient.instagram], ["📅", "Last visit", selectedClient.lastVisit]].map(([icon, label, val], i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 2 ? `1px solid ${C.border}` : "none" }}>
                 <span style={{ fontSize: 18 }}>{icon}</span>
-                <div style={{ flex: 1 }}><div style={{ fontSize: 12, color: C.dim }}>{label}</div><div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{val}</div></div>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 12, color: C.dim }}>{label}</div><div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{val || "—"}</div></div>
               </div>
             ))}
           </Card>
@@ -732,18 +789,25 @@ function Clients({ navigate }) {
   return (
     <div style={{ paddingBottom: 80 }}>
       <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
-          <BackBtn onBack={() => navigate("home")} />
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Clients</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <BackBtn onBack={() => navigate("home")} />
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Clients</div>
+          </div>
+          <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "9px 16px", fontSize: 13 }}>+ Add</BtnPrimary>
         </div>
-        <div style={{ fontSize: 13, color: C.mid }}>{CLIENTS_DATA.length} total clients</div>
+        <div style={{ fontSize: 13, color: C.mid }}>{clients.length} total clients</div>
       </div>
       <div style={{ padding: "0 20px" }}>
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "10px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <span style={{ fontSize: 13, color: C.dim }}>Search clients...</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." style={{ background: "none", border: "none", fontSize: 13, color: C.text, fontFamily: "'Outfit',sans-serif", width: "100%" }} />
         </div>
-        {CLIENTS_DATA.map((c, i) => (
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 40, color: C.mid }}>Loading clients...</div>
+        ) : filtered.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 40, color: C.mid }}>No clients found</div>
+        ) : filtered.map((c) => (
           <Card key={c.id} style={{ padding: "14px 16px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => { setSelectedClient(c); setActiveTab("history"); }}>
             <div style={{ width: 44, height: 44, borderRadius: 14, background: C.accentSoft, border: `1px solid ${C.accentSoft}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: C.accent, flexShrink: 0 }}>{c.avatar}</div>
             <div style={{ flex: 1 }}>
@@ -757,6 +821,20 @@ function Clients({ navigate }) {
           </Card>
         ))}
       </div>
+
+      {showAdd && (
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", maxWidth: 400, margin: "0 auto" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add New Client</div>
+            <input placeholder="Full name *" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Instagram handle" value={newInstagram} onChange={e => setNewInstagram(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 20 }} />
+            <BtnPrimary disabled={!newName || adding} onClick={addClient} style={{ width: "100%", padding: 14 }}>{adding ? "Adding..." : "Add Client"}</BtnPrimary>
+          </div>
+        </div>
+      )}
+
       <BottomNav active="clients" navigate={navigate} />
     </div>
   );
