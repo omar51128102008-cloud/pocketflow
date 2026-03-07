@@ -114,12 +114,13 @@ let biz = { name:'', location:'', userId: null };
 let S = {
   step:0, services: DEFAULT_SERVICES,
   selectedServices:[], selectedDate:null, selectedTime:null,
-  name:'', phone:'', instagram:'', note:'',
+  name:'', phone:'', instagram:'', note:'', promoCode:'', promoResult:null, discount:0,
   cardNumber:'', cardExpiry:'', cardCvc:'', cardName:'',
   booked:false, paying:false, error:'',
 };
 
-const total   = () => S.selectedServices.reduce((a,x)=>a+x.price,0);
+const rawTotal = () => S.selectedServices.reduce((a,x)=>a+x.price,0);
+const total   = () => Math.max(0, rawTotal() - S.discount);
 const deposit = () => Math.round(total()*0.3);
 const canNext = () => {
   if (S.step===0) return S.selectedServices.length>0;
@@ -158,6 +159,43 @@ async function loadBiz() {
   render();
 }
 
+async function applyPromo() {
+  const code = (document.getElementById('f_promo')?.value || '').trim().toUpperCase();
+  if (!code) return;
+  S.promoCode = code;
+
+  if (!biz.userId) { set({promoResult:{success:false,message:'Cannot validate code.'}}); return; }
+
+  const { data, error } = await sb
+    .from('discount_codes')
+    .select('*')
+    .eq('owner_id', biz.userId)
+    .eq('code', code)
+    .eq('active', true)
+    .single();
+
+  if (error || !data) {
+    set({promoResult:{success:false,message:'Code not found or no longer active.'}}); return;
+  }
+  if (data.usage_limit && data.times_used >= data.usage_limit) {
+    set({promoResult:{success:false,message:'This code has reached its usage limit.'}}); return;
+  }
+
+  const raw = rawTotal();
+  const disc = data.type === 'percent'
+    ? Math.round(raw * data.value / 100)
+    : Math.min(data.value, raw);
+
+  set({
+    discount: disc,
+    promoResult: {
+      success: true,
+      label: data.type === 'percent' ? `${data.value}% off` : `$${data.value} off`,
+      codeId: data.id,
+    }
+  });
+}
+
 async function handlePay() {
   if (!biz.userId) { set({error:'Invalid booking link.'}); return; }
   set({ paying:true, error:'' });
@@ -181,6 +219,10 @@ async function handlePay() {
       joined: new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}),
       owner_id: biz.userId,
     }],{onConflict:'name,owner_id',ignoreDuplicates:true});
+    // Increment promo usage if a code was applied
+    if (S.promoResult?.success && S.promoResult?.codeId) {
+      await sb.rpc('increment_code_usage', { code_id: S.promoResult.codeId }).catch(()=>{});
+    }
     set({ paying:false, booked:true });
   } catch(e) {
     set({ paying:false, error:'Something went wrong. Please try again.' });
@@ -401,6 +443,23 @@ function renderStep() {
     <div style="display:flex;gap:10px;align-items:flex-start;padding-bottom:8px">
       <span style="font-size:18px;flex-shrink:0">🔒</span>
       <span style="font-size:12px;color:${C.mid};line-height:1.6">Your payment is encrypted and secure. Only the deposit is charged today — remaining balance is due at your appointment.</span>
+    </div>
+    <div class="card" style="padding:16px;margin-bottom:16px">
+      <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">Promo Code</div>
+      ${S.promoResult && S.promoResult.success
+        ? `<div style="display:flex;align-items:center;justify-content:space-between;background:${C.green}18;border:1px solid ${C.green}33;border-radius:12px;padding:12px 14px">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:${C.green}">✓ ${S.promoCode} applied!</div>
+              <div style="font-size:12px;color:${C.mid};margin-top:3px">${S.promoResult.label} · New total: $${total()}+</div>
+            </div>
+            <button onclick="set({promoCode:'',promoResult:null,discount:0})" style="background:none;border:none;color:${C.dim};font-size:20px;cursor:pointer;padding:0 4px">×</button>
+          </div>`
+        : `<div style="display:flex;gap:10px">
+            <input class="input" id="f_promo" placeholder="Enter promo code" value="${S.promoCode}" style="margin-bottom:0;text-transform:uppercase;letter-spacing:1px;flex:1" />
+            <button id="applyPromoBtn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;border-radius:14px;color:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:13px;cursor:pointer;padding:0 18px;flex-shrink:0;white-space:nowrap">Apply</button>
+          </div>
+          ${S.promoResult && !S.promoResult.success ? `<div style="font-size:12px;color:${C.red};margin-top:8px">${S.promoResult.message}</div>` : ''}`
+      }
     </div>`;
 
   return '';
@@ -444,6 +503,11 @@ function bindEvents() {
   document.querySelectorAll('[data-time]').forEach(el=>
     el.addEventListener('click',()=>set({selectedTime:el.dataset.time}))
   );
+
+  // Promo code apply button
+  document.getElementById('applyPromoBtn')?.addEventListener('click', applyPromo);
+  document.getElementById('f_promo')?.addEventListener('keydown', e=>{ if(e.key==='Enter') applyPromo(); });
+  document.getElementById('f_promo')?.addEventListener('input', e=>{ S.promoCode=e.target.value.toUpperCase(); e.target.value=S.promoCode; });
 
   // Step 2 — update state and refresh CTA so Continue button enables as you type
   [['f_name','name'],['f_phone','phone'],['f_instagram','instagram'],['f_note','note']].forEach(([id,key])=>{
