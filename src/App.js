@@ -31,6 +31,16 @@ const GLOBAL_STYLES = `
   input[type=range]{-webkit-appearance:none;height:4px;border-radius:2px;background:#1e1e2e;}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);cursor:pointer;}
   select{appearance:none;}
+  @media (min-width: 768px) {
+    .mobile-only { display: none !important; }
+    .desktop-screen { padding-top: 40px !important; padding-bottom: 40px !important; }
+    .desktop-screen > div:first-child { position: relative !important; top: auto !important; padding-top: 0 !important; }
+    .desktop-two-col { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 20px !important; align-items: start !important; }
+    .desktop-three-col { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 16px !important; }
+  }
+  @media (max-width: 767px) {
+    .desktop-only { display: none !important; }
+  }
 `;
 
 // ── Shared Components ──────────────────────────────────────────────────────────
@@ -376,74 +386,114 @@ function Home({ navigate }) {
 
   return (
     <div style={{ paddingBottom: 80 }}>
-      <div style={{ padding: "52px 20px 16px", background: `linear-gradient(180deg,#111 0%,${C.bg} 100%)` }}>
+      {/* Header */}
+      <div style={{ padding: "40px 20px 20px", background: `linear-gradient(180deg,#111 0%,${C.bg} 100%)` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <div style={{ fontSize: 12, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>Friday · Mar 6</div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, lineHeight: 1.1 }}>Good morning,<br /><span style={{ background: `linear-gradient(135deg,${C.accent},${C.accentDark})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{bizName || "your business"}</span><br />is running. ✦</div>
+            <div style={{ fontSize: 12, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 800, lineHeight: 1.2 }}>Good morning,<br /><span style={{ background: `linear-gradient(135deg,${C.accent},${C.accentDark})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{bizName || "your business"}</span> ✦</div>
           </div>
           <div style={{ position: "relative", cursor: "pointer" }} onClick={() => navigate("notifications")}>
             <div style={{ width: 44, height: 44, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🔔</div>
             {unread.length > 0 && <div style={{ position: "absolute", top: -4, right: -4, width: 20, height: 20, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", border: `2px solid ${C.bg}` }}>{unread.length}</div>}
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 20 }}>
-          {[{ label: "This Week", value: "$700", sub: "revenue", color: C.gold }, { label: "Today", value: "3", sub: "appointments", color: C.text }, { label: "Handled", value: "47", sub: "by AI this month", color: C.accent }].map((s, i) => (
-            <Card key={i} style={{ padding: "12px 10px", textAlign: "center" }}>
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: i === 0 ? 18 : 22, fontWeight: 800, color: s.color }}>{s.value}</div>
-              <div style={{ fontSize: 9, color: C.dim, marginTop: 3 }}>{s.sub}</div>
+
+        {/* Stats row */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 24 }}>
+          {[
+            { label: "This week", value: "$700", sub: "revenue", color: C.gold, icon: "💰" },
+            { label: "Today", value: "3", sub: "appointments", color: C.text, icon: "📅" },
+            { label: "AI handled", value: "47", sub: "this month", color: C.accent, icon: "✦" },
+            { label: "Clients", value: "5", sub: "total", color: C.green, icon: "👥" },
+          ].map((s, i) => (
+            <Card key={i} style={{ padding: "16px", display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: `${s.color}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{s.icon}</div>
+              <div>
+                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: C.dim, marginTop: 1 }}>{s.label}</div>
+              </div>
             </Card>
           ))}
         </div>
       </div>
 
+      {/* Two column on desktop */}
       <div style={{ padding: "0 20px" }}>
-        <Card style={{ padding: 16, marginBottom: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.accent, animation: "pulse 2s infinite" }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: 1.5, textTransform: "uppercase" }}>AI Running</span>
-          </div>
-          {activity.map((a, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "8px 0", borderBottom: i < activity.length - 1 ? `1px solid ${C.border}` : "none" }}>
-              <span style={{ color: C.accent, fontSize: 10, marginTop: 2, flexShrink: 0 }}>{a.icon}</span>
-              <span style={{ fontSize: 13, color: C.mid, flex: 1 }}>{a.text}</span>
-              <span style={{ fontSize: 10, color: C.dim, flexShrink: 0 }}>{a.time}</span>
+        <div className="desktop-two-col">
+          {/* Left col */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 2, textTransform: "uppercase" }}>Today's Schedule</span>
+              <span style={{ fontSize: 11, color: C.accent, fontWeight: 600, cursor: "pointer" }} onClick={() => navigate("schedule")}>See all →</span>
             </div>
-          ))}
-        </Card>
-
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 2, textTransform: "uppercase" }}>Today's Schedule</span>
-          <span style={{ fontSize: 11, color: C.accent, fontWeight: 600, cursor: "pointer" }} onClick={() => navigate("schedule")}>See all →</span>
-        </div>
-        <Card style={{ padding: "4px 16px", marginBottom: 16 }}>
-          {todayAppts.map((a, i) => (
-            <div key={a.id} onClick={() => setSelectedAppt(a)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: i < todayAppts.length - 1 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: C.accentSoft, border: `1px solid ${C.accentSoft}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.accent, flexShrink: 0 }}>{a.avatar}</div>
-              <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{a.name}</div><div style={{ fontSize: 12, color: C.mid }}>{a.service}</div></div>
-              <div style={{ textAlign: "right" }}><div style={{ fontSize: 13, fontWeight: 600 }}>{a.time}</div><div style={{ fontSize: 11, color: a.status === "confirmed" ? C.green : C.yellow, marginTop: 3 }}>{a.status}</div></div>
-            </div>
-          ))}
-        </Card>
-
-        {unread.length > 0 && (
-          <>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Needs Attention</div>
-            {unread.map(m => (
-              <Card key={m.id} style={{ padding: 14, marginBottom: 10, borderColor: "#f43f5e22", cursor: "pointer" }} onClick={() => navigate("inbox")}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.red }} />
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{m.platform === "whatsapp" ? <WA /> : <IG />}<span style={{ fontSize: 13, fontWeight: 600 }}>{m.name}</span></div>
-                  <span style={{ fontSize: 10, color: C.dim, marginLeft: "auto" }}>{m.time}</span>
+            <Card style={{ padding: "4px 16px", marginBottom: 16 }}>
+              {todayAppts.map((a, i) => (
+                <div key={a.id} onClick={() => setSelectedAppt(a)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: i < todayAppts.length - 1 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.accent, flexShrink: 0 }}>{a.avatar}</div>
+                  <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{a.name}</div><div style={{ fontSize: 12, color: C.mid }}>{a.service}</div></div>
+                  <div style={{ textAlign: "right" }}><div style={{ fontSize: 13, fontWeight: 600 }}>{a.time}</div><div style={{ fontSize: 11, color: a.status === "confirmed" ? C.green : C.yellow, marginTop: 3 }}>{a.status}</div></div>
                 </div>
-                <div style={{ fontSize: 13, color: C.mid, marginBottom: 10 }}>"{m.preview}"</div>
-                <BtnPrimary onClick={() => navigate("inbox")} style={{ width: "100%", padding: 9, fontSize: 12 }}>Go to Inbox</BtnPrimary>
-              </Card>
-            ))}
-          </>
-        )}
+              ))}
+            </Card>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+            {unread.length > 0 && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Needs Attention</div>
+                {unread.map(m => (
+                  <Card key={m.id} style={{ padding: 14, marginBottom: 10, borderColor: "#f43f5e22", cursor: "pointer" }} onClick={() => navigate("inbox")}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.red }} />
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{m.platform === "whatsapp" ? <WA /> : <IG />}<span style={{ fontSize: 13, fontWeight: 600 }}>{m.name}</span></div>
+                      <span style={{ fontSize: 10, color: C.dim, marginLeft: "auto" }}>{m.time}</span>
+                    </div>
+                    <div style={{ fontSize: 13, color: C.mid, marginBottom: 10 }}>"{m.preview}"</div>
+                    <BtnPrimary onClick={() => navigate("inbox")} style={{ width: "100%", padding: 9, fontSize: 12 }}>Go to Inbox</BtnPrimary>
+                  </Card>
+                ))}
+              </>
+            )}
+          </div>
+
+          {/* Right col */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12, marginTop: 8 }}>AI Activity</div>
+            <Card style={{ padding: 16, marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.accent, animation: "pulse 2s infinite" }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: 1.5, textTransform: "uppercase" }}>Live</span>
+              </div>
+              {activity.map((a, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "9px 0", borderBottom: i < activity.length - 1 ? `1px solid ${C.border}` : "none" }}>
+                  <span style={{ color: C.accent, fontSize: 10, marginTop: 2, flexShrink: 0 }}>{a.icon}</span>
+                  <span style={{ fontSize: 13, color: C.mid, flex: 1 }}>{a.text}</span>
+                  <span style={{ fontSize: 10, color: C.dim, flexShrink: 0 }}>{a.time}</span>
+                </div>
+              ))}
+            </Card>
+
+            {/* Quick actions - desktop only */}
+            <div className="desktop-only">
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Quick Actions</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {[
+                  { icon: "➕", label: "New Appointment", screen: "schedule" },
+                  { icon: "💬", label: "View Inbox", screen: "inbox" },
+                  { icon: "🔗", label: "Booking Link", screen: "sharelink" },
+                  { icon: "✦", label: "Ask AI", screen: "assistant" },
+                ].map(item => (
+                  <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                    <span style={{ fontSize: 20 }}>{item.icon}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>{item.label}</span>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile-only grid */}
+        <div className="mobile-only" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
           {[{ icon: "💳", label: "Payments", screen: "payments" }, { icon: "⚙️", label: "Settings", screen: "settings" }, { icon: "🎁", label: "Loyalty", screen: "loyalty" }, { icon: "📊", label: "Analytics", screen: "analytics" }, { icon: "📣", label: "Promotions", screen: "promotions" }, { icon: "👥", label: "Staff", screen: "staff" }, { icon: "⏳", label: "Waitlist", screen: "waitlist" }, { icon: "🔗", label: "Share Booking Link", screen: "sharelink" }].map(item => (
             <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
               <span style={{ fontSize: 22 }}>{item.icon}</span>
@@ -2200,22 +2250,13 @@ export default function App() {
 
   return (
     <div style={{ fontFamily: "'Outfit',sans-serif", background: C.bg, minHeight: "100vh", color: C.text }}>
-      <style>{GLOBAL_STYLES + `
-        @media (min-width: 768px) {
-          .mobile-only { display: none !important; }
-        }
-        @media (max-width: 767px) {
-          .desktop-only { display: none !important; }
-        }
-      `}</style>
+      <style>{GLOBAL_STYLES}</style>
       {showSidebar && <Sidebar active={screen} navigate={navigate} />}
       <div style={{
         marginLeft: showSidebar ? 240 : 0,
         minHeight: "100vh",
-        maxWidth: isAuthScreen ? (isDesktop ? 480 : "100%") : (showSidebar ? "none" : 400),
-        margin: isAuthScreen ? "0 auto" : (showSidebar ? `0 0 0 240px` : "0 auto"),
       }}>
-        <div style={{ maxWidth: showSidebar ? 800 : "none", margin: showSidebar ? "0 auto" : "0" }}>
+        <div style={{ maxWidth: showSidebar ? 1100 : 400, margin: "0 auto", padding: showSidebar ? "0 32px" : "0" }}>
           <Screen navigate={navigate} />
         </div>
       </div>
