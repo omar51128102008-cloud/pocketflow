@@ -25,6 +25,12 @@ const GLOBAL_STYLES = `
   @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
   @keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  @keyframes orbFloat{0%,100%{transform:translateY(0px) scale(1)}50%{transform:translateY(-6px) scale(1.03)}}
+  @keyframes orbSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes orbSpinRev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+  @keyframes orbPulse{0%,100%{transform:scale(1);opacity:0.7}50%{transform:scale(1.15);opacity:1}}
+  @keyframes wave1{0%,100%{d:path("M0,50 Q25,20 50,50 Q75,80 100,50")}50%{d:path("M0,50 Q25,80 50,50 Q75,20 100,50")}}
+  @keyframes blobMorph{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%}25%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%}50%{border-radius:50% 60% 30% 60%/30% 40% 70% 50%}75%{border-radius:40% 60% 50% 40%/70% 30% 50% 60%}}
   input:focus,textarea:focus,select:focus{outline:none;}
   input::placeholder,textarea::placeholder{color:#3d3d55;}
   input[type=range]{-webkit-appearance:none;height:4px;border-radius:2px;background:#1e1e2e;}
@@ -715,11 +721,30 @@ function Assistant({ navigate }) {
   const [chatInput, setChatInput] = useState("");
   const [aiName, setAiName] = useState("Aria");
   const [loading, setLoading] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const [chatHistory, setChatHistory] = useState(null);
   const [listening, setListening] = useState(false);
   const [voiceSupported] = useState(() => "webkitSpeechRecognition" in window || "SpeechRecognition" in window);
+  const [voiceMode, setVoiceMode] = useState(false);
+  const [voiceSession, setVoiceSession] = useState([]); // messages captured during voice mode
+  const voiceSessionRef = useRef([]);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceLabel, setVoiceLabel] = useState("Tap to speak");
+  const voiceRecogRef = useRef(null);
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
+  const audioRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animFrameRef = useRef(null);
+  const [orbScale, setOrbScale] = useState(1);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -732,31 +757,146 @@ function Assistant({ navigate }) {
       setChatHistory([{ role: "assistant", text: `Hey! I'm ${name}, your AI assistant for ${biz}. I'm here 24/7 to handle bookings, messages, and keep things running. What do you need?` }]);
     };
     load();
+    return () => { cancelAnimationFrame(animFrameRef.current); };
   }, []);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, loading]);
 
-  const toggleVoice = () => {
-    if (listening) {
-      recognitionRef.current?.stop();
-      setListening(false);
-      return;
+  const startOrbAnalyser = (audio) => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = ctx.createMediaElementSource(audio);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 64;
+      src.connect(analyser);
+      analyser.connect(ctx.destination);
+      analyserRef.current = analyser;
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        analyser.getByteFrequencyData(data);
+        const avg = data.reduce((a, b) => a + b, 0) / data.length;
+        setOrbScale(1 + avg / 255 * 0.5);
+        animFrameRef.current = requestAnimationFrame(tick);
+      };
+      tick();
+      audio.onended = () => {
+        cancelAnimationFrame(animFrameRef.current);
+        setOrbScale(1);
+        setSpeaking(false);
+        ctx.close();
+      };
+    } catch {
+      // fallback — just animate without analyser
+      audio.onended = () => { setSpeaking(false); setOrbScale(1); };
     }
+  };
+
+  const openVoiceMode = () => {
+    setVoiceSession([]);
+    voiceSessionRef.current = [];
+    setVoiceLabel("Tap to speak");
+    setTimeout(() => startVoiceListen(), 400);
+  };
+
+  const closeVoiceMode = () => {
+    voiceRecogRef.current?.stop();
+    audioRef.current?.pause();
+    cancelAnimationFrame(animFrameRef.current);
+    setVoiceMode(false);
+    setVoiceListening(false);
+    setVoiceLoading(false);
+    setSpeaking(false);
+    setOrbScale(1);
+    // Merge voice session into main chat
+    if (voiceSessionRef.current.length > 0) {
+      setChatHistory(prev => [...(prev || []), ...voiceSessionRef.current]);
+    }
+  };
+
+  const startVoiceListen = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    const recognition = new SR();
+    recognition.lang = "en-US"; recognition.continuous = false; recognition.interimResults = false;
+    recognition.onresult = e => {
+      const text = e.results[0][0].transcript;
+      setVoiceListening(false);
+      setVoiceLabel("Thinking...");
+      handleVoiceMessage(text);
+    };
+    recognition.onerror = () => { setVoiceListening(false); setVoiceLabel("Tap to speak"); };
+    recognition.onend = () => setVoiceListening(false);
+    voiceRecogRef.current = recognition;
+    recognition.start();
+    setVoiceListening(true);
+    setVoiceLabel("Listening...");
+  };
+
+  const handleVoiceMessage = async (text) => {
+    const userMsg = { role: "user", text };
+    setVoiceSession(prev => { const next = [...prev, userMsg]; voiceSessionRef.current = next; return next; });
+    setVoiceLoading(true);
+    setVoiceLabel("Thinking...");
+    try {
+      const history = [...(chatHistory || []), ...voiceSessionRef.current, userMsg];
+      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile", max_tokens: 300,
+          messages: [
+            { role: "system", content: `You are ${aiName}, an AI business assistant for a beauty/personal care business using Pocketflow. Your name is ${aiName}. Help the owner manage appointments, clients, messages, revenue, and promotions. Be concise (1-3 sentences), casual but professional. Today: ${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}.` },
+            ...history.map(m => ({ role: m.role, content: m.text }))
+          ]
+        })
+      });
+      const data = await res.json();
+      const reply = data.choices?.[0]?.message?.content || "Got it.";
+      const assistantMsg = { role: "assistant", text: reply };
+      setVoiceSession(prev => { const next = [...prev, assistantMsg]; voiceSessionRef.current = next; return next; });
+      setVoiceLoading(false);
+      setVoiceLabel("Speaking...");
+      // Speak reply
+      try {
+        const audioRes = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: reply })
+        });
+        if (audioRes.ok) {
+          const blob = await audioRes.blob();
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          audioRef.current = audio;
+          setSpeaking(true);
+          startOrbAnalyser(audio);
+          audio.play();
+          audio.onended = () => {
+            URL.revokeObjectURL(url);
+            setSpeaking(false);
+            setOrbScale(1);
+            cancelAnimationFrame(animFrameRef.current);
+            setVoiceLabel("Tap to speak");
+            // Auto-listen again
+            setTimeout(() => startVoiceListen(), 500);
+          };
+        } else { setVoiceLabel("Tap to speak"); setTimeout(() => startVoiceListen(), 500); }
+      } catch { setVoiceLabel("Tap to speak"); setTimeout(() => startVoiceListen(), 500); }
+    } catch {
+      setVoiceSession(prev => [...prev, { role: "assistant", text: "Connection issue, try again." }]);
+      setVoiceLoading(false);
+      setVoiceLabel("Tap to speak");
+    }
+  };
+
+  const toggleVoice = () => {
+    if (listening) { recognitionRef.current?.stop(); setListening(false); return; }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SR();
-    recognition.lang = "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.onresult = e => {
-      const transcript = e.results[0][0].transcript;
-      setChatInput(transcript);
-      setListening(false);
-    };
+    recognition.lang = "en-US"; recognition.continuous = false; recognition.interimResults = false;
+    recognition.onresult = e => { setChatInput(e.results[0][0].transcript); setListening(false); };
     recognition.onerror = () => setListening(false);
     recognition.onend = () => setListening(false);
     recognitionRef.current = recognition;
-    recognition.start();
-    setListening(true);
+    recognition.start(); setListening(true);
   };
 
   const sendChat = async () => {
@@ -767,13 +907,11 @@ function Assistant({ navigate }) {
     setLoading(true);
     try {
       const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          max_tokens: 300,
+          model: "llama-3.3-70b-versatile", max_tokens: 300,
           messages: [
-            { role: "system", content: `You are ${aiName}, an AI business assistant for a beauty/personal care business using Pocketflow. Your name is ${aiName} — always refer to yourself by this name if asked. Help the owner manage appointments, clients, messages, revenue, and promotions. Be concise (2-4 sentences), casual but professional. Today: ${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}.` },
+            { role: "system", content: `You are ${aiName}, an AI business assistant for a beauty/personal care business using Pocketflow. Your name is ${aiName}. Help the owner manage appointments, clients, messages, revenue, and promotions. Be concise (2-4 sentences), casual but professional. Today: ${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}.` },
             ...(chatHistory||[]).map(m => ({ role: m.role, content: m.text })),
             { role: "user", content: text }
           ]
@@ -782,70 +920,119 @@ function Assistant({ navigate }) {
       const data = await res.json();
       const reply = data.choices?.[0]?.message?.content || "On it.";
       setChatHistory(p => [...p, { role: "assistant", text: reply }]);
-      // Speak with ElevenLabs
+      // ElevenLabs voice + orb
       try {
         const audioRes = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: reply })
         });
         if (audioRes.ok) {
           const blob = await audioRes.blob();
           const url = URL.createObjectURL(blob);
           const audio = new Audio(url);
+          audioRef.current = audio;
+          setSpeaking(true);
+          startOrbAnalyser(audio);
           audio.play();
-          audio.onended = () => URL.revokeObjectURL(url);
+          audio.onended = () => { URL.revokeObjectURL(url); setSpeaking(false); setOrbScale(1); cancelAnimationFrame(animFrameRef.current); };
         }
-      } catch { /* voice fails silently, chat still works */ }
+      } catch { /* voice fails silently */ }
     } catch {
       setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again in a second." }]);
     }
     setLoading(false);
   };
 
-  return (
-    <div style={{ paddingBottom: 80 }}>
-      <div style={{ padding: "52px 20px 16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>✦</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{aiName}</div>
-            <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, marginTop: 3 }}>● Online · Ready to help</div>
-          </div>
-          {voiceSupported && (
-            <div onClick={toggleVoice} style={{ width: 40, height: 40, borderRadius: 12, background: listening ? `linear-gradient(135deg,${C.red},#ff6b6b)` : C.surface, border: `1px solid ${listening ? C.red : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={listening ? "#fff" : C.mid} strokeWidth="2" strokeLinecap="round">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
-              </svg>
-            </div>
-          )}
+  // Orb state: idle / loading / speaking / listening
+  const orbState = listening ? "listening" : loading ? "loading" : speaking ? "speaking" : "idle";
+  const orbColor1 = orbState === "listening" ? "#ef4444" : orbState === "loading" ? "#6366f1" : "#7c3aed";
+  const orbColor2 = orbState === "listening" ? "#f97316" : orbState === "loading" ? "#a78bfa" : "#a78bfa";
+  const orbColor3 = orbState === "speaking" ? "#38bdf8" : "#4f46e5";
+  const orbSize = isDesktop ? 200 : 140;
+  const orbBlobSize = isDesktop ? 140 : 100;
+
+  const OrbWidget = () => (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: isDesktop ? "40px 0 32px" : "8px 0 16px" }}>
+      <div style={{ position: "relative", width: orbSize, height: orbSize, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {[1.6, 1.35, 1.15].map((scale, i) => (
+          <div key={i} style={{
+            position: "absolute", width: orbSize, height: orbSize, borderRadius: "50%",
+            background: `radial-gradient(circle, ${orbColor1}${["08","12","18"][i]}, transparent 70%)`,
+            transform: `scale(${speaking ? scale * (1 + (orbScale - 1) * (1 - i * 0.3)) : scale * (orbState === "idle" ? 1 : 1.05)})`,
+            transition: speaking ? "none" : "transform 0.3s ease",
+            animation: orbState !== "idle" ? `orbPulse ${1.5 + i * 0.4}s ease-in-out infinite` : "none",
+            animationDelay: `${i * 0.2}s`,
+          }} />
+        ))}
+        <div style={{
+          width: orbBlobSize, height: orbBlobSize,
+          background: `radial-gradient(circle at 35% 35%, ${orbColor2}, ${orbColor1} 50%, ${orbColor3})`,
+          borderRadius: "60% 40% 30% 70%/60% 30% 70% 40%",
+          boxShadow: `0 0 ${speaking ? 40 : 20}px ${orbColor1}66, 0 0 ${speaking ? 80 : 40}px ${orbColor1}33, inset 0 0 30px rgba(255,255,255,0.1)`,
+          animation: `blobMorph ${orbState === "speaking" ? 1.2 : orbState === "loading" ? 1.8 : 4}s ease-in-out infinite`,
+          transform: `scale(${orbScale})`,
+          transition: "transform 0.05s linear, box-shadow 0.3s ease, background 0.4s ease",
+          position: "relative", zIndex: 2,
+        }}>
+          <div style={{ position: "absolute", inset: 0, borderRadius: "inherit", background: "radial-gradient(circle at 30% 25%, rgba(255,255,255,0.35), transparent 60%)", animation: `orbSpinRev ${orbState === "speaking" ? 2 : 6}s linear infinite` }} />
         </div>
-        {listening && (
-          <div style={{ background: `${C.red}18`, border: `1px solid ${C.red}33`, borderRadius: 12, padding: "10px 14px", marginTop: 12, display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.red, animation: "pulse 1s infinite" }} />
-            <span style={{ fontSize: 13, color: C.red, fontWeight: 600 }}>Listening... speak now</span>
-          </div>
-        )}
-      </div>
-      <div style={{ padding: "0 20px", paddingBottom: 140 }}>
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 16 }}>
-          {["Who's next?", "Any urgent messages?", "Send a promo", "This week's revenue", "Block Sunday"].map(c => (
-            <div key={c} onClick={() => setChatInput(c)} style={{ padding: "8px 14px", borderRadius: 100, background: C.surface, border: `1px solid ${C.border}`, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>{c}</div>
+        <div style={{ position: "absolute", width: orbSize - 10, height: orbSize - 10, borderRadius: "50%", border: `1px dashed ${orbColor1}33`, animation: `orbSpin ${orbState === "speaking" ? 2 : 8}s linear infinite` }}>
+          {[0, 120, 240].map((deg, i) => (
+            <div key={i} style={{ position: "absolute", width: 6, height: 6, borderRadius: "50%", background: orbColor2, opacity: 0.8, top: "50%", left: "50%", transform: `rotate(${deg}deg) translateX(${orbSize/2 - 7}px) translateY(-50%)`, boxShadow: `0 0 6px ${orbColor2}` }} />
           ))}
         </div>
+      </div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: orbState === "listening" ? C.red : orbState === "speaking" ? C.accent : C.dim, marginTop: 10, letterSpacing: 1, textTransform: "uppercase", transition: "color 0.3s" }}>
+        {orbState === "listening" ? "Listening..." : orbState === "loading" ? "Thinking..." : orbState === "speaking" ? "Speaking" : aiName}
+      </div>
+      {isDesktop && (
+        <div style={{ marginTop: 6, fontSize: 12, color: C.dim, textAlign: "center", maxWidth: 200 }}>
+          Your AI business assistant, online 24/7
+        </div>
+      )}
+      {isDesktop && voiceSupported && (
+        <div onClick={openVoiceMode} style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 100, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff", boxShadow: `0 4px 20px ${C.accent}44` }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          Start Voice Chat
+        </div>
+      )}
+      {isDesktop && (
+        <div style={{ marginTop: 28, width: "100%", padding: "0 12px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Quick actions</div>
+          {["Who's next?", "Urgent messages?", "This week's revenue", "Send a promo", "Block Sunday"].map(c => (
+            <div key={c} onClick={() => setChatInput(c)} style={{ padding: "10px 14px", borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", marginBottom: 8, transition: "background 0.2s" }}
+              onMouseEnter={e => e.currentTarget.style.background = C.border}
+              onMouseLeave={e => e.currentTarget.style.background = C.surface}
+            >{c}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const ChatArea = () => (
+    <>
+      {!isDesktop && (
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "0 20px 12px", flexShrink: 0 }}>
+          {["Who's next?", "Urgent messages?", "This week's revenue", "Send a promo", "Block Sunday"].map(c => (
+            <div key={c} onClick={() => setChatInput(c)} style={{ padding: "7px 14px", borderRadius: 100, background: C.surface, border: `1px solid ${C.border}`, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>{c}</div>
+          ))}
+        </div>
+      )}
+      <div style={{ flex: 1, overflowY: "auto", padding: isDesktop ? "20px 24px" : "0 20px 20px" }}>
         {chatHistory === null ? (
           <div style={{ textAlign: "center", padding: 40, color: C.dim, fontSize: 13 }}>Loading {aiName}...</div>
         ) : chatHistory.map((m, i) => (
           <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 12, alignItems: "flex-start" }}>
             {m.role === "assistant" && (
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, marginRight: 8, flexShrink: 0, marginTop: 2 }}>✦</div>
+              <div style={{ width: 28, height: 28, borderRadius: 9, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, marginRight: 10, flexShrink: 0, marginTop: 2 }}>✦</div>
             )}
-            <div style={{ maxWidth: "78%", padding: "11px 14px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surface, border: m.role === "user" ? "none" : `1px solid ${C.border}`, fontSize: 14, lineHeight: 1.6, color: m.role === "user" ? "#fff" : C.text }}>{m.text}</div>
+            <div style={{ maxWidth: isDesktop ? "70%" : "78%", padding: "11px 15px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surface, border: m.role === "user" ? "none" : `1px solid ${C.border}`, fontSize: 14, lineHeight: 1.6, color: m.role === "user" ? "#fff" : C.text }}>{m.text}</div>
           </div>
         ))}
         {loading && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>✦</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 9, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>✦</div>
             <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "18px 18px 18px 4px", padding: "12px 16px", display: "flex", gap: 5 }}>
               {[0,1,2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: C.accent, animation: "pulse 1.2s infinite", animationDelay: `${d*0.2}s` }} />)}
             </div>
@@ -853,16 +1040,115 @@ function Assistant({ navigate }) {
         )}
         <div ref={chatEndRef} />
       </div>
-      <div style={{ position: "fixed", bottom: 72, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, padding: "12px 20px", background: `linear-gradient(0deg,${C.bg} 80%,transparent)`, zIndex: 40 }}>
-        <div style={{ display: "flex", gap: 10, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "6px 6px 6px 16px", alignItems: "center" }}>
-          <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendChat()} placeholder={listening ? "Listening..." : `Ask ${aiName} anything...`} style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+      <div style={{ padding: isDesktop ? "16px 24px 24px" : "12px 20px 32px", background: C.bg, borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 8, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "6px 6px 6px 16px", alignItems: "center" }}>
+          <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendChat()} placeholder={`Ask ${aiName} anything...`} style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", outline: "none" }} />
+          {voiceSupported && !isDesktop && (
+            <div onClick={openVoiceMode} style={{ width: 38, height: 38, borderRadius: 11, background: C.border, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </div>
+          )}
           <BtnPrimary onClick={sendChat} disabled={loading || !chatInput.trim()} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 11, flexShrink: 0, padding: 0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </BtnPrimary>
         </div>
       </div>
+    </>
+  );
+
+  const VoiceOverlay = voiceMode ? (
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#0a0a0f", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ width: "100%", maxWidth: 680, padding: "52px 28px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: "#fff" }}>{aiName}</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>Voice conversation</div>
+        </div>
+        <div onClick={closeVoiceMode} style={{ padding: "9px 22px", borderRadius: 100, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", letterSpacing: 0.3 }}>
+          End & Save to Chat
+        </div>
+      </div>
+      <div style={{ flex: 1, width: "100%", maxWidth: 680, overflowY: "auto", padding: "0 28px" }}>
+        {voiceSession.length === 0 && (
+          <div style={{ textAlign: "center", color: "rgba(255,255,255,0.25)", fontSize: 14, marginTop: 60 }}>Start talking — your conversation appears here in real time</div>
+        )}
+        {voiceSession.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 12, alignItems: "flex-start" }}>
+            {m.role === "assistant" && (
+              <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, marginRight: 10, flexShrink: 0, marginTop: 2 }}>✦</div>
+            )}
+            <div style={{ maxWidth: "76%", padding: "11px 15px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "rgba(255,255,255,0.07)", border: m.role === "user" ? "none" : "1px solid rgba(255,255,255,0.1)", fontSize: 14, lineHeight: 1.6, color: "#fff" }}>{m.text}</div>
+          </div>
+        ))}
+        {voiceLoading && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>✦</div>
+            <div style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "18px 18px 18px 4px", padding: "12px 16px", display: "flex", gap: 5 }}>
+              {[0,1,2].map(d => <div key={d} style={{ width: 5, height: 5, borderRadius: "50%", background: C.accent, animation: "pulse 1.2s infinite", animationDelay: `${d*0.2}s` }} />)}
+            </div>
+          </div>
+        )}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: 56, paddingTop: 16 }}>
+        <div onClick={() => { if (!voiceListening && !voiceLoading && !speaking) startVoiceListen(); }} style={{ position: "relative", width: 160, height: 160, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+          {[1.7, 1.4, 1.18].map((scale, i) => {
+            const c1 = voiceListening ? "#ef4444" : voiceLoading ? "#6366f1" : speaking ? "#7c3aed" : "#6366f1";
+            return <div key={i} style={{ position: "absolute", width: 160, height: 160, borderRadius: "50%", background: `radial-gradient(circle, ${c1}${["08","12","18"][i]}, transparent 70%)`, transform: `scale(${scale * (voiceListening || speaking ? 1 + (orbScale-1)*(1-i*0.3) : 1)})`, animation: (voiceListening || voiceLoading || speaking) ? `orbPulse ${1.5+i*0.4}s ease-in-out infinite` : "none", animationDelay: `${i*0.2}s` }} />;
+          })}
+          <div style={{ width: 110, height: 110, borderRadius: "60% 40% 30% 70%/60% 30% 70% 40%", background: voiceListening ? "radial-gradient(circle at 35% 35%,#f97316,#ef4444 50%,#dc2626)" : voiceLoading ? "radial-gradient(circle at 35% 35%,#a78bfa,#6366f1 50%,#4f46e5)" : speaking ? "radial-gradient(circle at 35% 35%,#a78bfa,#7c3aed 50%,#4f46e5)" : "radial-gradient(circle at 35% 35%,#818cf8,#6366f1 50%,#4338ca)", boxShadow: `0 0 ${speaking ? 50 : 25}px ${voiceListening?"#ef444466":"#7c3aed66"},0 0 ${speaking?100:50}px ${voiceListening?"#ef444422":"#7c3aed22"},inset 0 0 30px rgba(255,255,255,0.1)`, animation: `blobMorph ${speaking?1.2:voiceLoading?1.8:4}s ease-in-out infinite`, transform: `scale(${orbScale})`, transition: "transform 0.05s linear,box-shadow 0.3s,background 0.4s", position: "relative", zIndex: 2 }}>
+            <div style={{ position: "absolute", inset: 0, borderRadius: "inherit", background: "radial-gradient(circle at 30% 25%,rgba(255,255,255,0.35),transparent 60%)", animation: `orbSpinRev ${speaking?2:6}s linear infinite` }} />
+          </div>
+        </div>
+        <div style={{ marginTop: 14, fontSize: 13, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: voiceListening ? "#ef4444" : speaking ? C.accent : "rgba(255,255,255,0.45)" }}>
+          {voiceLabel}
+        </div>
+        <div style={{ marginTop: 5, fontSize: 12, color: "rgba(255,255,255,0.2)" }}>
+          {voiceSession.length > 0 ? `${Math.ceil(voiceSession.length/2)} exchange${voiceSession.length>2?"s":""} · tap End & Save to save to chat` : "Tap End & Save when done"}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  if (isDesktop) {
+    return (
+      <>
+      <div style={{ display: "flex", height: "100vh", background: C.bg, overflow: "hidden" }}>
+        {/* Left panel — orb + controls */}
+        <div style={{ width: 280, flexShrink: 0, borderRight: `1px solid ${C.border}`, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+          <div style={{ padding: "32px 20px 12px", borderBottom: `1px solid ${C.border}` }}>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>{aiName}</div>
+            <div style={{ fontSize: 11, color: C.accent, fontWeight: 600, marginTop: 4 }}>● Online</div>
+          </div>
+          <OrbWidget />
+        </div>
+
+        {/* Right panel — chat */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ padding: "24px 28px 16px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>Chat with {aiName}</div>
+            <div style={{ fontSize: 12, color: C.dim, marginTop: 2 }}>Your AI business assistant — ask anything about your business</div>
+          </div>
+          <ChatArea />
+        </div>
+      </div>
+      {VoiceOverlay}
+      </>
+    );
+  }
+
+  return (
+    <>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: C.bg }}>
+      {/* Mobile Header */}
+      <div style={{ padding: "52px 20px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800 }}>{aiName}</div>
+        <div style={{ fontSize: 11, color: C.accent, fontWeight: 600 }}>● Online</div>
+      </div>
+      <OrbWidget />
+      <ChatArea />
       <BottomNav active="assistant" navigate={navigate} />
     </div>
+    {VoiceOverlay}
+    </>
   );
 }
 
