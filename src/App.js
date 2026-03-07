@@ -715,8 +715,11 @@ function Assistant({ navigate }) {
   const [chatInput, setChatInput] = useState("");
   const [aiName, setAiName] = useState("Aria");
   const [loading, setLoading] = useState(false);
-  const [chatHistory, setChatHistory] = useState(null); // null = loading
+  const [chatHistory, setChatHistory] = useState(null);
+  const [listening, setListening] = useState(false);
+  const [voiceSupported] = useState(() => "webkitSpeechRecognition" in window || "SpeechRecognition" in window);
   const chatEndRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     const load = async () => {
@@ -732,6 +735,29 @@ function Assistant({ navigate }) {
   }, []);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, loading]);
+
+  const toggleVoice = () => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SR();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = e => {
+      const transcript = e.results[0][0].transcript;
+      setChatInput(transcript);
+      setListening(false);
+    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(true);
+  };
 
   const sendChat = async () => {
     const text = chatInput.trim();
@@ -754,7 +780,14 @@ function Assistant({ navigate }) {
         })
       });
       const data = await res.json();
-      setChatHistory(p => [...p, { role: "assistant", text: data.choices?.[0]?.message?.content || "On it." }]);
+      const reply = data.choices?.[0]?.message?.content || "On it.";
+      setChatHistory(p => [...p, { role: "assistant", text: reply }]);
+      // Speak reply if voice was used
+      if (voiceSupported && window.speechSynthesis) {
+        const utt = new SpeechSynthesisUtterance(reply);
+        utt.rate = 1.05; utt.pitch = 1.1;
+        window.speechSynthesis.speak(utt);
+      }
     } catch {
       setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again in a second." }]);
     }
@@ -766,11 +799,24 @@ function Assistant({ navigate }) {
       <div style={{ padding: "52px 20px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>✦</div>
-          <div>
+          <div style={{ flex: 1 }}>
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{aiName}</div>
             <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, marginTop: 3 }}>● Online · Ready to help</div>
           </div>
+          {voiceSupported && (
+            <div onClick={toggleVoice} style={{ width: 40, height: 40, borderRadius: 12, background: listening ? `linear-gradient(135deg,${C.red},#ff6b6b)` : C.surface, border: `1px solid ${listening ? C.red : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={listening ? "#fff" : C.mid} strokeWidth="2" strokeLinecap="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </div>
+          )}
         </div>
+        {listening && (
+          <div style={{ background: `${C.red}18`, border: `1px solid ${C.red}33`, borderRadius: 12, padding: "10px 14px", marginTop: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.red, animation: "pulse 1s infinite" }} />
+            <span style={{ fontSize: 13, color: C.red, fontWeight: 600 }}>Listening... speak now</span>
+          </div>
+        )}
       </div>
       <div style={{ padding: "0 20px", paddingBottom: 140 }}>
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 16 }}>
@@ -800,8 +846,8 @@ function Assistant({ navigate }) {
       </div>
       <div style={{ position: "fixed", bottom: 72, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, padding: "12px 20px", background: `linear-gradient(0deg,${C.bg} 80%,transparent)`, zIndex: 40 }}>
         <div style={{ display: "flex", gap: 10, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "6px 6px 6px 16px", alignItems: "center" }}>
-          <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendChat()} placeholder={`Ask ${aiName} anything...`} style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
-          <BtnPrimary onClick={sendChat} disabled={loading} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 11, flexShrink: 0, padding: 0 }}>
+          <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendChat()} placeholder={listening ? "Listening..." : `Ask ${aiName} anything...`} style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+          <BtnPrimary onClick={sendChat} disabled={loading || !chatInput.trim()} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 11, flexShrink: 0, padding: 0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </BtnPrimary>
         </div>
@@ -1575,37 +1621,90 @@ function Notifications({ navigate }) {
 // ── ANALYTICS ──────────────────────────────────────────────────────────────────
 function Analytics({ navigate }) {
   const [period, setPeriod] = useState("week");
+  const [appts, setAppts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const data = {
-    week: {
-      revenue: "$1,585", trend: "+23%", trendLabel: "vs last week",
-      appts: "9", newClients: "2", avgClient: "$176", noShows: "1",
-      bars: [{ day: "Mon", revenue: 305 }, { day: "Tue", revenue: 0 }, { day: "Wed", revenue: 220 }, { day: "Thu", revenue: 85 }, { day: "Fri", revenue: 700 }, { day: "Sat", revenue: 275 }, { day: "Sun", revenue: 0 }],
-      barLabel: "Revenue by Day",
-    },
-    month: {
-      revenue: "$6,240", trend: "+11%", trendLabel: "vs last month",
-      appts: "38", newClients: "9", avgClient: "$164", noShows: "3",
-      bars: [{ day: "W1", revenue: 1200 }, { day: "W2", revenue: 1850 }, { day: "W3", revenue: 1585 }, { day: "W4", revenue: 1605 }],
-      barLabel: "Revenue by Week",
-    },
-    year: {
-      revenue: "$52,800", trend: "+34%", trendLabel: "vs last year",
-      appts: "312", newClients: "64", avgClient: "$169", noShows: "18",
-      bars: [{ day: "Jan", revenue: 3200 }, { day: "Feb", revenue: 3800 }, { day: "Mar", revenue: 4200 }, { day: "Apr", revenue: 4100 }, { day: "May", revenue: 5200 }, { day: "Jun", revenue: 4800 }, { day: "Jul", revenue: 4100 }, { day: "Aug", revenue: 4600 }, { day: "Sep", revenue: 4900 }, { day: "Oct", revenue: 5100 }, { day: "Nov", revenue: 4800 }, { day: "Dec", revenue: 4000 }],
-      barLabel: "Revenue by Month",
-    }
-  };
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from("appointments").select("*").eq("owner_id", session.user.id);
+      setAppts(data || []);
+      setLoading(false);
+    };
+    load();
+  }, []);
 
-  const d = data[period];
-  const max = Math.max(...d.bars.map(b => b.revenue));
+  const parsePrice = p => parseInt((p || "0").replace(/\D/g, "")) || 0;
 
-  const topServices = [
-    { name: "Knotless Braids", count: period === "week" ? 8 : period === "month" ? 18 : 142, revenue: period === "week" ? "$1,600" : period === "month" ? "$3,240" : "$28,400", pct: 100 },
-    { name: "Box Braids", count: period === "week" ? 4 : period === "month" ? 9 : 74, revenue: period === "week" ? "$720" : period === "month" ? "$1,440" : "$13,320", pct: 45 },
-    { name: "Silk Press", count: period === "week" ? 5 : period === "month" ? 7 : 56, revenue: period === "week" ? "$600" : period === "month" ? "$840" : "$6,720", pct: 37 },
-    { name: "Natural Blowout", count: period === "week" ? 3 : period === "month" ? 4 : 40, revenue: period === "week" ? "$255" : period === "month" ? "$340" : "$3,400", pct: 16 },
-  ];
+  const confirmed = appts.filter(a => a.status === "confirmed");
+  const totalRev = confirmed.reduce((s, a) => s + parsePrice(a.price), 0);
+  const todayAppts = appts.filter(a => a.day === "Today");
+  const todayRev = todayAppts.filter(a => a.status === "confirmed").reduce((s, a) => s + parsePrice(a.price), 0);
+
+  // Service breakdown
+  const serviceMap = {};
+  confirmed.forEach(a => {
+    const services = (a.service || "").split(",").map(s => s.trim());
+    services.forEach(s => {
+      if (!s) return;
+      if (!serviceMap[s]) serviceMap[s] = { count: 0, revenue: 0 };
+      serviceMap[s].count++;
+      serviceMap[s].revenue += parsePrice(a.price) / services.length;
+    });
+  });
+  const topServices = Object.entries(serviceMap)
+    .sort((a, b) => b[1].revenue - a[1].revenue)
+    .slice(0, 5)
+    .map(([name, d]) => ({ name, ...d }));
+  const maxSvcRev = topServices[0]?.revenue || 1;
+
+  // Bar chart — week shows days, month shows weeks, year shows months
+  const now = new Date();
+  let bars = [];
+  let barLabel = "";
+  if (period === "week") {
+    barLabel = "Revenue by Day";
+    const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    bars = days.map(day => ({ day, revenue: 0 }));
+    confirmed.forEach(a => {
+      if (!a.created_at) return;
+      const d = new Date(a.created_at);
+      const diff = Math.floor((now - d) / 86400000);
+      if (diff < 7) bars[d.getDay()].revenue += parsePrice(a.price);
+    });
+  } else if (period === "month") {
+    barLabel = "Revenue by Week";
+    bars = [{ day: "W1", revenue: 0 }, { day: "W2", revenue: 0 }, { day: "W3", revenue: 0 }, { day: "W4", revenue: 0 }];
+    confirmed.forEach(a => {
+      if (!a.created_at) return;
+      const d = new Date(a.created_at);
+      if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+        const w = Math.min(Math.floor((d.getDate() - 1) / 7), 3);
+        bars[w].revenue += parsePrice(a.price);
+      }
+    });
+  } else {
+    barLabel = "Revenue by Month";
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    bars = months.map(m => ({ day: m, revenue: 0 }));
+    confirmed.forEach(a => {
+      if (!a.created_at) return;
+      const d = new Date(a.created_at);
+      if (d.getFullYear() === now.getFullYear()) bars[d.getMonth()].revenue += parsePrice(a.price);
+    });
+  }
+  const maxBar = Math.max(...bars.map(b => b.revenue), 1);
+
+  const displayRev = period === "week"
+    ? "$" + bars.reduce((s, b) => s + b.revenue, 0)
+    : period === "month"
+    ? "$" + bars.reduce((s, b) => s + b.revenue, 0)
+    : "$" + totalRev;
+
+  const insights = topServices.length > 0
+    ? [`${topServices[0]?.name} is your top earner`, `${confirmed.length} confirmed appointments total`, `$${Math.round(totalRev / Math.max(confirmed.length, 1))} average per appointment`, todayRev > 0 ? `$${todayRev} earned today` : "Add more appointments to see trends"]
+    : ["Book your first clients to start seeing analytics", "Share your booking link to get started", "Track revenue, services, and client trends here", "Everything updates automatically as you get bookings"];
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -1616,62 +1715,80 @@ function Analytics({ navigate }) {
         </div>
       </div>
       <div style={{ padding: "0 20px" }}>
-        <div style={{ display: "flex", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 4, marginBottom: 20 }}>
-          {["week", "month", "year"].map(p => <div key={p} onClick={() => setPeriod(p)} style={{ flex: 1, padding: "10px", borderRadius: 11, background: period === p ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "transparent", textAlign: "center", fontSize: 13, fontWeight: 600, color: period === p ? "#fff" : C.mid, cursor: "pointer", textTransform: "capitalize" }}>{p === "week" ? "This Week" : p === "month" ? "This Month" : "This Year"}</div>)}
-        </div>
-        <div style={{ background: "linear-gradient(135deg,#16103a,#1a0f3a)", border: `1px solid ${C.accentSoft}`, borderRadius: 22, padding: 22, marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, letterSpacing: 1.5, marginBottom: 8 }}>TOTAL REVENUE</div>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 48, fontWeight: 800, marginBottom: 4 }}>{d.revenue}</div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <span style={{ fontSize: 13, color: C.green, fontWeight: 700 }}>↑ {d.trend}</span>
-            <span style={{ fontSize: 13, color: C.mid }}>{d.trendLabel}</span>
-          </div>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
-          {[{ label: "Appointments", value: d.appts }, { label: "New clients", value: d.newClients }, { label: "Avg per client", value: d.avgClient }, { label: "No-shows", value: d.noShows }].map((s, i) => (
-            <Card key={i} style={{ padding: "14px 16px" }}>
-              <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>{s.label}</div>
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, color: C.accent }}>{s.value}</div>
-            </Card>
-          ))}
-        </div>
-        <SectionLabel>{d.barLabel}</SectionLabel>
-        <Card style={{ padding: 20, marginBottom: 24 }}>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 100, marginBottom: 12 }}>
-            {d.bars.map((b, i) => (
-              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%" }}>
-                <div style={{ flex: 1, display: "flex", alignItems: "flex-end", width: "100%" }}>
-                  <div style={{ width: "100%", borderRadius: "6px 6px 0 0", background: b.revenue > 0 ? `linear-gradient(180deg,${C.accent},${C.accentDark})` : C.border, height: `${max > 0 ? (b.revenue / max) * 100 : 0}%`, minHeight: b.revenue > 0 ? 4 : 0, transition: "height 0.4s ease" }} />
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 60, color: C.dim }}>Loading analytics...</div>
+        ) : (
+          <>
+            <div style={{ display: "flex", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 4, marginBottom: 20 }}>
+              {["week","month","year"].map(p => (
+                <div key={p} onClick={() => setPeriod(p)} style={{ flex: 1, padding: "10px", borderRadius: 11, background: period === p ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "transparent", textAlign: "center", fontSize: 13, fontWeight: 600, color: period === p ? "#fff" : C.mid, cursor: "pointer", textTransform: "capitalize" }}>
+                  {p === "week" ? "This Week" : p === "month" ? "This Month" : "This Year"}
                 </div>
+              ))}
+            </div>
+            <div style={{ background: "linear-gradient(135deg,#16103a,#1a0f3a)", border: `1px solid ${C.accentSoft}`, borderRadius: 22, padding: 22, marginBottom: 16 }}>
+              <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, letterSpacing: 1.5, marginBottom: 8 }}>TOTAL REVENUE</div>
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 48, fontWeight: 800, marginBottom: 4 }}>{displayRev}</div>
+              <div style={{ fontSize: 13, color: C.mid }}>From {confirmed.length} confirmed appointment{confirmed.length !== 1 ? "s" : ""}</div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
+              {[
+                { label: "Appointments", value: String(appts.length) },
+                { label: "Confirmed", value: String(confirmed.length) },
+                { label: "Avg per appt", value: "$" + Math.round(totalRev / Math.max(confirmed.length, 1)) },
+                { label: "Today's revenue", value: "$" + todayRev },
+              ].map((s, i) => (
+                <Card key={i} style={{ padding: "14px 16px" }}>
+                  <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>{s.label}</div>
+                  <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, color: C.accent }}>{s.value}</div>
+                </Card>
+              ))}
+            </div>
+            <SectionLabel>{barLabel}</SectionLabel>
+            <Card style={{ padding: 20, marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 100, marginBottom: 12 }}>
+                {bars.map((b, i) => (
+                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%" }}>
+                    <div style={{ flex: 1, display: "flex", alignItems: "flex-end", width: "100%" }}>
+                      <div style={{ width: "100%", borderRadius: "6px 6px 0 0", background: b.revenue > 0 ? `linear-gradient(180deg,${C.accent},${C.accentDark})` : C.border, height: `${(b.revenue / maxBar) * 100}%`, minHeight: b.revenue > 0 ? 4 : 2, transition: "height 0.4s ease" }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {bars.map(b => <div key={b.day} style={{ flex: 1, textAlign: "center", fontSize: 9, color: C.dim, fontWeight: 600 }}>{b.day}</div>)}
+              </div>
+            </Card>
+            <SectionLabel>Top Services</SectionLabel>
+            {topServices.length === 0 ? (
+              <Card style={{ padding: 24, textAlign: "center" }}>
+                <div style={{ fontSize: 13, color: C.dim }}>No confirmed appointments yet — service breakdown will appear here.</div>
+              </Card>
+            ) : (
+              <Card style={{ marginBottom: 24 }}>
+                {topServices.map((s, i) => (
+                  <div key={i} style={{ padding: "14px 16px", borderBottom: i < topServices.length - 1 ? `1px solid ${C.border}` : "none" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600 }}>{s.name}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>${Math.round(s.revenue)}</span>
+                    </div>
+                    <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${(s.revenue / maxSvcRev) * 100}%`, background: `linear-gradient(90deg,${C.accentDark},${C.accent})`, borderRadius: 2 }} />
+                    </div>
+                    <div style={{ fontSize: 11, color: C.dim, marginTop: 6 }}>{s.count} appointment{s.count !== 1 ? "s" : ""}</div>
+                  </div>
+                ))}
+              </Card>
+            )}
+            <SectionLabel>AI Insights</SectionLabel>
+            {insights.map((ins, i) => (
+              <div key={i} style={{ background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 14, padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
+                <span style={{ fontSize: 16, flexShrink: 0 }}>{"📅💰👥⭐".split("")[i]}</span>
+                <span style={{ fontSize: 13, color: C.mid, lineHeight: 1.5 }}>{ins}</span>
               </div>
             ))}
-          </div>
-          <div style={{ display: "flex", gap: 6 }}>
-            {d.bars.map(b => <div key={b.day} style={{ flex: 1, textAlign: "center", fontSize: 9, color: C.dim, fontWeight: 600 }}>{b.day}</div>)}
-          </div>
-        </Card>
-        <SectionLabel>Top Services</SectionLabel>
-        <Card style={{ marginBottom: 24 }}>
-          {topServices.map((s, i) => (
-            <div key={i} style={{ padding: "14px 16px", borderBottom: i < topServices.length - 1 ? `1px solid ${C.border}` : "none" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{s.name}</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{s.revenue}</span>
-              </div>
-              <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${s.pct}%`, background: `linear-gradient(90deg,${C.accentDark},${C.accent})`, borderRadius: 2 }} />
-              </div>
-              <div style={{ fontSize: 11, color: C.dim, marginTop: 6 }}>{s.count} appointments</div>
-            </div>
-          ))}
-        </Card>
-        <SectionLabel>AI Insights</SectionLabel>
-        {["Friday is your busiest day — consider adding an extra slot", "Knotless Braids is your top earner at 58% of revenue", "2 clients haven't booked in 6 weeks — want me to reach out?", "Your average rating is 4.9 — top 5% on Pocketflow"].map((ins, i) => (
-          <div key={i} style={{ background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 14, padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
-            <span style={{ fontSize: 18 }}>{"📅💰👥⭐".split("")[i]}</span>
-            <span style={{ fontSize: 13, color: C.mid, lineHeight: 1.5 }}>{ins}</span>
-          </div>
-        ))}
+          </>
+        )}
       </div>
     </div>
   );
@@ -2005,6 +2122,9 @@ function Booking({ navigate }) {
 // ── STAFF ──────────────────────────────────────────────────────────────────────
 function Staff({ navigate }) {
   const [selectedStaff, setSelectedStaff] = useState(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMsg, setChatMsg] = useState("");
+  const [chatLog, setChatLog] = useState({});
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
@@ -2017,16 +2137,70 @@ function Staff({ navigate }) {
 
   const statusColor = s => s === "active" ? C.green : C.yellow;
 
+  const sendMsg = () => {
+    if (!chatMsg.trim() || !selectedStaff) return;
+    const key = selectedStaff.id;
+    const msg = { from: "you", text: chatMsg.trim(), time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+    setChatLog(p => ({ ...p, [key]: [...(p[key] || []), msg] }));
+    setChatMsg("");
+    // Simulate reply after 1.5s
+    setTimeout(() => {
+      const replies = ["Got it! 👍", "On it!", "Sure, no problem", "Will do ✓", "Okay, thanks for the heads up!"];
+      const reply = { from: selectedStaff.name, text: replies[Math.floor(Math.random() * replies.length)], time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+      setChatLog(p => ({ ...p, [key]: [...(p[key] || []), reply] }));
+    }, 1500);
+  };
+
+  // Staff chat overlay
+  if (chatOpen && selectedStaff) {
+    const msgs = chatLog[selectedStaff.id] || [];
+    return (
+      <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: C.bg }}>
+        <div style={{ padding: "52px 20px 16px", background: C.bg, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 12 }}>
+          <BackBtn onBack={() => setChatOpen(false)} />
+          <div style={{ width: 36, height: 36, borderRadius: 11, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: C.accent }}>{selectedStaff.avatar}</div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>{selectedStaff.name}</div>
+            <div style={{ fontSize: 11, color: statusColor(selectedStaff.status), fontWeight: 600, textTransform: "capitalize" }}>● {selectedStaff.status}</div>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 100px" }}>
+          {msgs.length === 0 && (
+            <div style={{ textAlign: "center", padding: "60px 0", color: C.dim, fontSize: 13 }}>
+              Start a conversation with {selectedStaff.name}
+            </div>
+          )}
+          {msgs.map((m, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: m.from === "you" ? "flex-end" : "flex-start", marginBottom: 10 }}>
+              <div>
+                <div style={{ maxWidth: 260, padding: "10px 14px", borderRadius: m.from === "you" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.from === "you" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surface, border: m.from === "you" ? "none" : `1px solid ${C.border}`, fontSize: 14, color: m.from === "you" ? "#fff" : C.text, lineHeight: 1.5 }}>{m.text}</div>
+                <div style={{ fontSize: 10, color: C.dim, marginTop: 4, textAlign: m.from === "you" ? "right" : "left" }}>{m.time}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, padding: "12px 20px 32px", background: C.bg, borderTop: `1px solid ${C.border}` }}>
+          <div style={{ display: "flex", gap: 10, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "6px 6px 6px 16px", alignItems: "center" }}>
+            <input value={chatMsg} onChange={e => setChatMsg(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} placeholder={`Message ${selectedStaff.name}...`} style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+            <BtnPrimary onClick={sendMsg} disabled={!chatMsg.trim()} style={{ width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, flexShrink: 0, padding: 0 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </BtnPrimary>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (selectedStaff) return (
     <div style={{ paddingBottom: 80 }}>
-      <div style={{ background: `linear-gradient(180deg,#16103a,${C.bg})`, padding: "48px 24px 24px", textAlign: "center" }}>
+      <div style={{ background: `linear-gradient(180deg,#16103a,${C.bg})`, padding: "48px 24px 24px", textAlign: "center", position: "relative" }}>
         <div onClick={() => setSelectedStaff(null)} style={{ position: "absolute", top: 52, left: 20, width: 38, height: 38, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         </div>
         <div style={{ width: 80, height: 80, borderRadius: 24, background: C.accentSoft, border: `1px solid ${C.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, color: C.accent, margin: "0 auto 12px" }}>{selectedStaff.avatar}</div>
         <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800 }}>{selectedStaff.name}</div>
         <div style={{ fontSize: 13, color: C.mid, marginTop: 4 }}>{selectedStaff.role}</div>
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10 }}>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 10 }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(selectedStaff.status), background: `${statusColor(selectedStaff.status)}18`, border: `1px solid ${statusColor(selectedStaff.status)}33`, borderRadius: 100, padding: "3px 10px", textTransform: "capitalize" }}>{selectedStaff.status}</span>
         </div>
       </div>
@@ -2043,23 +2217,16 @@ function Staff({ navigate }) {
         <Card style={{ padding: "4px 16px", marginBottom: 16 }}>
           {selectedStaff.services.map((s, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: i < selectedStaff.services.length - 1 ? `1px solid ${C.border}` : "none" }}>
-              <span style={{ fontSize: 14, fontWeight: 500 }}>{s}</span>
+              <span style={{ fontSize: 14 }}>{s}</span>
               <span style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>✓ Active</span>
             </div>
           ))}
-        </Card>
-        <SectionLabel>Contact</SectionLabel>
-        <Card style={{ padding: "4px 16px", marginBottom: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0" }}>
-            <span style={{ fontSize: 18 }}>📱</span>
-            <div><div style={{ fontSize: 12, color: C.dim }}>Phone</div><div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{selectedStaff.phone}</div></div>
-          </div>
         </Card>
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={() => { setStaff(p => p.map(s => s.id === selectedStaff.id ? { ...s, status: s.status === "active" ? "day-off" : "active" } : s)); setSelectedStaff(p => ({ ...p, status: p.status === "active" ? "day-off" : "active" })); }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>
             {selectedStaff.status === "active" ? "Mark Day Off" : "Mark Active"}
           </button>
-          <BtnPrimary onClick={() => navigate("inbox")} style={{ flex: 1, padding: 13 }}>Send Message</BtnPrimary>
+          <BtnPrimary onClick={() => setChatOpen(true)} style={{ flex: 1, padding: 13 }}>💬 Message</BtnPrimary>
         </div>
       </div>
     </div>
@@ -2079,7 +2246,7 @@ function Staff({ navigate }) {
       </div>
       <div style={{ padding: "0 20px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
-          {[{ label: "On shift", value: staff.filter(s => s.status === "active").length, color: C.green }, { label: "Total appts", value: staff.reduce((a, s) => a + s.appts, 0), color: C.accent }, { label: "Today revenue", value: "$700", color: C.gold }].map((s, i) => (
+          {[{ label: "On shift", value: staff.filter(s => s.status === "active").length, color: C.green }, { label: "Total appts", value: staff.reduce((a, s) => a + s.appts, 0), color: C.accent }, { label: "Staff", value: staff.length, color: C.gold }].map((s, i) => (
             <Card key={i} style={{ padding: "14px 10px", textAlign: "center" }}>
               <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800, color: s.color }}>{s.value}</div>
               <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>{s.label}</div>
@@ -2087,9 +2254,9 @@ function Staff({ navigate }) {
           ))}
         </div>
         {staff.map(s => (
-          <Card key={s.id} onClick={() => setSelectedStaff(s)} style={{ padding: "16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}>
+          <Card key={s.id} onClick={() => setSelectedStaff(s)} style={{ padding: 16, marginBottom: 12, display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}>
             <div style={{ position: "relative" }}>
-              <div style={{ width: 52, height: 52, borderRadius: 16, background: C.accentSoft, border: `1px solid ${C.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: C.accent }}>{s.avatar}</div>
+              <div style={{ width: 52, height: 52, borderRadius: 16, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: C.accent }}>{s.avatar}</div>
               <div style={{ position: "absolute", bottom: -2, right: -2, width: 14, height: 14, borderRadius: "50%", background: statusColor(s.status), border: `2px solid ${C.bg}` }} />
             </div>
             <div style={{ flex: 1 }}>
@@ -2103,16 +2270,15 @@ function Staff({ navigate }) {
           </Card>
         ))}
       </div>
-
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", maxWidth: 400, margin: "0 auto" }} onClick={() => setShowAdd(false)}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 430, padding: "24px 20px 40px" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add Staff Member</div>
             <input placeholder="Full name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
             <input placeholder="Role (e.g. Braider, Stylist)" value={newRole} onChange={e => setNewRole(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
             <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 20 }} />
-            <BtnPrimary disabled={!newName || !newRole} onClick={() => { setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar: newName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(), phone: newPhone, status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); setNewName(""); setNewRole(""); setNewPhone(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add Staff Member</BtnPrimary>
+            <BtnPrimary disabled={!newName || !newRole} onClick={() => { setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar: newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: newPhone, status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); setNewName(""); setNewRole(""); setNewPhone(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add Staff Member</BtnPrimary>
           </div>
         </div>
       )}
