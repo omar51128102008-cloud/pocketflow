@@ -714,9 +714,23 @@ function Inbox({ navigate }) {
 // ── ASSISTANT ──────────────────────────────────────────────────────────────────
 function Assistant({ navigate }) {
   const [chatInput, setChatInput] = useState("");
-  const [chatHistory, setChatHistory] = useState([{ role: "assistant", text: "Hey! Everything's running smooth today. You've got 3 appointments, $700 in confirmed revenue, and I've already handled 6 messages for you. What do you need?" }]);
+  const [aiName, setAiName] = useState("Aria");
   const [loading, setLoading] = useState(false);
+  const [chatHistory, setChatHistory] = useState(null); // null = loading
   const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from("business_profiles").select("ai_name, biz_name").eq("user_id", session.user.id).single();
+      const name = data?.ai_name || "Aria";
+      const biz  = data?.biz_name || "your business";
+      setAiName(name);
+      setChatHistory([{ role: "assistant", text: `Hey! I'm ${name}, your AI assistant for ${biz}. I'm here 24/7 to handle bookings, messages, and keep things running. What do you need?` }]);
+    };
+    load();
+  }, []);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, loading]);
 
@@ -729,27 +743,21 @@ function Assistant({ navigate }) {
     try {
       const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
           max_tokens: 300,
           messages: [
-            { role: "system", content: `You are an AI business assistant for a beauty/personal care business using Pocketflow. Help the owner manage their business — appointments, clients, messages, revenue, and promotions. Be concise (2-4 sentences), casual but professional. Today's date: ${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}.` },
-            ...chatHistory.map(m => ({ role: m.role, content: m.text })),
+            { role: "system", content: `You are ${aiName}, an AI business assistant for a beauty/personal care business using Pocketflow. Your name is ${aiName} — always refer to yourself by this name if asked. Help the owner manage appointments, clients, messages, revenue, and promotions. Be concise (2-4 sentences), casual but professional. Today: ${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}.` },
+            ...(chatHistory||[]).map(m => ({ role: m.role, content: m.text })),
             { role: "user", content: text }
           ]
         })
       });
       const data = await res.json();
-      if (data.error) {
-        setChatHistory(p => [...p, { role: "assistant", text: "Couldn't connect to AI. Check your API key and try again." }]);
-      } else {
-        setChatHistory(p => [...p, { role: "assistant", text: data.choices?.[0]?.message?.content || "On it." }]);
-      }
+      setChatHistory(p => [...p, { role: "assistant", text: data.choices?.[0]?.message?.content || "On it." }]);
     } catch {
-      setChatHistory(p => [...p, { role: "assistant", text: "Connection failed. Make sure your API key is added at the top of App.js." }]);
+      setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again in a second." }]);
     }
     setLoading(false);
   };
@@ -757,35 +765,44 @@ function Assistant({ navigate }) {
   return (
     <div style={{ paddingBottom: 80 }}>
       <div style={{ padding: "52px 20px 16px" }}>
-        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, marginBottom: 4 }}>Assistant</div>
-        <div style={{ fontSize: 13, color: C.mid }}>Talk to your AI — it knows everything</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>✦</div>
+          <div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, lineHeight: 1 }}>{aiName}</div>
+            <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, marginTop: 3 }}>● Online · Ready to help</div>
+          </div>
+        </div>
       </div>
-      <div style={{ padding: "0 20px", overflowY: "auto", paddingBottom: 140 }}>
+      <div style={{ padding: "0 20px", paddingBottom: 140 }}>
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 16 }}>
           {["Who's next?", "Any urgent messages?", "Send a promo", "This week's revenue", "Block Sunday"].map(c => (
             <div key={c} onClick={() => setChatInput(c)} style={{ padding: "8px 14px", borderRadius: 100, background: C.surface, border: `1px solid ${C.border}`, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>{c}</div>
           ))}
         </div>
-        {chatHistory.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 12 }}>
-            {m.role === "assistant" && <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, marginRight: 8, flexShrink: 0, marginTop: 2 }}>✦</div>}
-            <div style={{ maxWidth: "78%", padding: "11px 14px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surface, border: m.role === "user" ? "none" : `1px solid ${C.border}`, fontSize: 14, lineHeight: 1.5, color: m.role === "user" ? "#fff" : C.text }}>{m.text}</div>
+        {chatHistory === null ? (
+          <div style={{ textAlign: "center", padding: 40, color: C.dim, fontSize: 13 }}>Loading {aiName}...</div>
+        ) : chatHistory.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 12, alignItems: "flex-start" }}>
+            {m.role === "assistant" && (
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, marginRight: 8, flexShrink: 0, marginTop: 2 }}>✦</div>
+            )}
+            <div style={{ maxWidth: "78%", padding: "11px 14px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surface, border: m.role === "user" ? "none" : `1px solid ${C.border}`, fontSize: 14, lineHeight: 1.6, color: m.role === "user" ? "#fff" : C.text }}>{m.text}</div>
           </div>
         ))}
         {loading && (
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>✦</div>
             <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "18px 18px 18px 4px", padding: "12px 16px", display: "flex", gap: 5 }}>
-              {[0, 1, 2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: C.accent, animation: "pulse 1.2s infinite", animationDelay: `${d * 0.2}s` }} />)}
+              {[0,1,2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: C.accent, animation: "pulse 1.2s infinite", animationDelay: `${d*0.2}s` }} />)}
             </div>
           </div>
         )}
         <div ref={chatEndRef} />
       </div>
-      <div style={{ position: "fixed", bottom: 72, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 400, padding: "12px 20px", background: `linear-gradient(0deg,${C.bg} 80%,transparent)`, zIndex: 40 }}>
+      <div style={{ position: "fixed", bottom: 72, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, padding: "12px 20px", background: `linear-gradient(0deg,${C.bg} 80%,transparent)`, zIndex: 40 }}>
         <div style={{ display: "flex", gap: 10, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "6px 6px 6px 16px", alignItems: "center" }}>
-          <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendChat()} placeholder="Ask me anything..." style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
-          <BtnPrimary onClick={sendChat} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 11, flexShrink: 0, padding: 0 }}>
+          <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendChat()} placeholder={`Ask ${aiName} anything...`} style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+          <BtnPrimary onClick={sendChat} disabled={loading} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 11, flexShrink: 0, padding: 0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </BtnPrimary>
         </div>
@@ -1132,6 +1149,29 @@ function Settings({ navigate }) {
   const [sunday, setSunday] = useState(false);
   const [paymentInputOpen, setPaymentInputOpen] = useState({});
   const [paymentDetails, setPaymentDetails] = useState({});
+  const [aiName, setAiName] = useState("Aria");
+  const [aiNameSaved, setAiNameSaved] = useState(false);
+  const [savingName, setSavingName] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from("business_profiles").select("ai_name").eq("user_id", session.user.id).single();
+      if (data?.ai_name) setAiName(data.ai_name);
+    };
+    load();
+  }, []);
+
+  const saveAiName = async () => {
+    if (!aiName.trim()) return;
+    setSavingName(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    await supabase.from("business_profiles").upsert({ user_id: session.user.id, ai_name: aiName.trim() }, { onConflict: "user_id" });
+    setSavingName(false);
+    setAiNameSaved(true);
+    setTimeout(() => setAiNameSaved(false), 2000);
+  };
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -1142,6 +1182,26 @@ function Settings({ navigate }) {
         </div>
       </div>
       <div style={{ padding: "0 20px" }}>
+        <SectionLabel>AI Name</SectionLabel>
+        <Card style={{ padding: 16, marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 13, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>✦</div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>{aiName || "Aria"}</div>
+              <div style={{ fontSize: 12, color: C.mid }}>Your AI assistant's name</div>
+            </div>
+          </div>
+          <input
+            value={aiName}
+            onChange={e => { setAiName(e.target.value); setAiNameSaved(false); }}
+            placeholder="e.g. Aria, Nova, Sage..."
+            maxLength={20}
+            style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 10 }}
+          />
+          {aiNameSaved
+            ? <div style={{ width: "100%", padding: 11, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Saved!</div>
+            : <BtnPrimary onClick={saveAiName} disabled={savingName || !aiName.trim()} style={{ width: "100%", padding: 11, fontSize: 13 }}>{savingName ? "Saving..." : "Save Name"}</BtnPrimary>}
+        </Card>
         <SectionLabel>AI Controls</SectionLabel>
         <Card style={{ marginBottom: 8 }}>
           {[["Auto-reply DMs", "AI responds to all incoming messages", aiReplies, setAiReplies], ["Auto-confirm bookings", "No approval needed from you", aiBookings, setAiBookings], ["Send reminders", "24h before every appointment", aiReminders, setAiReminders], ["Send follow-ups", "After every completed visit", aiFollowUps, setAiFollowUps], ["Run promotions", "Ask me before sending any promo", aiPromos, setAiPromos]].map(([label, sub, val, set], i) => (
