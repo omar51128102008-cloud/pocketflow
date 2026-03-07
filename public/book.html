@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book an Appointment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    ::-webkit-scrollbar { display: none; }
+    body { background: #050508; font-family: 'Outfit', sans-serif; color: #f1f0ff; min-height: 100vh; }
+    input, textarea { font-family: 'Outfit', sans-serif; }
+    input:focus, textarea:focus { outline: none; }
+    input::placeholder, textarea::placeholder { color: #3d3d55; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .fade-in { animation: fadeUp 0.35s ease forwards; }
+    .page { max-width: 480px; margin: 0 auto; padding-bottom: 120px; }
+    .btn-primary { background: linear-gradient(135deg, #7c3aed, #a78bfa); border: none; border-radius: 14px; color: #fff; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 15px; cursor: pointer; transition: all 0.2s; padding: 16px; width: 100%; }
+    .btn-primary:disabled { background: #1e1e2e; color: #3d3d55; cursor: not-allowed; }
+    .card { background: #0e0e14; border: 1px solid #1e1e2e; border-radius: 18px; }
+    .fixed-bottom { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: #050508; border-top: 1px solid #1e1e2e; padding: 16px 20px 32px; }
+  </style>
+</head>
+<body>
+<div class="page" id="app">
+  <div style="text-align:center;padding:80px 20px;color:#3d3d55;">Loading...</div>
+</div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://nrgecynqwibxdamrqopv.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yZ2VjeW5xd2lieGRhbXJxb3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MDM3OTksImV4cCI6MjA4ODQ3OTc5OX0.3Eg_uAWhGGlnB9CrPYpbDHjLjF8KEin64BidmdHbc3s'
+);
+
+const C = {
+  bg: '#050508', surface: '#0e0e14', surfaceHigh: '#16161f',
+  border: '#1e1e2e', accent: '#a78bfa', accentDark: '#7c3aed',
+  accentSoft: '#a78bfa18', gold: '#f59e0b', green: '#10b981',
+  red: '#f43f5e', text: '#f1f0ff', mid: '#8b8ba8', dim: '#3d3d55',
+};
+
+const SERVICES = [
+  { id: 1, name: 'Knotless Braids', price: 180, duration: '4h', icon: '✨', desc: 'Medium to jumbo, any length' },
+  { id: 2, name: 'Box Braids', price: 160, duration: '3.5h', icon: '💫', desc: 'Small, medium, or large' },
+  { id: 3, name: 'Silk Press', price: 120, duration: '2h', icon: '🌟', desc: 'Sleek and straight finish' },
+  { id: 4, name: 'Natural Blowout', price: 85, duration: '1.5h', icon: '💨', desc: 'Stretched and fluffy' },
+  { id: 5, name: 'Loc Retwist', price: 95, duration: '2h', icon: '🌀', desc: 'Fresh and neat locs' },
+  { id: 6, name: 'Wig Install', price: 75, duration: '1h', icon: '👑', desc: 'Lace front or closure' },
+];
+
+const DATES = ['Fri Mar 7', 'Sat Mar 8', 'Mon Mar 10', 'Tue Mar 11', 'Wed Mar 12', 'Thu Mar 13'];
+const TIMES = ['9:00 AM', '10:30 AM', '12:00 PM', '1:30 PM', '3:00 PM', '4:30 PM', '6:00 PM'];
+
+let state = {
+  step: 0,
+  selectedServices: [],
+  selectedDate: null,
+  selectedTime: null,
+  name: '', phone: '', instagram: '', note: '',
+  cardNumber: '', cardExpiry: '', cardCvc: '', cardName: '',
+  booked: false, paying: false,
+  bizName: 'Loading...', bizLocation: '',
+};
+
+async function loadBizInfo() {
+  const { data } = await sb.from('business_profiles').select('biz_name, location').limit(1).single();
+  if (data) {
+    state.bizName = data.biz_name || 'Book an Appointment';
+    state.bizLocation = data.location || '';
+  } else {
+    state.bizName = 'Book an Appointment';
+  }
+  render();
+}
+
+function setState(updates) {
+  state = { ...state, ...updates };
+  render();
+}
+
+function toggleService(s) {
+  const exists = state.selectedServices.find(x => x.id === s.id);
+  setState({ selectedServices: exists ? state.selectedServices.filter(x => x.id !== s.id) : [...state.selectedServices, s] });
+}
+
+function totalPrice() { return state.selectedServices.reduce((sum, s) => sum + s.price, 0); }
+function depositAmount() { return Math.round(totalPrice() * 0.3); }
+
+function canNext() {
+  if (state.step === 0) return state.selectedServices.length > 0;
+  if (state.step === 1) return state.selectedDate && state.selectedTime;
+  if (state.step === 2) return state.name.trim() && state.phone.trim();
+  if (state.step === 3) return state.cardNumber.replace(/\s/g,'').length === 16 && state.cardExpiry.length >= 4 && state.cardCvc.length >= 3 && state.cardName.trim();
+  return true;
+}
+
+async function handlePay() {
+  setState({ paying: true });
+  try {
+    await sb.from('appointments').insert([{
+      client_name: state.name,
+      client_avatar: state.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase(),
+      service: state.selectedServices.map(s => s.name).join(', '),
+      time: state.selectedTime,
+      duration: state.selectedServices.map(s => s.duration).join('+'),
+      price: '$' + totalPrice(),
+      status: 'confirmed',
+      note: state.note,
+      day: state.selectedDate,
+    }]);
+    // Also add to clients if not existing
+    await sb.from('clients').upsert([{
+      name: state.name,
+      phone: state.phone,
+      instagram: state.instagram,
+      avatar: state.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase(),
+      total_visits: 1,
+      total_spent: totalPrice(),
+      joined: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+    }], { onConflict: 'name', ignoreDuplicates: true });
+  } catch(e) { console.log(e); }
+  setTimeout(() => setState({ paying: false, booked: true }), 1500);
+}
+
+function render() {
+  const app = document.getElementById('app');
+
+  if (state.booked) {
+    app.innerHTML = `
+      <div class="fade-in" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;">
+        <div style="width:90px;height:90px;border-radius:28px;background:${C.green}22;border:2px solid ${C.green}44;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:24px;animation:pop 0.5s cubic-bezier(0.34,1.56,0.64,1)">✓</div>
+        <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:800;margin-bottom:8px">You're booked!</div>
+        <div style="font-size:14px;color:${C.mid};line-height:1.8;margin-bottom:24px">
+          ${state.selectedServices.map(s=>s.name).join(' + ')}<br/>
+          ${state.selectedDate} at ${state.selectedTime}<br/>
+          <span style="color:${C.accent};font-weight:600">${state.bizName}${state.bizLocation ? ' · ' + state.bizLocation : ''}</span>
+        </div>
+        <div class="card" style="padding:16px;width:100%;margin-bottom:24px;text-align:left">
+          ${[['Services', state.selectedServices.map(s=>s.name).join(', ')], ['Deposit paid', '$'+depositAmount()], ['Remaining balance', '$'+(totalPrice()-depositAmount())+' due at appointment'], ['Your phone', state.phone]].map(([k,v],i,arr) => `
+            <div style="display:flex;justify-content:space-between;padding:9px 0;${i<arr.length-1?'border-bottom:1px solid '+C.border:''}gap:12px">
+              <span style="font-size:13px;color:${C.mid};flex-shrink:0">${k}</span>
+              <span style="font-size:13px;font-weight:600;color:${k==='Deposit paid'?C.green:C.text};text-align:right">${v}</span>
+            </div>`).join('')}
+        </div>
+        <div style="font-size:13px;color:${C.mid};margin-bottom:28px;line-height:1.6">You'll receive a reminder 24h before your appointment ✨</div>
+        <div style="font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Pocketflow</span></div>
+      </div>`;
+    return;
+  }
+
+  const stepLabels = ['Services', 'Date & Time', 'Your Info', 'Payment'];
+
+  app.innerHTML = `
+    <div>
+      <!-- Header -->
+      <div style="background:linear-gradient(180deg,#16103a 0%,${C.bg} 100%);padding:48px 24px 24px;text-align:center;position:relative">
+        ${state.step > 0 ? `<div id="backBtn" style="position:absolute;top:52px;left:20px;width:38px;height:38px;background:${C.surface}cc;border:1px solid ${C.border};border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${C.mid}" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        </div>` : ''}
+        <div style="width:72px;height:72px;border-radius:22px;background:linear-gradient(135deg,${C.accentDark},${C.accent});display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 14px;box-shadow:0 0 40px ${C.accentDark}55">✦</div>
+        <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:800">${state.bizName}</div>
+        ${state.bizLocation ? `<div style="font-size:13px;color:${C.mid};margin-top:5px">${state.bizLocation} · ⭐ 4.9</div>` : ''}
+      </div>
+
+      <!-- Progress -->
+      <div style="display:flex;gap:6px;padding:0 24px 20px">
+        ${stepLabels.map((s,i) => `
+          <div style="flex:1;text-align:center">
+            <div style="height:3px;border-radius:2px;background:${i<=state.step?`linear-gradient(90deg,${C.accentDark},${C.accent})`:C.border};margin-bottom:6px;transition:background 0.3s"></div>
+            <div style="font-size:9px;color:${i<=state.step?C.accent:C.dim};font-weight:600">${s}</div>
+          </div>`).join('')}
+      </div>
+
+      <!-- Content -->
+      <div style="padding:0 20px" class="fade-in" id="stepContent">
+        ${renderStep()}
+      </div>
+    </div>
+
+    <!-- Bottom CTA -->
+    <div class="fixed-bottom">
+      ${state.step < 3 ? `
+        <button class="btn-primary" id="nextBtn" ${!canNext()?'disabled':''}>
+          ${state.step === 0 ? (state.selectedServices.length > 0 ? `Continue · ${state.selectedServices.length} service${state.selectedServices.length>1?'s':''} · $${totalPrice()}+` : 'Select a service') :
+            state.step === 1 ? (state.selectedDate && state.selectedTime ? `Continue · ${state.selectedDate} at ${state.selectedTime}` : 'Select date & time') :
+            state.step === 2 ? 'Continue to Payment' : 'Next'}
+        </button>` : `
+        <button class="btn-primary" id="payBtn" ${!canNext()||state.paying?'disabled':''}>
+          ${state.paying ? '⏳ Processing...' : `Pay $${depositAmount()} deposit & confirm`}
+        </button>`}
+      <div style="text-align:center;margin-top:10px;font-size:11px;color:${C.dim}">🔒 Secure · Powered by <span style="color:${C.accent}">Pocketflow</span></div>
+    </div>`;
+
+  // Bind events
+  document.getElementById('backBtn')?.addEventListener('click', () => setState({ step: state.step - 1 }));
+  document.getElementById('nextBtn')?.addEventListener('click', () => { if (canNext()) setState({ step: state.step + 1 }); });
+  document.getElementById('payBtn')?.addEventListener('click', () => { if (canNext() && !state.paying) handlePay(); });
+
+  // Step-specific bindings
+  if (state.step === 0) {
+    document.querySelectorAll('[data-service]').forEach(el => {
+      el.addEventListener('click', () => {
+        const s = SERVICES.find(x => x.id === parseInt(el.dataset.service));
+        if (s) toggleService(s);
+      });
+    });
+  }
+  if (state.step === 1) {
+    document.querySelectorAll('[data-date]').forEach(el => {
+      el.addEventListener('click', () => setState({ selectedDate: el.dataset.date, selectedTime: null }));
+    });
+    document.querySelectorAll('[data-time]').forEach(el => {
+      el.addEventListener('click', () => setState({ selectedTime: el.dataset.time }));
+    });
+  }
+  if (state.step === 2) {
+    ['name','phone','instagram','note'].forEach(field => {
+      document.getElementById('field_'+field)?.addEventListener('input', e => setState({ [field]: e.target.value }));
+    });
+  }
+  if (state.step === 3) {
+    ['cardNumber','cardExpiry','cardCvc','cardName'].forEach(field => {
+      document.getElementById('field_'+field)?.addEventListener('input', e => {
+        let val = e.target.value;
+        if (field === 'cardNumber') val = val.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim();
+        if (field === 'cardExpiry') { const v = val.replace(/\D/g,'').slice(0,4); val = v.length>=3 ? v.slice(0,2)+'/'+v.slice(2) : v; }
+        if (field === 'cardCvc') val = val.replace(/\D/g,'').slice(0,4);
+        e.target.value = val;
+        setState({ [field]: val });
+      });
+    });
+  }
+}
+
+function renderStep() {
+  if (state.step === 0) {
+    return `
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:800;margin-bottom:4px">What are you coming in for?</div>
+      <div style="font-size:13px;color:${C.mid};margin-bottom:20px">Select one or more services</div>
+      ${SERVICES.map(s => {
+        const sel = state.selectedServices.find(x => x.id === s.id);
+        return `<div data-service="${s.id}" style="display:flex;align-items:center;gap:14px;background:${sel?C.accentSoft:C.surface};border:1px solid ${sel?C.accent:C.border};border-radius:18px;padding:16px;margin-bottom:10px;cursor:pointer;transition:all 0.2s">
+          <div style="width:50px;height:50px;border-radius:16px;background:${sel?`linear-gradient(135deg,${C.accentDark},${C.accent})`:C.surfaceHigh};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${s.icon}</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:700">${s.name}</div>
+            <div style="font-size:12px;color:${C.mid};margin-top:3px">${s.desc} · ${s.duration}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:15px;font-weight:800;color:${C.gold}">$${s.price}+</div>
+            ${sel ? `<div style="font-size:10px;color:${C.accent};font-weight:700;margin-top:3px">✓ Added</div>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+      ${state.selectedServices.length > 0 ? `
+        <div style="background:${C.accentSoft};border:1px solid ${C.accent}33;border-radius:14px;padding:12px 16px;margin-top:4px">
+          <div style="font-size:13px;color:${C.mid}">${state.selectedServices.map(s=>s.name).join(' + ')}</div>
+          <div style="font-size:14px;font-weight:700;color:${C.gold};margin-top:6px">Total: $${totalPrice()}+ · Deposit: $${depositAmount()}</div>
+        </div>` : ''}`;
+  }
+
+  if (state.step === 1) {
+    return `
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:800;margin-bottom:4px">When works for you?</div>
+      <div style="font-size:13px;color:${C.mid};margin-bottom:20px">${state.selectedServices.map(s=>s.name).join(' + ')}</div>
+      <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">Available Dates</div>
+      <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:16px;margin-bottom:20px">
+        ${DATES.map(d => {
+          const parts = d.split(' ');
+          const sel = state.selectedDate === d;
+          return `<div data-date="${d}" style="padding:14px 16px;border-radius:16px;background:${sel?`linear-gradient(135deg,${C.accentDark},${C.accent})`:C.surface};border:1px solid ${sel?'transparent':C.border};text-align:center;cursor:pointer;flex-shrink:0;min-width:70px">
+            <div style="font-size:10px;font-weight:700;color:${sel?'#ffffffaa':C.dim};margin-bottom:4px">${parts[0].toUpperCase()}</div>
+            <div style="font-size:20px;font-weight:800;color:${sel?'#fff':C.text}">${parts[2]}</div>
+            <div style="font-size:10px;color:${sel?'#ffffffaa':C.dim};margin-top:3px">${parts[1]}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${state.selectedDate ? `
+        <div>
+          <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">Available Times</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            ${TIMES.map(t => `<div data-time="${t}" style="padding:13px 8px;border-radius:14px;background:${state.selectedTime===t?C.accentSoft:C.surface};border:1px solid ${state.selectedTime===t?C.accent:C.border};text-align:center;font-size:13px;font-weight:600;color:${state.selectedTime===t?C.accent:C.mid};cursor:pointer">${t}</div>`).join('')}
+          </div>
+        </div>` : ''}`;
+  }
+
+  if (state.step === 2) {
+    return `
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:800;margin-bottom:4px">Your details</div>
+      <div style="font-size:13px;color:${C.mid};margin-bottom:20px">Almost there — just need a few details</div>
+      <div class="card" style="padding:16px;margin-bottom:20px">
+        ${[['Services', state.selectedServices.map(s=>s.name).join(', ')], ['Date', state.selectedDate], ['Time', state.selectedTime], ['Total', '$'+totalPrice()+'+']].map(([k,v],i,arr) => `
+          <div style="display:flex;justify-content:space-between;padding:7px 0;${i<arr.length-1?'border-bottom:1px solid '+C.border:''}gap:12px">
+            <span style="font-size:13px;color:${C.mid};flex-shrink:0">${k}</span>
+            <span style="font-size:13px;font-weight:600;text-align:right">${v}</span>
+          </div>`).join('')}
+      </div>
+      ${[['name','Your full name *','text'], ['phone','Phone number *','tel'], ['instagram','Instagram handle (optional)','text']].map(([id,ph,type]) => `
+        <input id="field_${id}" type="${type}" placeholder="${ph}" value="${state[id]}" style="width:100%;background:${C.surface};border:1px solid ${C.border};border-radius:14px;padding:14px 16px;font-size:14px;color:${C.text};margin-bottom:12px" />`).join('')}
+      <textarea id="field_note" placeholder="Notes — hair length, allergies, special requests..." rows="3" style="width:100%;background:${C.surface};border:1px solid ${C.border};border-radius:14px;padding:14px 16px;font-size:14px;color:${C.text};resize:none">${state.note}</textarea>`;
+  }
+
+  if (state.step === 3) {
+    return `
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:800;margin-bottom:4px">Pay deposit</div>
+      <div style="font-size:13px;color:${C.mid};margin-bottom:20px">Secure your spot with a 30% deposit</div>
+      <div class="card" style="padding:16px;margin-bottom:20px">
+        ${[['Services', state.selectedServices.map(s=>s.name).join(', ')], ['Date & Time', state.selectedDate+' at '+state.selectedTime], ['Total estimate', '$'+totalPrice()+'+'], ['Deposit today (30%)', '$'+depositAmount()]].map(([k,v],i,arr) => `
+          <div style="display:flex;justify-content:space-between;padding:8px 0;${i<arr.length-1?'border-bottom:1px solid '+C.border:''}gap:12px">
+            <span style="font-size:13px;color:${C.mid};flex-shrink:0">${k}</span>
+            <span style="font-size:13px;font-weight:${k.includes('Deposit')?800:600};color:${k.includes('Deposit')?C.green:C.text};text-align:right">${v}</span>
+          </div>`).join('')}
+      </div>
+      <div style="background:${C.surface};border:1px solid ${C.border};border-radius:18px;padding:20px;margin-bottom:16px">
+        <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px">Card Details</div>
+        <input id="field_cardNumber" placeholder="Card number" value="${state.cardNumber}" maxlength="19" style="width:100%;background:${C.surfaceHigh};border:1px solid ${C.border};border-radius:12px;padding:13px 14px;font-size:15px;color:${C.text};margin-bottom:12px;letter-spacing:1px" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <input id="field_cardExpiry" placeholder="MM/YY" value="${state.cardExpiry}" maxlength="5" style="background:${C.surfaceHigh};border:1px solid ${C.border};border-radius:12px;padding:13px 14px;font-size:15px;color:${C.text}" />
+          <input id="field_cardCvc" placeholder="CVC" value="${state.cardCvc}" maxlength="4" type="password" style="background:${C.surfaceHigh};border:1px solid ${C.border};border-radius:12px;padding:13px 14px;font-size:15px;color:${C.text}" />
+        </div>
+        <input id="field_cardName" placeholder="Name on card" value="${state.cardName}" style="width:100%;background:${C.surfaceHigh};border:1px solid ${C.border};border-radius:12px;padding:13px 14px;font-size:15px;color:${C.text}" />
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:12px 0">
+        <span style="font-size:18px">🔒</span>
+        <span style="font-size:12px;color:${C.mid}">Your payment is encrypted and secure. You won't be charged until confirmed.</span>
+      </div>`;
+  }
+  return '';
+}
+
+loadBizInfo();
+</script>
+</body>
+</html>
