@@ -561,7 +561,7 @@ function Assistant({ navigate }) {
     setChatHistory(p => [...p, { role: "user", text }]);
     setLoading(true);
     try {
-      const res = await fetch("https://maren-creepier-unepigrammatically.ngrok-free.app/chat", {
+      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
