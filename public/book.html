@@ -124,8 +124,19 @@ const deposit = () => Math.round(total()*0.3);
 const canNext = () => {
   if (S.step===0) return S.selectedServices.length>0;
   if (S.step===1) return S.selectedDate && S.selectedTime;
-  if (S.step===2) return S.name.trim() && S.phone.trim();
-  if (S.step===3) return S.cardNumber.replace(/\s/g,'').length===16 && S.cardExpiry.length>=4 && S.cardCvc.length>=3 && S.cardName.trim();
+  if (S.step===2) {
+    const name  = (document.getElementById('f_name')?.value  || S.name).trim();
+    const phone = (document.getElementById('f_phone')?.value || S.phone).trim();
+    return name.length>0 && phone.length>0;
+  }
+  if (S.step===3) {
+    // Read live from DOM so we don't need a full re-render on every keystroke
+    const cn = (document.getElementById('f_cardNumber')?.value || S.cardNumber).replace(/\s/g,'');
+    const ce =  document.getElementById('f_cardExpiry')?.value || S.cardExpiry;
+    const cv =  document.getElementById('f_cardCvc')?.value    || S.cardCvc;
+    const ca = (document.getElementById('f_cardName')?.value   || S.cardName).trim();
+    return cn.length===16 && ce.length>=4 && cv.length>=3 && ca.length>0;
+  }
   return false;
 };
 
@@ -434,9 +445,9 @@ function bindEvents() {
     el.addEventListener('click',()=>set({selectedTime:el.dataset.time}))
   );
 
-  // Step 2 — few fields, no focus issues
+  // Step 2 — update state and refresh CTA so Continue button enables as you type
   [['f_name','name'],['f_phone','phone'],['f_instagram','instagram'],['f_note','note']].forEach(([id,key])=>{
-    document.getElementById(id)?.addEventListener('input',e=>{ S[key]=e.target.value; });
+    document.getElementById(id)?.addEventListener('input',e=>{ S[key]=e.target.value; refreshCTA(); });
   });
 
   // Card fields — update state silently, NO full re-render, preserves focus & cursor
