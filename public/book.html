@@ -395,10 +395,31 @@ function renderStep() {
   return '';
 }
 
-function bindEvents() {
+// Refresh only the CTA without rebuilding the whole page
+function refreshCTA() {
+  const area = document.getElementById('ctaArea');
+  if (area) { area.innerHTML = renderCTA(); bindCTA(); }
+}
+
+function bindCTA() {
   document.getElementById('backBtn')?.addEventListener('click', ()=>set({step:S.step-1,error:''}));
   document.getElementById('nextBtn')?.addEventListener('click', ()=>{ if(canNext()) set({step:S.step+1}); });
-  document.getElementById('payBtn')?.addEventListener('click', ()=>{ if(canNext()&&!S.paying) handlePay(); });
+  document.getElementById('payBtn')?.addEventListener('click', ()=>{
+    // Sync card values from DOM before submitting
+    const cn = document.getElementById('f_cardNumber');
+    const ce = document.getElementById('f_cardExpiry');
+    const cv = document.getElementById('f_cardCvc');
+    const ca = document.getElementById('f_cardName');
+    if(cn) S.cardNumber = cn.value;
+    if(ce) S.cardExpiry = ce.value;
+    if(cv) S.cardCvc    = cv.value;
+    if(ca) S.cardName   = ca.value;
+    if(canNext()&&!S.paying) handlePay();
+  });
+}
+
+function bindEvents() {
+  bindCTA();
 
   document.querySelectorAll('[data-service]').forEach(el=>
     el.addEventListener('click',()=>{
@@ -413,24 +434,37 @@ function bindEvents() {
     el.addEventListener('click',()=>set({selectedTime:el.dataset.time}))
   );
 
+  // Step 2 — few fields, no focus issues
   [['f_name','name'],['f_phone','phone'],['f_instagram','instagram'],['f_note','note']].forEach(([id,key])=>{
-    document.getElementById(id)?.addEventListener('input',e=>set({[key]:e.target.value}));
+    document.getElementById(id)?.addEventListener('input',e=>{ S[key]=e.target.value; });
   });
 
+  // Card fields — update state silently, NO full re-render, preserves focus & cursor
   document.getElementById('f_cardNumber')?.addEventListener('input',e=>{
-    const v=e.target.value.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim();
-    e.target.value=v; set({cardNumber:v});
+    const raw = e.target.value.replace(/\D/g,'').slice(0,16);
+    const fmt = raw.replace(/(.{4})/g,'$1 ').trim();
+    const pos = e.target.selectionStart;
+    if(e.target.value !== fmt) { e.target.value=fmt; try{ e.target.setSelectionRange(pos,pos); }catch(x){} }
+    S.cardNumber = fmt;
+    refreshCTA();
   });
   document.getElementById('f_cardExpiry')?.addEventListener('input',e=>{
-    const v=e.target.value.replace(/\D/g,'').slice(0,4);
-    const f=v.length>=3?v.slice(0,2)+'/'+v.slice(2):v;
-    e.target.value=f; set({cardExpiry:f});
+    const raw = e.target.value.replace(/\D/g,'').slice(0,4);
+    const fmt = raw.length>=3 ? raw.slice(0,2)+'/'+raw.slice(2) : raw;
+    if(e.target.value !== fmt) e.target.value = fmt;
+    S.cardExpiry = fmt;
+    refreshCTA();
   });
   document.getElementById('f_cardCvc')?.addEventListener('input',e=>{
-    const v=e.target.value.replace(/\D/g,'').slice(0,4);
-    e.target.value=v; set({cardCvc:v});
+    const v = e.target.value.replace(/\D/g,'').slice(0,4);
+    if(e.target.value !== v) e.target.value = v;
+    S.cardCvc = v;
+    refreshCTA();
   });
-  document.getElementById('f_cardName')?.addEventListener('input',e=>set({cardName:e.target.value}));
+  document.getElementById('f_cardName')?.addEventListener('input',e=>{
+    S.cardName = e.target.value;
+    refreshCTA();
+  });
 }
 
 loadBiz();
