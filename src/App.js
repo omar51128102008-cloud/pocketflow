@@ -97,29 +97,15 @@ const IG = () => (
   </svg>
 );
 
-// ── Data ───────────────────────────────────────────────────────────────────────
-const APPOINTMENTS = [
-  { id: 1, name: "Jasmine Rivera", service: "Knotless Braids", time: "10:00 AM", duration: "3h", status: "confirmed", avatar: "JR", price: "$220", note: "Medium size, waist length", day: "Today" },
-  { id: 2, name: "Tasha Monroe", service: "Natural Blowout", time: "1:30 PM", duration: "1.5h", status: "confirmed", avatar: "TM", price: "$85", note: "Low heat preferred", day: "Today" },
-  { id: 3, name: "Kendra Blake", service: "Silk Press", time: "3:30 PM", duration: "2h", status: "pending", avatar: "KB", price: "$120", note: "First time client", day: "Today" },
-  { id: 4, name: "Monique Steele", service: "Loc Retwist", time: "11:00 AM", duration: "2h", status: "confirmed", avatar: "MS", price: "$95", note: "Regular — every 6 weeks", day: "Tomorrow" },
-  { id: 5, name: "Aisha Williams", service: "Box Braids", time: "2:00 PM", duration: "4h", status: "confirmed", avatar: "AW", price: "$180", note: "Small size", day: "Tomorrow" },
-];
-
-const MESSAGES_DATA = [
-  { id: 1, platform: "whatsapp", name: "Destiny Carter", preview: "Hey do you have anything this Saturday?", time: "2m ago", handled: true, unread: false, reply: "Hey Destiny! 💕 I have a 1pm and 3pm open this Saturday. Which works for you?" },
-  { id: 2, platform: "instagram", name: "brianna.hair_", preview: "How much for knotless braids?", time: "18m ago", handled: true, unread: false, reply: "Hi! Knotless start at $180 depending on length & size. DM me to book! ✨" },
-  { id: 3, platform: "whatsapp", name: "Kayla Johnson", preview: "I need to reschedule my Thursday appt 😭", time: "1h ago", handled: false, unread: true, reply: "" },
-  { id: 4, platform: "instagram", name: "nails.by.ree", preview: "Do you do collab popups?", time: "3h ago", handled: false, unread: true, reply: "" },
-];
-
-const CLIENTS_DATA = [
-  { id: 1, name: "Jasmine Rivera", avatar: "JR", phone: "+1 (404) 555-0182", instagram: "@jasmine.rivera", joined: "March 2023", totalVisits: 14, totalSpent: "$2,840", avgSpend: "$203", lastVisit: "Today", note: "Loves medium knotless braids. Waist length. Allergic to synthetic hair spray.", badge: "VIP" },
-  { id: 2, name: "Tasha Monroe", avatar: "TM", phone: "+1 (404) 555-0193", instagram: "@tasha.monroe", joined: "June 2023", totalVisits: 9, totalSpent: "$1,120", avgSpend: "$124", lastVisit: "Today", note: "Low heat only. Prefers silk press.", badge: null },
-  { id: 3, name: "Kendra Blake", avatar: "KB", phone: "+1 (404) 555-0201", instagram: "@kendra.b", joined: "Jan 2024", totalVisits: 3, totalSpent: "$360", avgSpend: "$120", lastVisit: "Today", note: "First time client. Referred by Jasmine.", badge: null },
-  { id: 4, name: "Monique Steele", avatar: "MS", phone: "+1 (404) 555-0214", instagram: "@monique.steele", joined: "April 2023", totalVisits: 7, totalSpent: "$890", avgSpend: "$127", lastVisit: "Yesterday", note: "Regular every 6 weeks. Loc retwist only.", badge: null },
-  { id: 5, name: "Aisha Williams", avatar: "AW", phone: "+1 (404) 555-0228", instagram: "@aisha.w", joined: "Aug 2023", totalVisits: 5, totalSpent: "$900", avgSpend: "$180", lastVisit: "Mar 3", note: "Small box braids. Takes about 4 hours.", badge: null },
-];
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function timeAgo(ts) {
+  if (!ts) return "";
+  const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (diff < 60) return "Just now";
+  if (diff < 3600) return Math.floor(diff/60) + "m ago";
+  if (diff < 86400) return Math.floor(diff/3600) + "h ago";
+  return Math.floor(diff/86400) + "d ago";
+}
 
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
 function Login({ navigate }) {
@@ -365,24 +351,49 @@ function Onboarding({ navigate }) {
 function Home({ navigate }) {
   const [selectedAppt, setSelectedAppt] = useState(null);
   const [bizName, setBizName] = useState("");
-  const unread = MESSAGES_DATA.filter(m => m.unread);
-  const todayAppts = APPOINTMENTS.filter(a => a.day === "Today");
+  const [appts, setAppts] = useState([]);
+  const [msgs, setMsgs] = useState([]);
+  const [stats, setStats] = useState({ weekRevenue: 0, todayCount: 0, aiHandled: 0, clientCount: 0 });
+
   const activity = [
-    { icon: "✦", text: "Sent reminder to 3 clients for tomorrow", time: "Just now" },
-    { icon: "✦", text: "Auto-replied to 2 Instagram DMs", time: "8 min ago" },
-    { icon: "✦", text: "Kendra Blake booked via WhatsApp link", time: "34 min ago" },
-    { icon: "✦", text: "Collected $220 deposit from Jasmine R.", time: "1h ago" },
+    { icon: "✦", text: "AI is ready to handle your messages and bookings", time: "Now" },
+    { icon: "✦", text: "Booking page is live — share your link with clients", time: "" },
   ];
 
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase.from("business_profiles").select("biz_name").eq("user_id", session.user.id).single();
-      setBizName(data?.biz_name || session.user.user_metadata?.business_name || "");
+      const uid = session.user.id;
+
+      const [profRes, apptsRes, msgsRes, clientsRes] = await Promise.all([
+        supabase.from("business_profiles").select("biz_name").eq("user_id", uid).single(),
+        supabase.from("appointments").select("*").eq("owner_id", uid).order("created_at", { ascending: false }),
+        supabase.from("messages").select("*").eq("owner_id", uid).order("created_at", { ascending: false }),
+        supabase.from("clients").select("id").eq("owner_id", uid),
+      ]);
+
+      setBizName(profRes.data?.biz_name || session.user.user_metadata?.business_name || "");
+
+      const allAppts = apptsRes.data || [];
+      const allMsgs = msgsRes.data || [];
+      setAppts(allAppts);
+      setMsgs(allMsgs);
+
+      const weekRevenue = allAppts
+        .filter(a => a.status === "confirmed")
+        .reduce((s, a) => s + (parseInt((a.price||"0").replace(/\D/g,""))||0), 0);
+      const todayCount = allAppts.filter(a => a.day === "Today").length;
+      const aiHandled = allMsgs.filter(m => m.handled).length;
+      const clientCount = (clientsRes.data || []).length;
+
+      setStats({ weekRevenue, todayCount, aiHandled, clientCount });
     };
     load();
   }, []);
+
+  const unread = msgs.filter(m => m.unread);
+  const todayAppts = appts.filter(a => a.day === "Today");
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -402,10 +413,10 @@ function Home({ navigate }) {
         {/* Stats row */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 24 }}>
           {[
-            { label: "This week", value: "$700", sub: "revenue", color: C.gold, icon: "💰" },
-            { label: "Today", value: "3", sub: "appointments", color: C.text, icon: "📅" },
-            { label: "AI handled", value: "47", sub: "this month", color: C.accent, icon: "✦" },
-            { label: "Clients", value: "5", sub: "total", color: C.green, icon: "👥" },
+            { label: "This week", value: "$" + stats.weekRevenue, sub: "revenue", color: C.gold, icon: "💰" },
+            { label: "Today", value: String(stats.todayCount), sub: "appointments", color: C.text, icon: "📅" },
+            { label: "AI handled", value: String(stats.aiHandled), sub: "messages", color: C.accent, icon: "✦" },
+            { label: "Clients", value: String(stats.clientCount), sub: "total", color: C.green, icon: "👥" },
           ].map((s, i) => (
             <Card key={i} style={{ padding: "16px", display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: `${s.color}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{s.icon}</div>
@@ -535,15 +546,38 @@ function Home({ navigate }) {
 // ── SCHEDULE ───────────────────────────────────────────────────────────────────
 function Schedule({ navigate }) {
   const [selectedAppt, setSelectedAppt] = useState(null);
-  const todayAppts = APPOINTMENTS.filter(a => a.day === "Today");
-  const tomorrowAppts = APPOINTMENTS.filter(a => a.day === "Tomorrow");
+  const [appts, setAppts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [reminderSent, setReminderSent] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from("appointments").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: false });
+      setAppts(data || []);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const todayAppts = appts.filter(a => a.day === "Today");
+  const upcomingAppts = appts.filter(a => a.day !== "Today");
+  const totalRevenue = appts.filter(a => a.status === "confirmed").reduce((s, a) => s + (parseInt((a.price||"0").replace(/\D/g,""))||0), 0);
 
   const ApptRow = ({ a, last }) => (
     <div onClick={() => setSelectedAppt(a)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: last ? "none" : `1px solid ${C.border}`, cursor: "pointer" }}>
-      <div style={{ width: 42, height: 42, borderRadius: 13, background: C.accentSoft, border: `1px solid ${C.accentSoft}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.accent, flexShrink: 0 }}>{a.avatar}</div>
-      <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{a.name}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{a.service} · {a.duration}</div></div>
+      <div style={{ width: 42, height: 42, borderRadius: 13, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.accent, flexShrink: 0 }}>{a.client_avatar || a.client_name?.slice(0,2).toUpperCase()}</div>
+      <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{a.client_name}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{a.service} · {a.duration}</div></div>
       <div style={{ textAlign: "right" }}><div style={{ fontSize: 13, fontWeight: 600 }}>{a.time}</div><div style={{ fontSize: 12, color: C.gold, marginTop: 2, fontWeight: 600 }}>{a.price}</div></div>
     </div>
+  );
+
+  const EmptyState = ({ label }) => (
+    <Card style={{ padding: 24, textAlign: "center" }}>
+      <div style={{ fontSize: 28, marginBottom: 8 }}>📅</div>
+      <div style={{ fontSize: 13, color: C.mid }}>No {label} appointments</div>
+    </Card>
   );
 
   return (
@@ -553,38 +587,46 @@ function Schedule({ navigate }) {
           <BackBtn onBack={() => navigate("home")} />
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Schedule</div>
         </div>
-        <div style={{ fontSize: 13, color: C.mid }}>5 appointments · $700 confirmed</div>
+        <div style={{ fontSize: 13, color: C.mid }}>{appts.length} appointments · ${totalRevenue} confirmed</div>
       </div>
       <div style={{ padding: "0 20px" }}>
-        <SectionLabel>Today — Friday</SectionLabel>
-        <Card style={{ padding: "4px 16px", marginBottom: 8 }}>
-          {todayAppts.map((a, i) => <ApptRow key={a.id} a={a} last={i === todayAppts.length - 1} />)}
-        </Card>
-        <SectionLabel>Tomorrow — Saturday</SectionLabel>
-        <Card style={{ padding: "4px 16px" }}>
-          {tomorrowAppts.map((a, i) => <ApptRow key={a.id} a={a} last={i === tomorrowAppts.length - 1} />)}
-        </Card>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 40, color: C.mid }}>Loading schedule...</div>
+        ) : (
+          <>
+            <SectionLabel>Today</SectionLabel>
+            {todayAppts.length > 0
+              ? <Card style={{ padding: "4px 16px", marginBottom: 8 }}>{todayAppts.map((a, i) => <ApptRow key={a.id} a={a} last={i === todayAppts.length - 1} />)}</Card>
+              : <EmptyState label="today's" />}
+            <SectionLabel>Upcoming</SectionLabel>
+            {upcomingAppts.length > 0
+              ? <Card style={{ padding: "4px 16px" }}>{upcomingAppts.map((a, i) => <ApptRow key={a.id} a={a} last={i === upcomingAppts.length - 1} />)}</Card>
+              : <EmptyState label="upcoming" />}
+          </>
+        )}
       </div>
       {selectedAppt && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", maxWidth: 400, margin: "0 auto" }} onClick={() => setSelectedAppt(null)}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", maxWidth: 430, margin: "0 auto" }} onClick={() => { setSelectedAppt(null); setReminderSent(null); }}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-              <div style={{ width: 52, height: 52, borderRadius: 16, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: C.accent }}>{selectedAppt.avatar}</div>
-              <div><div style={{ fontSize: 18, fontWeight: 700 }}>{selectedAppt.name}</div><div style={{ fontSize: 13, color: C.mid }}>{selectedAppt.service}</div></div>
+              <div style={{ width: 52, height: 52, borderRadius: 16, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: C.accent }}>{selectedAppt.client_avatar || selectedAppt.client_name?.slice(0,2).toUpperCase()}</div>
+              <div><div style={{ fontSize: 18, fontWeight: 700 }}>{selectedAppt.client_name}</div><div style={{ fontSize: 13, color: C.mid }}>{selectedAppt.service}</div></div>
             </div>
             <Card style={{ padding: 16, marginBottom: 16 }}>
-              {[["Time", selectedAppt.time], ["Duration", selectedAppt.duration], ["Price", selectedAppt.price], ["Status", selectedAppt.status], ["Note", selectedAppt.note]].map(([k, v]) => (
+              {[["Day", selectedAppt.day], ["Time", selectedAppt.time], ["Duration", selectedAppt.duration], ["Price", selectedAppt.price], ["Status", selectedAppt.status], ["Note", selectedAppt.note]].filter(([,v]) => v).map(([k, v]) => (
                 <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: k !== "Note" ? `1px solid ${C.border}` : "none" }}>
                   <span style={{ fontSize: 13, color: C.mid }}>{k}</span>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: k === "Price" ? C.gold : k === "Status" ? (selectedAppt.status === "confirmed" ? C.green : C.yellow) : C.text }}>{v}</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: k === "Price" ? C.gold : k === "Status" ? (selectedAppt.status === "confirmed" ? C.green : C.yellow) : C.text, textTransform: "capitalize" }}>{v}</span>
                 </div>
               ))}
             </Card>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => { setSelectedAppt(null); }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Reschedule</button>
-              <BtnPrimary onClick={() => { setSelectedAppt(null); }} style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
-            </div>
+            {reminderSent
+              ? <div style={{ padding: 13, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Reminder sent!</div>
+              : <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => setSelectedAppt(null)} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Reschedule</button>
+                  <BtnPrimary onClick={() => setReminderSent(true)} style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
+                </div>}
           </div>
         </div>
       )}
@@ -595,8 +637,26 @@ function Schedule({ navigate }) {
 
 // ── INBOX ──────────────────────────────────────────────────────────────────────
 function Inbox({ navigate }) {
-  const [msgs, setMsgs] = useState(MESSAGES_DATA);
+  const [msgs, setMsgs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const unread = msgs.filter(m => m.unread);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from("messages").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: false });
+      setMsgs(data || []);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const handleAI = async (m) => {
+    const reply = "Hey! Thanks for reaching out 💕 Let me check on that and get back to you shortly.";
+    await supabase.from("messages").update({ handled: true, unread: false, reply }).eq("id", m.id);
+    setMsgs(p => p.map(x => x.id === m.id ? { ...x, handled: true, unread: false, reply } : x));
+  };
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -605,31 +665,46 @@ function Inbox({ navigate }) {
           <BackBtn onBack={() => navigate("home")} />
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Inbox</div>
         </div>
-        <div style={{ fontSize: 13, color: C.mid }}>AI handled {msgs.filter(m => m.handled).length} of {msgs.length} today</div>
+        <div style={{ fontSize: 13, color: C.mid }}>AI handled {msgs.filter(m => m.handled).length} of {msgs.length} messages</div>
       </div>
       <div style={{ padding: "0 20px" }}>
-        {unread.length > 0 && <div style={{ background: "#f43f5e11", border: "1px solid #f43f5e22", borderRadius: 12, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#f87171", fontWeight: 500 }}>⚠ {unread.length} message{unread.length > 1 ? "s" : ""} need your input</div>}
-        {msgs.map(m => (
-          <Card key={m.id} style={{ padding: 16, marginBottom: 12, borderColor: m.unread ? "#f43f5e22" : C.border }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              {m.unread && <div style={{ width: 7, height: 7, borderRadius: "50%", background: C.red, flexShrink: 0 }} />}
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>{m.platform === "whatsapp" ? <WA /> : <IG />}<span style={{ fontSize: 14, fontWeight: 600 }}>{m.name}</span></div>
-              <span style={{ fontSize: 11, color: C.dim, marginLeft: "auto" }}>{m.time}</span>
-            </div>
-            <div style={{ fontSize: 13, color: C.mid, marginBottom: m.handled ? 12 : 0, lineHeight: 1.5 }}>"{m.preview}"</div>
-            {m.handled ? (
-              <div style={{ background: "#10b98111", border: "1px solid #10b98122", borderRadius: 10, padding: "10px 12px" }}>
-                <div style={{ fontSize: 10, color: C.green, fontWeight: 700, marginBottom: 6 }}>✓ AI AUTO-REPLIED</div>
-                <div style={{ fontSize: 12, color: "#6ee7b7", lineHeight: 1.5 }}>{m.reply}</div>
-              </div>
-            ) : (
-              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                <BtnPrimary onClick={() => setMsgs(p => p.map(x => x.id === m.id ? { ...x, handled: true, unread: false, reply: "Hey! Thanks for reaching out 💕 Let me check on that and get back to you shortly." } : x))} style={{ flex: 1, padding: 10, fontSize: 12 }}>Let AI handle it</BtnPrimary>
-                <button style={{ flex: 1, padding: 10, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Reply myself</button>
-              </div>
-            )}
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 40, color: C.mid }}>Loading messages...</div>
+        ) : msgs.length === 0 ? (
+          <Card style={{ padding: 32, textAlign: "center" }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>💬</div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No messages yet</div>
+            <div style={{ fontSize: 13, color: C.mid }}>When clients message you via WhatsApp or Instagram, they'll appear here.</div>
           </Card>
-        ))}
+        ) : (
+          <>
+            {unread.length > 0 && <div style={{ background: "#f43f5e11", border: "1px solid #f43f5e22", borderRadius: 12, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#f87171", fontWeight: 500 }}>⚠ {unread.length} message{unread.length > 1 ? "s" : ""} need your input</div>}
+            {msgs.map(m => (
+              <Card key={m.id} style={{ padding: 16, marginBottom: 12, borderColor: m.unread ? "#f43f5e22" : C.border }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  {m.unread && <div style={{ width: 7, height: 7, borderRadius: "50%", background: C.red, flexShrink: 0 }} />}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {m.platform === "whatsapp" ? <WA /> : <IG />}
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>{m.name}</span>
+                  </div>
+                  <span style={{ fontSize: 11, color: C.dim, marginLeft: "auto" }}>{timeAgo(m.created_at)}</span>
+                </div>
+                <div style={{ fontSize: 13, color: C.mid, marginBottom: m.handled ? 12 : 0, lineHeight: 1.5 }}>"{m.preview}"</div>
+                {m.handled ? (
+                  <div style={{ background: "#10b98111", border: "1px solid #10b98122", borderRadius: 10, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 10, color: C.green, fontWeight: 700, marginBottom: 6 }}>✓ AI AUTO-REPLIED</div>
+                    <div style={{ fontSize: 12, color: "#6ee7b7", lineHeight: 1.5 }}>{m.reply}</div>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                    <BtnPrimary onClick={() => handleAI(m)} style={{ flex: 1, padding: 10, fontSize: 12 }}>Let AI handle it</BtnPrimary>
+                    <button style={{ flex: 1, padding: 10, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Reply myself</button>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </>
+        )}
       </div>
       <BottomNav active="inbox" navigate={navigate} />
     </div>
@@ -661,7 +736,7 @@ function Assistant({ navigate }) {
           model: "llama-3.3-70b-versatile",
           max_tokens: 300,
           messages: [
-            { role: "system", content: "You are Pocketflow, an AI business assistant for a hair salon owner. Speak casually but professionally. Today: Jasmine Rivera (Knotless Braids 10am $220), Tasha Monroe (Natural Blowout 1:30pm $85), Kendra Blake (Silk Press 3:30pm pending $120). Week revenue: $700. 2 unread messages: Kayla Johnson wants to reschedule Thursday, nails.by.ree asking about collab popups. Keep responses short, 2-4 sentences max." },
+            { role: "system", content: `You are an AI business assistant for a beauty/personal care business using Pocketflow. Help the owner manage their business — appointments, clients, messages, revenue, and promotions. Be concise (2-4 sentences), casual but professional. Today's date: ${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}.` },
             ...chatHistory.map(m => ({ role: m.role, content: m.text })),
             { role: "user", content: text }
           ]
