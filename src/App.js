@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-const GROQ_API_KEY = "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";
-
+// API calls go through the Railway proxy — no keys needed in the frontend
 const supabase = createClient(
   "https://nrgecynqwibxdamrqopv.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5yZ2VjeW5xd2lieGRhbXJxb3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MDM3OTksImV4cCI6MjA4ODQ3OTc5OX0.3Eg_uAWhGGlnB9CrPYpbDHjLjF8KEin64BidmdHbc3s"
@@ -870,7 +869,9 @@ function Clients({ navigate }) {
 
   useEffect(() => {
     const loadClients = async () => {
-      const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLoading(false); return; }
+      const { data, error } = await supabase.from("clients").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: false });
       if (!error && data) {
         setClients(data.map(c => ({
           ...c,
@@ -888,10 +889,14 @@ function Clients({ navigate }) {
   const addClient = async () => {
     if (!newName.trim()) return;
     setAdding(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setAdding(false); return; }
     const avatar = newName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
     const { data, error } = await supabase.from("clients").insert([{
       name: newName, phone: newPhone, instagram: newInstagram,
-      avatar, total_visits: 0, total_spent: 0, joined: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })
+      avatar, total_visits: 0, total_spent: 0,
+      joined: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+      owner_id: session.user.id,
     }]).select();
     if (!error && data) {
       setClients(p => [{ ...data[0], totalVisits: 0, totalSpent: "$0", avgSpend: "$0", lastVisit: "N/A" }, ...p]);
