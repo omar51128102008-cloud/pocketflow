@@ -53,7 +53,7 @@ const BackBtn = ({ onBack }) => (
 );
 
 const BottomNav = ({ active, navigate }) => (
-  <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 400, background: C.surface, borderTop: `1px solid ${C.border}`, display: "flex", padding: "10px 0 20px", zIndex: 50 }}>
+  <div className="mobile-only" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 400, background: C.surface, borderTop: `1px solid ${C.border}`, display: "flex", padding: "10px 0 20px", zIndex: 50 }}>
     {[
       { id: "home", icon: "⌂", label: "Home" },
       { id: "schedule", icon: "◫", label: "Schedule" },
@@ -1747,8 +1747,84 @@ function Waitlist({ navigate }) {
     </div>
   );
 }
+// ── SIDEBAR (desktop only) ─────────────────────────────────────────────────────
+function Sidebar({ active, navigate }) {
+  const mainNav = [
+    { id: "home", icon: "⌂", label: "Home" },
+    { id: "schedule", icon: "◫", label: "Schedule" },
+    { id: "inbox", icon: "◻", label: "Inbox" },
+    { id: "assistant", icon: "✦", label: "AI Assistant" },
+    { id: "clients", icon: "◯", label: "Clients" },
+  ];
+  const secondaryNav = [
+    { id: "payments", icon: "💳", label: "Payments" },
+    { id: "analytics", icon: "📊", label: "Analytics" },
+    { id: "promotions", icon: "📣", label: "Promotions" },
+    { id: "loyalty", icon: "🎁", label: "Loyalty" },
+    { id: "staff", icon: "👥", label: "Staff" },
+    { id: "waitlist", icon: "⏳", label: "Waitlist" },
+  ];
+
+  return (
+    <div style={{ width: 240, background: C.surface, borderRight: `1px solid ${C.border}`, height: "100vh", position: "fixed", left: 0, top: 0, display: "flex", flexDirection: "column", padding: "24px 0", zIndex: 100 }}>
+      {/* Logo */}
+      <div style={{ padding: "0 20px 28px", borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 11, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✦</div>
+          <div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontWeight: 800, color: C.text }}>Pocketflow</div>
+            <div style={{ fontSize: 10, color: C.mid }}>Luxe Hair Studio</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main nav */}
+      <div style={{ padding: "16px 12px 0", flex: 1, overflowY: "auto" }}>
+        <div style={{ fontSize: 10, color: C.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", padding: "0 8px", marginBottom: 8 }}>Main</div>
+        {mainNav.map(item => (
+          <div key={item.id} onClick={() => navigate(item.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, background: active === item.id ? C.accentSoft : "transparent", border: `1px solid ${active === item.id ? C.accent + "33" : "transparent"}`, cursor: "pointer", marginBottom: 4, transition: "all 0.2s" }}>
+            <span style={{ fontSize: 16, color: active === item.id ? C.accent : C.mid }}>{item.icon}</span>
+            <span style={{ fontSize: 14, fontWeight: active === item.id ? 700 : 500, color: active === item.id ? C.accent : C.mid }}>{item.label}</span>
+            {item.id === "inbox" && <div style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: C.red }} />}
+          </div>
+        ))}
+
+        <div style={{ fontSize: 10, color: C.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", padding: "0 8px", marginBottom: 8, marginTop: 20 }}>Manage</div>
+        {secondaryNav.map(item => (
+          <div key={item.id} onClick={() => navigate(item.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, background: active === item.id ? C.accentSoft : "transparent", border: `1px solid ${active === item.id ? C.accent + "33" : "transparent"}`, cursor: "pointer", marginBottom: 4, transition: "all 0.2s" }}>
+            <span style={{ fontSize: 14 }}>{item.icon}</span>
+            <span style={{ fontSize: 14, fontWeight: active === item.id ? 700 : 500, color: active === item.id ? C.accent : C.mid }}>{item.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Bottom */}
+      <div style={{ padding: "16px 12px 0", borderTop: `1px solid ${C.border}` }}>
+        <div onClick={() => navigate("settings")} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, background: active === "settings" ? C.accentSoft : "transparent", cursor: "pointer", marginBottom: 8 }}>
+          <span style={{ fontSize: 14 }}>⚙️</span>
+          <span style={{ fontSize: 14, fontWeight: 500, color: active === "settings" ? C.accent : C.mid }}>Settings</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px" }}>
+          <div style={{ width: 32, height: 32, borderRadius: 10, background: C.accentSoft, border: `1px solid ${C.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: C.accent }}>LH</div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>Luxe Hair</div>
+            <div style={{ fontSize: 11, color: C.mid }}>Pro Plan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [screen, setScreen] = useState("login");
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const navigate = (s) => {
     setScreen(s);
@@ -1758,10 +1834,30 @@ export default function App() {
   const screens = { login: Login, onboarding: Onboarding, home: Home, schedule: Schedule, inbox: Inbox, assistant: Assistant, clients: Clients, payments: Payments, settings: Settings, loyalty: Loyalty, notifications: Notifications, analytics: Analytics, promotions: Promotions, booking: Booking, staff: Staff, waitlist: Waitlist };
   const Screen = screens[screen] || Home;
 
+  const isAuthScreen = screen === "login" || screen === "onboarding" || screen === "booking";
+  const showSidebar = isDesktop && !isAuthScreen;
+
   return (
-    <div style={{ fontFamily: "'Outfit',sans-serif", background: C.bg, minHeight: "100vh", maxWidth: 400, margin: "0 auto", color: C.text, position: "relative" }}>
-      <style>{GLOBAL_STYLES}</style>
-      <Screen navigate={navigate} />
+    <div style={{ fontFamily: "'Outfit',sans-serif", background: C.bg, minHeight: "100vh", color: C.text }}>
+      <style>{GLOBAL_STYLES + `
+        @media (min-width: 768px) {
+          .mobile-only { display: none !important; }
+        }
+        @media (max-width: 767px) {
+          .desktop-only { display: none !important; }
+        }
+      `}</style>
+      {showSidebar && <Sidebar active={screen} navigate={navigate} />}
+      <div style={{
+        marginLeft: showSidebar ? 240 : 0,
+        minHeight: "100vh",
+        maxWidth: isAuthScreen ? (isDesktop ? 480 : "100%") : (showSidebar ? "none" : 400),
+        margin: isAuthScreen ? "0 auto" : (showSidebar ? `0 0 0 240px` : "0 auto"),
+      }}>
+        <div style={{ maxWidth: showSidebar ? 800 : "none", margin: showSidebar ? "0 auto" : "0" }}>
+          <Screen navigate={navigate} />
+        </div>
+      </div>
     </div>
   );
 }
