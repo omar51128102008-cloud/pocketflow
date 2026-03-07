@@ -116,6 +116,37 @@ function Login({ navigate }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [bizName, setBizName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [confirmSent, setConfirmSent] = useState(false);
+
+  const handleAuth = async () => {
+    setError("");
+    setLoading(true);
+    if (mode === "login") {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setError(error.message);
+      else navigate("home");
+    } else {
+      const { error } = await supabase.auth.signUp({
+        email, password,
+        options: { data: { business_name: bizName } }
+      });
+      if (error) setError(error.message);
+      else setConfirmSent(true);
+    }
+    setLoading(false);
+  };
+
+  if (confirmSent) return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
+      <div style={{ fontSize: 60, marginBottom: 24 }}>📧</div>
+      <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, marginBottom: 12 }}>Check your email</div>
+      <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7, marginBottom: 28 }}>We sent a confirmation link to<br /><span style={{ color: C.accent, fontWeight: 600 }}>{email}</span><br />Click it to activate your account.</div>
+      <BtnPrimary onClick={() => setConfirmSent(false)} style={{ padding: "13px 28px" }}>Back to Login</BtnPrimary>
+    </div>
+  );
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: "60px 24px 40px" }}>
@@ -127,24 +158,17 @@ function Login({ navigate }) {
         </div>
         <div style={{ display: "flex", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 4, marginBottom: 28 }}>
           {["login", "signup"].map(m => (
-            <div key={m} onClick={() => setMode(m)} style={{ flex: 1, padding: "11px", borderRadius: 11, background: mode === m ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "transparent", textAlign: "center", fontSize: 14, fontWeight: 600, color: mode === m ? "#fff" : C.mid, cursor: "pointer", transition: "all 0.2s" }}>{m === "login" ? "Log In" : "Sign Up"}</div>
+            <div key={m} onClick={() => { setMode(m); setError(""); }} style={{ flex: 1, padding: "11px", borderRadius: 11, background: mode === m ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "transparent", textAlign: "center", fontSize: 14, fontWeight: 600, color: mode === m ? "#fff" : C.mid, cursor: "pointer", transition: "all 0.2s" }}>{m === "login" ? "Log In" : "Sign Up"}</div>
           ))}
         </div>
-        {mode === "signup" && <input placeholder="Business name" style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />}
+        {mode === "signup" && <input placeholder="Business name" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />}
         <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
         <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 20 }} />
+        {error && <div style={{ background: "#f43f5e18", border: "1px solid #f43f5e33", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
         {mode === "login" && <div style={{ textAlign: "right", marginBottom: 16, marginTop: -8 }}><span style={{ fontSize: 13, color: C.accent, cursor: "pointer" }}>Forgot password?</span></div>}
-        <BtnPrimary onClick={() => navigate(mode === "login" ? "home" : "onboarding")} style={{ width: "100%", padding: 16 }}>{mode === "login" ? "Log In" : "Create Account"}</BtnPrimary>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "24px 0" }}>
-          <div style={{ flex: 1, height: 1, background: C.border }} /><span style={{ fontSize: 12, color: C.dim }}>or continue with</span><div style={{ flex: 1, height: 1, background: C.border }} />
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          {[{ icon: "🍎", label: "Apple" }, { icon: "G", label: "Google" }].map(b => (
-            <button key={b.label} onClick={() => navigate("onboarding")} style={{ flex: 1, padding: 14, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.text, cursor: "pointer", fontFamily: "'Outfit',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <span style={{ fontSize: 18 }}>{b.icon}</span>{b.label}
-            </button>
-          ))}
-        </div>
+        <BtnPrimary onClick={handleAuth} disabled={loading || !email || !password} style={{ width: "100%", padding: 16 }}>
+          {loading ? "Please wait..." : mode === "login" ? "Log In" : "Create Account"}
+        </BtnPrimary>
       </div>
       <div style={{ textAlign: "center", fontSize: 12, color: C.dim, marginTop: 24 }}>By continuing you agree to our <span style={{ color: C.accent }}>Terms</span> & <span style={{ color: C.accent }}>Privacy Policy</span></div>
     </div>
@@ -1050,7 +1074,7 @@ function Settings({ navigate }) {
           ))}
         </Card>
         <div style={{ textAlign: "center", padding: "20px 0" }}>
-          <span onClick={() => navigate("login")} style={{ fontSize: 13, color: C.red, fontWeight: 600, cursor: "pointer" }}>Sign Out</span>
+          <span onClick={async () => { await supabase.auth.signOut(); navigate("login"); }} style={{ fontSize: 13, color: C.red, fontWeight: 600, cursor: "pointer" }}>Sign Out</span>
         </div>
       </div>
     </div>
@@ -1902,6 +1926,18 @@ export default function App() {
     const handleResize = () => setIsDesktop(window.innerWidth >= 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Check for existing session on load
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setScreen("home");
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN") setScreen("home");
+      if (event === "SIGNED_OUT") setScreen("login");
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   const navigate = (s) => {
