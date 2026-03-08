@@ -1058,7 +1058,6 @@ Examples:
       const { navigating, screen, text: reply } = handleNavIntent(raw);
       const displayText = navigating ? `Opening **${screen}**... ${reply}` : reply;
       setChatHistory(p => [...p, { role: "assistant", text: displayText, time: new Date() }]);
-      speakText(reply, null);
     } catch {
       setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again in a second.", time: new Date() }]);
     }
