@@ -86,14 +86,7 @@ const C = {
   text:'#f1f0ff', mid:'#8b8ba8', dim:'#3d3d55',
 };
 
-const DEFAULT_SERVICES = [
-  { id:1, name:'Knotless Braids', price:180, duration:'4h',   icon:'✨', desc:'Medium to jumbo, any length' },
-  { id:2, name:'Box Braids',      price:160, duration:'3.5h', icon:'💫', desc:'Small, medium, or large' },
-  { id:3, name:'Silk Press',      price:120, duration:'2h',   icon:'🌟', desc:'Sleek and straight finish' },
-  { id:4, name:'Natural Blowout', price:85,  duration:'1.5h', icon:'💨', desc:'Stretched and fluffy' },
-  { id:5, name:'Loc Retwist',     price:95,  duration:'2h',   icon:'🌀', desc:'Fresh and neat locs' },
-  { id:6, name:'Wig Install',     price:75,  duration:'1h',   icon:'👑', desc:'Lace front or closure' },
-];
+const DEFAULT_SERVICES = [];
 
 function getAvailableDates() {
   const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -149,12 +142,18 @@ function toggleSvc(s) {
 
 async function loadBiz() {
   if (!BUSINESS_ID) { biz={name:'Invalid Link',location:'',userId:null}; render(); return; }
-  const { data } = await sb.from('business_profiles').select('biz_name,location,user_id').eq('user_id',BUSINESS_ID).single();
-  if (data) {
-    biz = { name: data.biz_name||'Book an Appointment', location: data.location||'', userId: data.user_id };
+  const [profileRes, servicesRes] = await Promise.all([
+    sb.from('business_profiles').select('biz_name,location,user_id').eq('user_id',BUSINESS_ID).single(),
+    sb.from('services').select('*').eq('owner_id',BUSINESS_ID).neq('active',false).order('created_at',{ascending:true})
+  ]);
+  if (profileRes.data) {
+    biz = { name: profileRes.data.biz_name||'Book an Appointment', location: profileRes.data.location||'', userId: profileRes.data.user_id };
     document.title = `Book · ${biz.name}`;
   } else {
     biz = { name:'Business Not Found', location:'', userId:null };
+  }
+  if (servicesRes.data && servicesRes.data.length > 0) {
+    S.services = servicesRes.data.map(s => ({ id: s.id, name: s.name, price: Number(s.price), duration: s.duration, icon: s.icon||'✨', desc: s.description||'' }));
   }
   render();
 }
@@ -367,6 +366,13 @@ function renderStep() {
   if (S.step===0) return `
     <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:800;margin-bottom:6px">What are you coming in for?</div>
     <div style="font-size:14px;color:${C.mid};margin-bottom:24px">Select one or more services</div>
+    ${S.services.length===0 ? `
+      <div style="text-align:center;padding:60px 20px;color:${C.dim}">
+        <div style="font-size:40px;margin-bottom:12px">✂️</div>
+        <div style="font-size:16px;font-weight:700;color:${C.mid};margin-bottom:6px">No services available</div>
+        <div style="font-size:13px">The business hasn't added their services yet. Check back soon!</div>
+      </div>
+    ` : `
     <div class="service-grid">
       ${S.services.map(s=>{
         const sel=S.selectedServices.find(x=>x.id===s.id);
@@ -384,6 +390,7 @@ function renderStep() {
         </div>`;
       }).join('')}
     </div>
+    `}
     ${S.selectedServices.length>0?`
       <div style="background:${C.accentDark}18;border:1px solid ${C.accentDark}33;border-radius:14px;padding:14px 18px;margin-top:8px">
         <div style="font-size:13px;color:${C.mid};margin-bottom:6px">${S.selectedServices.map(s=>s.name).join(' + ')}</div>

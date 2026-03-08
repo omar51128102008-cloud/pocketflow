@@ -63,6 +63,16 @@ const SectionLabel = ({ children }) => (
   <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12, marginTop: 24 }}>{children}</div>
 );
 
+function useDesktop() {
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  useEffect(() => {
+    const h = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return isDesktop;
+}
+
 const BtnPrimary = ({ children, onClick, disabled, style }) => (
   <button onClick={onClick} disabled={disabled} style={{ background: disabled ? "#1e1e2e" : `linear-gradient(135deg,${C.accentDark},${C.accent})`, border: "none", borderRadius: 14, color: disabled ? C.dim : "#fff", fontFamily: "'Outfit',sans-serif", fontWeight: 600, fontSize: 15, cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.2s", ...style }}>{children}</button>
 );
@@ -121,6 +131,8 @@ function Login({ navigate }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [confirmSent, setConfirmSent] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const handleAuth = async () => {
     setError("");
@@ -140,6 +152,26 @@ function Login({ navigate }) {
     setLoading(false);
   };
 
+  const handleReset = async () => {
+    if (!email) { setError("Enter your email first"); return; }
+    setError(""); setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/pocketflow"
+    });
+    setLoading(false);
+    if (error) setError(error.message);
+    else setResetSent(true);
+  };
+
+  if (resetSent) return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
+      <div style={{ fontSize: 60, marginBottom: 24 }}>📧</div>
+      <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, marginBottom: 12 }}>Check your email</div>
+      <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7, marginBottom: 28 }}>We sent a password reset link to<br /><span style={{ color: C.accent, fontWeight: 600 }}>{email}</span></div>
+      <BtnPrimary onClick={() => { setResetMode(false); setResetSent(false); }} style={{ padding: "13px 28px" }}>Back to Login</BtnPrimary>
+    </div>
+  );
+
   if (confirmSent) return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
       <div style={{ fontSize: 60, marginBottom: 24 }}>📧</div>
@@ -151,25 +183,38 @@ function Login({ navigate }) {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: "60px 24px 40px" }}>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 400, margin: "0 auto", width: "100%" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ width: 70, height: 70, borderRadius: 22, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 16px", boxShadow: `0 0 40px ${C.accentDark}44` }}>✦</div>
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 32, fontWeight: 800 }}>Pocketflow</div>
           <div style={{ fontSize: 14, color: C.mid, marginTop: 6 }}>Your AI business assistant</div>
         </div>
-        <div style={{ display: "flex", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 4, marginBottom: 28 }}>
-          {["login", "signup"].map(m => (
-            <div key={m} onClick={() => { setMode(m); setError(""); }} style={{ flex: 1, padding: "11px", borderRadius: 11, background: mode === m ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "transparent", textAlign: "center", fontSize: 14, fontWeight: 600, color: mode === m ? "#fff" : C.mid, cursor: "pointer", transition: "all 0.2s" }}>{m === "login" ? "Log In" : "Sign Up"}</div>
-          ))}
-        </div>
-        {mode === "signup" && <input placeholder="Business name" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />}
-        <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
-        <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 20 }} />
-        {error && <div style={{ background: "#f43f5e18", border: "1px solid #f43f5e33", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
-        {mode === "login" && <div style={{ textAlign: "right", marginBottom: 16, marginTop: -8 }}><span style={{ fontSize: 13, color: C.accent, cursor: "pointer" }}>Forgot password?</span></div>}
-        <BtnPrimary onClick={handleAuth} disabled={loading || !email || !password} style={{ width: "100%", padding: 16 }}>
-          {loading ? "Please wait..." : mode === "login" ? "Log In" : "Create Account"}
-        </BtnPrimary>
+        {resetMode ? (
+          <>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Reset password</div>
+            <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>Enter your email and we'll send a reset link.</div>
+            <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
+            {error && <div style={{ background: "#f43f5e18", border: "1px solid #f43f5e33", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
+            <BtnPrimary onClick={handleReset} disabled={loading || !email} style={{ width: "100%", padding: 16, marginBottom: 12 }}>{loading ? "Sending..." : "Send Reset Link"}</BtnPrimary>
+            <div style={{ textAlign: "center" }}><span onClick={() => { setResetMode(false); setError(""); }} style={{ fontSize: 13, color: C.accent, cursor: "pointer" }}>← Back to login</span></div>
+          </>
+        ) : (
+          <>
+            <div style={{ display: "flex", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 4, marginBottom: 28 }}>
+              {["login", "signup"].map(m => (
+                <div key={m} onClick={() => { setMode(m); setError(""); }} style={{ flex: 1, padding: "11px", borderRadius: 11, background: mode === m ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "transparent", textAlign: "center", fontSize: 14, fontWeight: 600, color: mode === m ? "#fff" : C.mid, cursor: "pointer", transition: "all 0.2s" }}>{m === "login" ? "Log In" : "Sign Up"}</div>
+              ))}
+            </div>
+            {mode === "signup" && <input placeholder="Business name" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />}
+            <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
+            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 20 }} />
+            {error && <div style={{ background: "#f43f5e18", border: "1px solid #f43f5e33", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
+            {mode === "login" && <div style={{ textAlign: "right", marginBottom: 16, marginTop: -8 }}><span onClick={() => { setResetMode(true); setError(""); }} style={{ fontSize: 13, color: C.accent, cursor: "pointer" }}>Forgot password?</span></div>}
+            <BtnPrimary onClick={handleAuth} disabled={loading || !email || !password} style={{ width: "100%", padding: 16 }}>
+              {loading ? "Please wait..." : mode === "login" ? "Log In" : "Create Account"}
+            </BtnPrimary>
+          </>
+        )}
       </div>
       <div style={{ textAlign: "center", fontSize: 12, color: C.dim, marginTop: 24 }}>By continuing you agree to our <span style={{ color: C.accent }}>Terms</span> & <span style={{ color: C.accent }}>Privacy Policy</span></div>
     </div>
@@ -230,7 +275,20 @@ function Onboarding({ navigate }) {
           </div>
         ))}
       </Card>
-      <BtnPrimary onClick={async () => { const { data: { session } } = await supabase.auth.getSession(); if (session) localStorage.setItem("pocketflow_onboarded_" + session.user.id, "true"); navigate("home"); }} style={{ width: "100%", padding: 16 }}>Go to Dashboard →</BtnPrimary>
+      <BtnPrimary onClick={async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          localStorage.setItem("pocketflow_onboarded_" + session.user.id, "true");
+          // Save business profile
+          await supabase.from("business_profiles").upsert({ user_id: session.user.id, biz_name: bizName, location: bizLocation }, { onConflict: "user_id" });
+          // Save services
+          if (services.length > 0) {
+            const rows = services.map(s => ({ owner_id: session.user.id, name: s.name, price: parseFloat(s.price) || 0, duration: s.duration || "1h", icon: "✨", active: true }));
+            await supabase.from("services").insert(rows);
+          }
+        }
+        navigate("home");
+      }} style={{ width: "100%", padding: 16 }}>Go to Dashboard →</BtnPrimary>
     </div>
   );
 
@@ -510,7 +568,7 @@ function Home({ navigate }) {
 
         {/* Mobile-only grid */}
         <div className="mobile-only" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
-          {[{ icon: "💳", label: "Payments", screen: "payments" }, { icon: "⚙️", label: "Settings", screen: "settings" }, { icon: "🎁", label: "Loyalty", screen: "loyalty" }, { icon: "📊", label: "Analytics", screen: "analytics" }, { icon: "📣", label: "Promotions", screen: "promotions" }, { icon: "👥", label: "Staff", screen: "staff" }, { icon: "⏳", label: "Waitlist", screen: "waitlist" }, { icon: "🔗", label: "Share Booking Link", screen: "sharelink" }].map(item => (
+          {[{ icon: "✂️", label: "Services", screen: "services" }, { icon: "💳", label: "Payments", screen: "payments" }, { icon: "⚙️", label: "Settings", screen: "settings" }, { icon: "🎁", label: "Loyalty", screen: "loyalty" }, { icon: "📊", label: "Analytics", screen: "analytics" }, { icon: "📣", label: "Promotions", screen: "promotions" }, { icon: "👥", label: "Staff", screen: "staff" }, { icon: "⏳", label: "Waitlist", screen: "waitlist" }, { icon: "🔗", label: "Share Booking Link", screen: "sharelink" }].map(item => (
             <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
               <span style={{ fontSize: 22 }}>{item.icon}</span>
               <span style={{ fontSize: 14, fontWeight: 600 }}>{item.label}</span>
@@ -1197,6 +1255,7 @@ function NoteTab({ client, onNoteUpdate }) {
 
 // ── CLIENTS ────────────────────────────────────────────────────────────────────
 function Clients({ navigate }) {
+  const isDesktop = useDesktop();
   const [selectedClient, setSelectedClient] = useState(null);
   const [activeTab, setActiveTab] = useState("history");
   const [clients, setClients] = useState([]);
@@ -1322,6 +1381,8 @@ function Clients({ navigate }) {
         <div style={{ fontSize: 13, color: C.mid }}>{clients.length} total clients</div>
       </div>
       <div style={{ padding: "0 20px" }}>
+        <div style={{ display: isDesktop ? "grid" : "block", gridTemplateColumns: isDesktop ? "340px 1fr" : undefined, gap: isDesktop ? 24 : undefined, alignItems: "start" }}>
+        <div>
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "10px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." style={{ background: "none", border: "none", fontSize: 13, color: C.text, fontFamily: "'Outfit',sans-serif", width: "100%" }} />
@@ -1343,11 +1404,60 @@ function Clients({ navigate }) {
             <div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{c.totalSpent}</div>
           </Card>
         ))}
+        </div>{/* end col 1 */}
+        {isDesktop && (
+          <div style={{ position: "sticky", top: 80 }}>
+            {selectedClient ? (
+              <Card style={{ padding: 0, overflow: "hidden" }}>
+                <div style={{ background: "linear-gradient(180deg,#16103a,#0d0d1a)", padding: "28px 24px 20px", textAlign: "center" }}>
+                  <div style={{ width: 70, height: 70, borderRadius: 22, background: C.accentSoft, border: `1px solid ${C.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, color: C.accent, margin: "0 auto 10px" }}>{selectedClient.avatar}</div>
+                  <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 800 }}>{selectedClient.name}</div>
+                  <div style={{ fontSize: 12, color: C.mid, marginTop: 4 }}>Since {selectedClient.joined}</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 0, borderBottom: `1px solid ${C.border}` }}>
+                  {[{ label: "Visits", value: selectedClient.totalVisits }, { label: "Spent", value: selectedClient.totalSpent }, { label: "Avg", value: selectedClient.avgSpend }].map((s, i) => (
+                    <div key={i} style={{ padding: "14px 10px", textAlign: "center", borderRight: i < 2 ? `1px solid ${C.border}` : "none" }}>
+                      <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, fontWeight: 800, color: i === 1 ? C.gold : C.text }}>{s.value}</div>
+                      <div style={{ fontSize: 10, color: C.dim, marginTop: 3 }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ padding: 16 }}>
+                  <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                    {["history", "notes", "contact"].map(t => (
+                      <div key={t} onClick={() => setActiveTab(t)} style={{ flex: 1, padding: "8px", borderRadius: 10, background: activeTab === t ? C.accentSoft : C.surfaceHigh, border: `1px solid ${activeTab === t ? C.accent : C.borderHigh}`, textAlign: "center", fontSize: 12, fontWeight: 600, color: activeTab === t ? C.accent : C.mid, cursor: "pointer", textTransform: "capitalize" }}>{t}</div>
+                    ))}
+                  </div>
+                  {activeTab === "contact" && (
+                    <div>
+                      {[["📱", "Phone", selectedClient.phone], ["📸", "Instagram", selectedClient.instagram], ["📅", "Last visit", selectedClient.lastVisit]].map(([icon, label, val], i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: i < 2 ? `1px solid ${C.border}` : "none" }}>
+                          <span style={{ fontSize: 16 }}>{icon}</span>
+                          <div><div style={{ fontSize: 11, color: C.dim }}>{label}</div><div style={{ fontSize: 13, fontWeight: 600, marginTop: 1 }}>{val || "—"}</div></div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {activeTab === "notes" && <NoteTab client={selectedClient} onNoteUpdate={(note) => setSelectedClient(p => ({ ...p, note: (p.note ? p.note + "\n\n" : "") + note }))} />}
+                  {activeTab === "history" && selectedClient.appointmentHistory && selectedClient.appointmentHistory.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "20px 0", color: C.dim, fontSize: 13 }}>No appointment history yet</div>
+                  )}
+                </div>
+              </Card>
+            ) : (
+              <div style={{ textAlign: "center", padding: "60px 20px", color: C.dim }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>👤</div>
+                <div style={{ fontSize: 14 }}>Select a client to view details</div>
+              </div>
+            )}
+          </div>
+        )}
+        </div>{/* end grid */}
       </div>
 
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", maxWidth: 400, margin: "0 auto" }} onClick={() => setShowAdd(false)}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add New Client</div>
             <input placeholder="Full name *" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
@@ -1363,6 +1473,166 @@ function Clients({ navigate }) {
   );
 }
 
+// ── SERVICES ──────────────────────────────────────────────────────────────────
+function Services({ navigate }) {
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState({ name: "", price: "", duration: "", desc: "", icon: "✨", active: true });
+  const [userId, setUserId] = useState(null);
+
+  const ICONS = ["✨","💫","🌟","💨","🌀","👑","💅","🪮","💆","🎨","🔥","💎","🌸","✂️","💜"];
+  const DURATIONS = ["30m","45m","1h","1.5h","2h","2.5h","3h","3.5h","4h","4.5h","5h","5.5h","6h"];
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      setUserId(session.user.id);
+      const { data } = await supabase.from("services").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: true });
+      setServices(data || []);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const resetForm = () => setForm({ name: "", price: "", duration: "", desc: "", icon: "✨", active: true });
+
+  const openAdd = () => { resetForm(); setEditingId(null); setShowAdd(true); };
+  const openEdit = (s) => { setForm({ name: s.name, price: String(s.price), duration: s.duration, desc: s.description || "", icon: s.icon || "✨", active: s.active !== false }); setEditingId(s.id); setShowAdd(true); };
+
+  const saveService = async () => {
+    if (!form.name.trim() || !form.price || !form.duration) return;
+    setSaving(true);
+    if (editingId) {
+      const { data } = await supabase.from("services").update({ name: form.name.trim(), price: parseFloat(form.price), duration: form.duration, description: form.desc.trim(), icon: form.icon, active: form.active }).eq("id", editingId).select().single();
+      if (data) setServices(p => p.map(s => s.id === editingId ? data : s));
+    } else {
+      const { data } = await supabase.from("services").insert({ owner_id: userId, name: form.name.trim(), price: parseFloat(form.price), duration: form.duration, description: form.desc.trim(), icon: form.icon, active: form.active }).select().single();
+      if (data) setServices(p => [...p, data]);
+    }
+    setSaving(false);
+    setShowAdd(false);
+    resetForm();
+  };
+
+  const deleteService = async (id) => {
+    await supabase.from("services").delete().eq("id", id);
+    setServices(p => p.filter(s => s.id !== id));
+  };
+
+  const toggleActive = async (s) => {
+    const newVal = !s.active;
+    await supabase.from("services").update({ active: newVal }).eq("id", s.id);
+    setServices(p => p.map(x => x.id === s.id ? { ...x, active: newVal } : x));
+  };
+
+  return (
+    <div style={{ paddingBottom: 80 }}>
+      <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <BackBtn onBack={() => navigate("settings")} />
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Services</div>
+          </div>
+          <BtnPrimary onClick={openAdd} style={{ padding: "9px 18px", fontSize: 13 }}>+ Add</BtnPrimary>
+        </div>
+        <div style={{ fontSize: 13, color: C.dim, marginTop: 6, paddingLeft: 44 }}>These appear on your booking page</div>
+      </div>
+
+      <div style={{ padding: "0 20px" }}>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 60, color: C.dim, fontSize: 14 }}>Loading services...</div>
+        ) : services.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 20px" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>✂️</div>
+            <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>No services yet</div>
+            <div style={{ fontSize: 13, color: C.dim, marginBottom: 24 }}>Add your services so clients can book from your page</div>
+            <BtnPrimary onClick={openAdd} style={{ padding: "12px 28px" }}>Add Your First Service</BtnPrimary>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: 12, color: C.dim, fontWeight: 600, marginBottom: 12 }}>{services.filter(s => s.active !== false).length} active · {services.filter(s => s.active === false).length} hidden</div>
+            {services.map((s, i) => (
+              <Card key={s.id} style={{ padding: "16px", marginBottom: 10, opacity: s.active === false ? 0.5 : 1, transition: "opacity 0.2s" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: `linear-gradient(135deg,${C.accentDark}22,${C.accent}22)`, border: `1px solid ${C.accent}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{s.icon || "✨"}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>{s.name}</div>
+                    {s.description && <div style={{ fontSize: 12, color: C.dim, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.description}</div>}
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: C.accent }}>${s.price}</span>
+                      <span style={{ fontSize: 13, color: C.mid }}>· {s.duration}</span>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                    <div onClick={() => toggleActive(s)} style={{ width: 32, height: 32, borderRadius: 9, background: s.active !== false ? C.accentSoft : C.surfaceHigh, border: `1px solid ${s.active !== false ? C.accent : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13 }}>
+                      {s.active !== false ? "👁" : "🚫"}
+                    </div>
+                    <div onClick={() => openEdit(s)} style={{ width: 32, height: 32, borderRadius: 9, background: C.surfaceHigh, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13 }}>✏️</div>
+                    <div onClick={() => deleteService(s.id)} style={{ width: 32, height: 32, borderRadius: 9, background: "#f43f5e11", border: "1px solid #f43f5e22", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13 }}>🗑️</div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+            <div style={{ marginTop: 8, padding: "14px 16px", borderRadius: 14, background: C.accentSoft, border: `1px solid ${C.accent}33`, fontSize: 13, color: C.mid, lineHeight: 1.6 }}>
+              💡 Changes go live on your booking page instantly
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Add / Edit Modal */}
+      {showAdd && (
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 800, marginBottom: 20 }}>{editingId ? "Edit Service" : "New Service"}</div>
+
+            {/* Icon picker */}
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Icon</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+              {ICONS.map(ic => (
+                <div key={ic} onClick={() => setForm(p => ({ ...p, icon: ic }))} style={{ width: 38, height: 38, borderRadius: 10, background: form.icon === ic ? C.accentSoft : C.surfaceHigh, border: `1px solid ${form.icon === ic ? C.accent : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, cursor: "pointer" }}>{ic}</div>
+              ))}
+            </div>
+
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Service Name *</div>
+            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Knotless Braids" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 14 }} />
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Price ($) *</div>
+                <input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="120" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Duration *</div>
+                <select value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: form.duration ? C.text : C.dim, fontFamily: "'Outfit',sans-serif" }}>
+                  <option value="">Select</option>
+                  {DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Description (optional)</div>
+            <input value={form.desc} onChange={e => setForm(p => ({ ...p, desc: e.target.value }))} placeholder="Short description clients will see" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 14 }} />
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", marginBottom: 16, borderTop: `1px solid ${C.border}` }}>
+              <div><div style={{ fontSize: 14, fontWeight: 600 }}>Show on booking page</div><div style={{ fontSize: 12, color: C.dim }}>Clients can book this service</div></div>
+              <Toggle on={form.active} onToggle={() => setForm(p => ({ ...p, active: !p.active }))} />
+            </div>
+
+            <BtnPrimary onClick={saveService} disabled={saving || !form.name.trim() || !form.price || !form.duration} style={{ width: "100%", padding: 14, fontSize: 15 }}>
+              {saving ? "Saving..." : editingId ? "Save Changes" : "Add Service"}
+            </BtnPrimary>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── PAYMENTS ───────────────────────────────────────────────────────────────────
 function Payments({ navigate }) {
   const [depositEnabled, setDepositEnabled] = useState(true);
@@ -1374,15 +1644,102 @@ function Payments({ navigate }) {
   const [lateCancel, setLateCancel] = useState(true);
   const [lateCancelHours, setLateCancelHours] = useState("24");
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
-  const invoices = [
-    { id: 1, name: "Jasmine Rivera", service: "Knotless Braids", amount: "$220", status: "paid", date: "Today" },
-    { id: 2, name: "Tasha Monroe", service: "Natural Blowout", amount: "$85", status: "paid", date: "Today" },
-    { id: 3, name: "Kendra Blake", service: "Silk Press", amount: "$120", status: "pending", date: "Today" },
-    { id: 4, name: "Monique Steele", service: "Loc Retwist", amount: "$95", status: "paid", date: "Yesterday" },
-    { id: 5, name: "Aisha Williams", service: "Box Braids", amount: "$180", status: "overdue", date: "Mar 3" },
-  ];
-  const statusColor = s => s === "paid" ? C.green : s === "pending" ? C.yellow : C.red;
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLoading(false); return; }
+      const { data } = await supabase.from("appointments").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: false }).limit(50);
+      setAppointments(data || []);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const parsePrice = p => parseFloat(String(p || "0").replace(/[^0-9.]/g, "")) || 0;
+  const paid = appointments.filter(a => a.status === "confirmed" || a.status === "completed");
+  const pending = appointments.filter(a => a.status === "pending");
+  const totalRevenue = paid.reduce((s, a) => s + parsePrice(a.price), 0);
+  const pendingRevenue = pending.reduce((s, a) => s + parsePrice(a.price), 0);
+  const statusColor = s => s === "confirmed" || s === "completed" ? C.green : s === "pending" ? C.yellow : C.red;
+  const statusLabel = s => s === "confirmed" ? "paid" : s === "completed" ? "paid" : s === "pending" ? "pending" : s || "unknown";
+
+  const SettingsPanel = () => (
+    <>
+      <SectionLabel>Deposit Protection</SectionLabel>
+      <Card style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: depositEnabled ? `1px solid ${C.border}` : "none" }}>
+          <div><div style={{ fontSize: 14, fontWeight: 600 }}>Require deposit to book</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Clients pay upfront before confirmed</div></div>
+          <Toggle on={depositEnabled} onToggle={() => setDepositEnabled(p => !p)} />
+        </div>
+        {depositEnabled && (
+          <div style={{ padding: "0 16px 16px" }}>
+            <div style={{ background: C.surfaceHigh, border: `1px solid ${C.borderHigh}`, borderRadius: 14, padding: 14 }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                {["percent", "fixed"].map(t => <div key={t} onClick={() => setDepositType(t)} style={{ flex: 1, padding: "9px", borderRadius: 10, background: depositType === t ? C.accentSoft : "transparent", border: `1px solid ${depositType === t ? C.accent : C.border}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: depositType === t ? C.accent : C.mid, cursor: "pointer" }}>{t === "percent" ? "Percentage" : "Fixed $"}</div>)}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 14px", gap: 8 }}>
+                <span style={{ fontSize: 18, color: C.mid }}>{depositType === "percent" ? "%" : "$"}</span>
+                <input value={depositAmount} onChange={e => setDepositAmount(e.target.value)} style={{ flex: 1, background: "none", border: "none", fontSize: 20, fontWeight: 700, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+                <span style={{ fontSize: 12, color: C.dim }}>{depositType === "percent" ? "of total" : "flat fee"}</span>
+              </div>
+            </div>
+          </div>
+        )}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px" }}>
+          <div><div style={{ fontSize: 14, fontWeight: 600 }}>Auto-charge on booking</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Charge card immediately when booked</div></div>
+          <Toggle on={autoCharge} onToggle={() => setAutoCharge(p => !p)} />
+        </div>
+      </Card>
+      <SectionLabel>No-Show & Cancellation</SectionLabel>
+      <Card style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: `1px solid ${C.border}` }}>
+          <div><div style={{ fontSize: 14, fontWeight: 600 }}>No-show fee</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Charge ${noShowFee ? noShowAmount : "–"} if client doesn't show</div></div>
+          <Toggle on={noShowFee} onToggle={() => setNoShowFee(p => !p)} />
+        </div>
+        {noShowFee && <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}` }}><div style={{ display: "flex", alignItems: "center", background: C.surfaceHigh, border: `1px solid ${C.borderHigh}`, borderRadius: 12, padding: "10px 14px", gap: 8 }}><span style={{ fontSize: 16, color: C.mid }}>$</span><input value={noShowAmount} onChange={e => setNoShowAmount(e.target.value)} style={{ flex: 1, background: "none", border: "none", fontSize: 18, fontWeight: 700, color: C.text, fontFamily: "'Outfit',sans-serif" }} /></div></div>}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: lateCancel ? `1px solid ${C.border}` : "none" }}>
+          <div><div style={{ fontSize: 14, fontWeight: 600 }}>Late cancellation fee</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Within {lateCancelHours}h of appointment</div></div>
+          <Toggle on={lateCancel} onToggle={() => setLateCancel(p => !p)} />
+        </div>
+        {lateCancel && <div style={{ padding: "12px 16px" }}><div style={{ display: "flex", gap: 8 }}>{["12", "24", "48"].map(h => <div key={h} onClick={() => setLateCancelHours(h)} style={{ flex: 1, padding: "9px", borderRadius: 10, background: lateCancelHours === h ? C.accentSoft : C.surfaceHigh, border: `1px solid ${lateCancelHours === h ? C.accent : C.borderHigh}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: lateCancelHours === h ? C.accent : C.mid, cursor: "pointer" }}>{h}h</div>)}</div></div>}
+      </Card>
+    </>
+  );
+
+  const InvoicesPanel = () => (
+    <>
+      <SectionLabel>Appointments</SectionLabel>
+      {loading ? (
+        <Card style={{ padding: "24px 16px", textAlign: "center", color: C.dim, fontSize: 14 }}>Loading...</Card>
+      ) : appointments.length === 0 ? (
+        <Card style={{ padding: "32px 20px", textAlign: "center" }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>💳</div>
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No appointments yet</div>
+          <div style={{ fontSize: 13, color: C.dim }}>Payments will appear here once clients book</div>
+        </Card>
+      ) : (
+        <Card>
+          {appointments.map((appt, i) => (
+            <div key={appt.id} onClick={() => setSelectedInvoice(appt)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderBottom: i < appointments.length - 1 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
+              <div style={{ width: 38, height: 38, borderRadius: 12, background: `${statusColor(appt.status)}18`, border: `1px solid ${statusColor(appt.status)}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{appt.status === "confirmed" || appt.status === "completed" ? "✓" : appt.status === "pending" ? "⏳" : "!"}</div>
+              <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600 }}>{appt.client_name}</div><div style={{ fontSize: 11, color: C.mid, marginTop: 2 }}>{appt.service} · {appt.day || appt.time}</div></div>
+              <div style={{ textAlign: "right" }}><div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{appt.price || "—"}</div><div style={{ fontSize: 10, color: statusColor(appt.status), marginTop: 3, fontWeight: 600, textTransform: "uppercase" }}>{statusLabel(appt.status)}</div></div>
+            </div>
+          ))}
+        </Card>
+      )}
+    </>
+  );
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -1394,87 +1751,37 @@ function Payments({ navigate }) {
       </div>
       <div style={{ padding: "0 20px" }}>
         <div style={{ background: "linear-gradient(135deg,#16103a,#1a0f3a)", border: `1px solid ${C.accentSoft}`, borderRadius: 22, padding: 22, marginBottom: 24 }}>
-          <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, letterSpacing: 1.5, marginBottom: 8 }}>THIS WEEK</div>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 42, fontWeight: 800, marginBottom: 8 }}>$700</div>
-          <div style={{ display: "flex", gap: 16 }}>
-            {[["Collected", "$605", C.green], ["Pending", "$120", C.yellow], ["Overdue", "$180", C.red]].map(([l, v, color]) => (
-              <div key={l}><div style={{ fontSize: 11, color: C.dim }}>{l}</div><div style={{ fontSize: 15, fontWeight: 700, color }}>{v}</div></div>
-            ))}
+          <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, letterSpacing: 1.5, marginBottom: 8 }}>TOTAL REVENUE</div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 42, fontWeight: 800, marginBottom: 8 }}>${totalRevenue.toLocaleString()}</div>
+          <div style={{ display: "flex", gap: 20 }}>
+            <div><div style={{ fontSize: 11, color: C.dim }}>Collected</div><div style={{ fontSize: 15, fontWeight: 700, color: C.green }}>${totalRevenue.toLocaleString()}</div></div>
+            <div><div style={{ fontSize: 11, color: C.dim }}>Pending</div><div style={{ fontSize: 15, fontWeight: 700, color: C.yellow }}>${pendingRevenue.toLocaleString()}</div></div>
+            <div><div style={{ fontSize: 11, color: C.dim }}>Appointments</div><div style={{ fontSize: 15, fontWeight: 700, color: C.accent }}>{appointments.length}</div></div>
           </div>
         </div>
-        <SectionLabel>Deposit Protection</SectionLabel>
-        <Card style={{ marginBottom: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: depositEnabled ? `1px solid ${C.border}` : "none" }}>
-            <div><div style={{ fontSize: 14, fontWeight: 600 }}>Require deposit to book</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Clients pay upfront before confirmed</div></div>
-            <Toggle on={depositEnabled} onToggle={() => setDepositEnabled(p => !p)} />
+        {isDesktop ? (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }}>
+            <div><SettingsPanel /></div>
+            <div><InvoicesPanel /></div>
           </div>
-          {depositEnabled && (
-            <div style={{ padding: "0 16px 16px" }}>
-              <div style={{ background: C.surfaceHigh, border: `1px solid ${C.borderHigh}`, borderRadius: 14, padding: 14 }}>
-                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                  {["percent", "fixed"].map(t => <div key={t} onClick={() => setDepositType(t)} style={{ flex: 1, padding: "9px", borderRadius: 10, background: depositType === t ? C.accentSoft : "transparent", border: `1px solid ${depositType === t ? C.accent : C.border}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: depositType === t ? C.accent : C.mid, cursor: "pointer" }}>{t === "percent" ? "Percentage" : "Fixed $"}</div>)}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 14px", gap: 8 }}>
-                  <span style={{ fontSize: 18, color: C.mid }}>{depositType === "percent" ? "%" : "$"}</span>
-                  <input value={depositAmount} onChange={e => setDepositAmount(e.target.value)} style={{ flex: 1, background: "none", border: "none", fontSize: 20, fontWeight: 700, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
-                  <span style={{ fontSize: 12, color: C.dim }}>{depositType === "percent" ? "of total" : "flat fee"}</span>
-                </div>
-              </div>
-            </div>
-          )}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px" }}>
-            <div><div style={{ fontSize: 14, fontWeight: 600 }}>Auto-charge on booking</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Charge card immediately when booked</div></div>
-            <Toggle on={autoCharge} onToggle={() => setAutoCharge(p => !p)} />
-          </div>
-        </Card>
-        <SectionLabel>No-Show & Cancellation</SectionLabel>
-        <Card style={{ marginBottom: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: `1px solid ${C.border}` }}>
-            <div><div style={{ fontSize: 14, fontWeight: 600 }}>No-show fee</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Charge ${noShowFee ? noShowAmount : "–"} if client doesn't show</div></div>
-            <Toggle on={noShowFee} onToggle={() => setNoShowFee(p => !p)} />
-          </div>
-          {noShowFee && <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}` }}><div style={{ display: "flex", alignItems: "center", background: C.surfaceHigh, border: `1px solid ${C.borderHigh}`, borderRadius: 12, padding: "10px 14px", gap: 8 }}><span style={{ fontSize: 16, color: C.mid }}>$</span><input value={noShowAmount} onChange={e => setNoShowAmount(e.target.value)} style={{ flex: 1, background: "none", border: "none", fontSize: 18, fontWeight: 700, color: C.text, fontFamily: "'Outfit',sans-serif" }} /></div></div>}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: lateCancel ? `1px solid ${C.border}` : "none" }}>
-            <div><div style={{ fontSize: 14, fontWeight: 600 }}>Late cancellation fee</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Within {lateCancelHours}h of appointment</div></div>
-            <Toggle on={lateCancel} onToggle={() => setLateCancel(p => !p)} />
-          </div>
-          {lateCancel && <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}` }}><div style={{ display: "flex", gap: 8 }}>{["12", "24", "48"].map(h => <div key={h} onClick={() => setLateCancelHours(h)} style={{ flex: 1, padding: "9px", borderRadius: 10, background: lateCancelHours === h ? C.accentSoft : C.surfaceHigh, border: `1px solid ${lateCancelHours === h ? C.accent : C.borderHigh}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: lateCancelHours === h ? C.accent : C.mid, cursor: "pointer" }}>{h}h</div>)}</div></div>}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px" }}>
-            <div><div style={{ fontSize: 14, fontWeight: 600 }}>Connected payment</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Stripe · •••• 4242</div></div>
-            <span style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>Active</span>
-          </div>
-        </Card>
-        <SectionLabel>Invoices</SectionLabel>
-        <Card>
-          {invoices.map((inv, i) => (
-            <div key={inv.id} onClick={() => setSelectedInvoice(inv)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderBottom: i < invoices.length - 1 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
-              <div style={{ width: 38, height: 38, borderRadius: 12, background: `${statusColor(inv.status)}18`, border: `1px solid ${statusColor(inv.status)}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{inv.status === "paid" ? "✓" : inv.status === "pending" ? "⏳" : "!"}</div>
-              <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600 }}>{inv.name}</div><div style={{ fontSize: 11, color: C.mid, marginTop: 2 }}>{inv.service} · {inv.date}</div></div>
-              <div style={{ textAlign: "right" }}><div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{inv.amount}</div><div style={{ fontSize: 10, color: statusColor(inv.status), marginTop: 3, fontWeight: 600, textTransform: "uppercase" }}>{inv.status}</div></div>
-            </div>
-          ))}
-        </Card>
+        ) : (
+          <><SettingsPanel /><InvoicesPanel /></>
+        )}
       </div>
       {selectedInvoice && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", maxWidth: 400, margin: "0 auto" }} onClick={() => setSelectedInvoice(null)}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setSelectedInvoice(null)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 4 }}>{selectedInvoice.name}</div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 4 }}>{selectedInvoice.client_name}</div>
             <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>{selectedInvoice.service}</div>
             <Card style={{ padding: 16, marginBottom: 16 }}>
-              {[["Amount", selectedInvoice.amount], ["Status", selectedInvoice.status], ["Date", selectedInvoice.date]].map(([k, v]) => (
-                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: k !== "Date" ? `1px solid ${C.border}` : "none" }}>
+              {[["Amount", selectedInvoice.price || "—"], ["Status", statusLabel(selectedInvoice.status)], ["Date", selectedInvoice.day || selectedInvoice.time || "—"], ["Duration", selectedInvoice.duration || "—"]].map(([k, v]) => (
+                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: k !== "Duration" ? `1px solid ${C.border}` : "none" }}>
                   <span style={{ fontSize: 13, color: C.mid }}>{k}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: k === "Amount" ? C.gold : k === "Status" ? statusColor(selectedInvoice.status) : C.text, textTransform: "capitalize" }}>{v}</span>
                 </div>
               ))}
             </Card>
-            {selectedInvoice.status !== "paid" && (
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => { setSelectedInvoice(null); }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Send Reminder</button>
-                <BtnPrimary onClick={() => { setSelectedInvoice(null); }} style={{ flex: 1, padding: 13 }}>Charge Now</BtnPrimary>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -1484,6 +1791,7 @@ function Payments({ navigate }) {
 
 // ── SETTINGS ───────────────────────────────────────────────────────────────────
 function Settings({ navigate }) {
+  const isDesktop = useDesktop();
   const [aiReplies, setAiReplies] = useState(true);
   const [aiBookings, setAiBookings] = useState(true);
   const [aiReminders, setAiReminders] = useState(true);
@@ -1528,7 +1836,8 @@ function Settings({ navigate }) {
         </div>
       </div>
       <div style={{ padding: "0 20px" }}>
-        <SectionLabel>AI Name</SectionLabel>
+        <div style={{ display: isDesktop ? "grid" : "block", gridTemplateColumns: isDesktop ? "1fr 1fr" : undefined, gap: isDesktop ? 24 : undefined, alignItems: "start" }}>
+        <div>
         <Card style={{ padding: 16, marginBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
             <div style={{ width: 44, height: 44, borderRadius: 13, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>✦</div>
@@ -1566,6 +1875,8 @@ function Settings({ navigate }) {
             {tone === "friendly" ? '"Hey girl! 💕 I have a 2pm open this Saturday, does that work?"' : tone === "professional" ? '"Good afternoon. I have availability at 2:00 PM this Saturday."' : '"Yo! Saturday at 2 works? Let me know 🔥"'}
           </div>
         </Card>
+        </div>{/* end col 1 */}
+        <div>{/* col 2 */}
         <SectionLabel>Booking Rules</SectionLabel>
         <Card style={{ marginBottom: 8 }}>
           <div style={{ padding: "14px 16px", borderBottom: `1px solid ${C.border}` }}>
@@ -1619,11 +1930,12 @@ function Settings({ navigate }) {
         <SectionLabel>Account</SectionLabel>
         <Card>
           {[
+            { icon: "✂️", label: "Services", sub: "Manage your services & prices", screen: "services" },
             { icon: "👤", label: "Business Profile", sub: "Edit your business info", screen: "profile" },
             { icon: "🔗", label: "Connected Accounts", sub: "WhatsApp, Instagram, Google", screen: "connections" },
             { icon: "💳", label: "Subscription", sub: "Pro Plan · $29/mo", screen: "subscription" },
           ].map(({ icon, label, sub, screen }, i) => (
-            <div key={i} onClick={() => navigate(screen)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 2 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
+            <div key={i} onClick={() => navigate(screen)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 3 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
               <span style={{ fontSize: 20 }}>{icon}</span>
               <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{label}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{sub}</div></div>
               <span style={{ fontSize: 12, color: C.mid }}>›</span>
@@ -1633,6 +1945,8 @@ function Settings({ navigate }) {
         <div style={{ textAlign: "center", padding: "20px 0" }}>
           <span onClick={async () => { await supabase.auth.signOut(); navigate("login"); }} style={{ fontSize: 13, color: C.red, fontWeight: 600, cursor: "pointer" }}>Sign Out</span>
         </div>
+        </div>{/* end col 2 */}
+        </div>{/* end grid */}
       </div>
     </div>
   );
@@ -1640,6 +1954,7 @@ function Settings({ navigate }) {
 
 // ── LOYALTY ────────────────────────────────────────────────────────────────────
 function Loyalty({ navigate }) {
+  const isDesktop = useDesktop();
   const [loyaltyOn, setLoyaltyOn] = useState(true);
   const [visitsForReward, setVisitsForReward] = useState("5");
   const [rewardType, setRewardType] = useState("discount");
@@ -1713,7 +2028,8 @@ function Loyalty({ navigate }) {
         </div>
       </div>
       <div style={{ padding: "0 20px" }}>
-
+        <div style={{ display: isDesktop ? "grid" : "block", gridTemplateColumns: isDesktop ? "1fr 1fr" : undefined, gap: isDesktop ? 24 : undefined, alignItems: "start" }}>
+        <div>{/* col 1: codes */}
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
           {[{ label: "Active codes", value: String(codes.filter(c => c.active).length), color: C.accent }, { label: "Times redeemed", value: String(codes.reduce((s, c) => s + (c.times_used || 0), 0)), color: C.gold }].map((s, i) => (
@@ -1829,7 +2145,8 @@ function Loyalty({ navigate }) {
             </div>
           )}
         </Card>
-
+        </div>{/* end col 1 */}
+        <div>{/* col 2: automated messages */}
         <SectionLabel>Automated Messages</SectionLabel>
         <Card style={{ marginBottom: 8 }}>
           {[["🎂","Birthday message","Sent on their birthday",birthdayOn,setBirthdayOn],["🔁","Rebook reminder","After 21 days with no appointment",rebookOn,setRebookOn],["⭐","Review request","After every completed appointment",reviewOn,setReviewOn],["💔","Win-back campaign","Re-engage clients gone 45+ days",winbackOn,setWinbackOn]].map(([icon,label,sub,val,set],i)=>(
@@ -1855,24 +2172,16 @@ function Loyalty({ navigate }) {
               : <BtnPrimary style={{ width:"100%",marginTop:10,padding:10,fontSize:13 }}>Reply with AI</BtnPrimary>}
           </Card>
         ))}
+        </div>{/* end col 2 */}
+        </div>{/* end grid */}
       </div>
       <BottomNav active="home" navigate={navigate} />
     </div>
   );
 }
-
-// ── NOTIFICATIONS ──────────────────────────────────────────────────────────────
 function Notifications({ navigate }) {
   const [filter, setFilter] = useState("all");
-  const notifs = [
-    { id: 1, type: "booking", icon: "📅", title: "New booking confirmed", body: "Kendra Blake booked Silk Press for today at 3:30 PM", time: "2 min ago", read: false, action: "View" },
-    { id: 2, type: "payment", icon: "💰", title: "Deposit received", body: "Jasmine Rivera paid $66 deposit for tomorrow's appointment", time: "15 min ago", read: false, action: "View" },
-    { id: 3, type: "ai", icon: "✦", title: "AI handled 3 messages", body: "Replied to Destiny C., brianna.hair_, and 1 other automatically", time: "1h ago", read: true, action: null },
-    { id: 4, type: "review", icon: "⭐", title: "New 5-star review", body: "Tasha Monroe left a review — AI has replied", time: "2h ago", read: true, action: "View" },
-    { id: 5, type: "alert", icon: "⚠️", title: "Kayla J. wants to reschedule", body: "She messaged on WhatsApp — needs your attention", time: "3h ago", read: false, action: "Handle" },
-    { id: 6, type: "ai", icon: "✦", title: "Slow day detected", body: "You have 2 open slots Friday. Want me to send a promo?", time: "Yesterday", read: true, action: "Send promo" },
-    { id: 7, type: "payment", icon: "💰", title: "Overdue payment", body: "Aisha Williams — $180 for Box Braids is 3 days overdue", time: "Yesterday", read: true, action: "Remind" },
-  ];
+  const notifs = [];
   const typeColor = t => ({ booking: C.accent, payment: C.gold, ai: C.blue, alert: C.red, review: C.yellow })[t] || C.mid;
   const filtered = filter === "all" ? notifs : notifs.filter(n => n.type === filter);
   const unread = notifs.filter(n => !n.read).length;
@@ -1885,29 +2194,38 @@ function Notifications({ navigate }) {
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Notifications</div>
         </div>
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
-          {["all", "booking", "payment", "ai", "alert", "review"].map(f => (
-            <div key={f} onClick={() => setFilter(f)} style={{ padding: "8px 14px", borderRadius: 100, background: filter === f ? C.accentSoft : C.surface, border: `1px solid ${filter === f ? C.accent : C.border}`, fontSize: 12, fontWeight: 600, color: filter === f ? C.accent : C.mid, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, textTransform: "capitalize" }}>{f === "all" ? `All (${notifs.length})` : f}</div>
+          {["all", "booking", "payment", "ai", "alert"].map(f => (
+            <div key={f} onClick={() => setFilter(f)} style={{ padding: "8px 14px", borderRadius: 100, background: filter === f ? C.accentSoft : C.surface, border: `1px solid ${filter === f ? C.accent : C.border}`, fontSize: 12, fontWeight: 600, color: filter === f ? C.accent : C.mid, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, textTransform: "capitalize" }}>{f === "all" ? "All" : f}</div>
           ))}
         </div>
       </div>
       <div style={{ padding: "0 20px" }}>
-        {unread > 0 && <div style={{ background: `${C.accent}12`, border: `1px solid ${C.accent}22`, borderRadius: 14, padding: "12px 16px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 13, color: C.accent, fontWeight: 600 }}>{unread} unread notifications</span><span style={{ fontSize: 12, color: C.mid, cursor: "pointer" }}>Mark all read</span></div>}
-        {filtered.map(n => (
-          <div key={n.id} style={{ background: C.surface, border: `1px solid ${n.read ? C.border : typeColor(n.type) + "33"}`, borderRadius: 16, padding: "14px 16px", marginBottom: 10, position: "relative", overflow: "hidden" }}>
-            {!n.read && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: typeColor(n.type), borderRadius: "3px 0 0 3px" }} />}
-            <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: `${typeColor(n.type)}18`, border: `1px solid ${typeColor(n.type)}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: n.type === "ai" ? 14 : 18, color: n.type === "ai" ? C.blue : "inherit", flexShrink: 0 }}>{n.icon}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <span style={{ fontSize: 14, fontWeight: n.read ? 500 : 700, flex: 1, marginRight: 8 }}>{n.title}</span>
-                  <span style={{ fontSize: 10, color: C.dim, flexShrink: 0, marginTop: 2 }}>{n.time}</span>
-                </div>
-                <div style={{ fontSize: 12, color: C.mid, lineHeight: 1.5, marginBottom: n.action ? 10 : 0 }}>{n.body}</div>
-                {n.action && <BtnPrimary style={{ padding: "7px 14px", fontSize: 12 }}>{n.action}</BtnPrimary>}
-              </div>
-            </div>
+        {filtered.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 20px" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🔔</div>
+            <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>All caught up</div>
+            <div style={{ fontSize: 13, color: C.dim }}>Notifications from bookings, payments, and your AI assistant will appear here</div>
           </div>
-        ))}
+        ) : (
+          <>
+            {unread > 0 && <div style={{ background: `${C.accent}12`, border: `1px solid ${C.accent}22`, borderRadius: 14, padding: "12px 16px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 13, color: C.accent, fontWeight: 600 }}>{unread} unread</span><span style={{ fontSize: 12, color: C.mid, cursor: "pointer" }}>Mark all read</span></div>}
+            {filtered.map(n => (
+              <div key={n.id} style={{ background: C.surface, border: `1px solid ${n.read ? C.border : typeColor(n.type) + "33"}`, borderRadius: 16, padding: "14px 16px", marginBottom: 10, position: "relative", overflow: "hidden" }}>
+                {!n.read && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: typeColor(n.type), borderRadius: "3px 0 0 3px" }} />}
+                <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: `${typeColor(n.type)}18`, border: `1px solid ${typeColor(n.type)}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{n.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, fontWeight: n.read ? 500 : 700, flex: 1, marginRight: 8 }}>{n.title}</span>
+                      <span style={{ fontSize: 10, color: C.dim, flexShrink: 0, marginTop: 2 }}>{n.time}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: C.mid, lineHeight: 1.5 }}>{n.body}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
@@ -1915,6 +2233,7 @@ function Notifications({ navigate }) {
 
 // ── ANALYTICS ──────────────────────────────────────────────────────────────────
 function Analytics({ navigate }) {
+  const isDesktop = useDesktop();
   const [period, setPeriod] = useState("week");
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2021,67 +2340,73 @@ function Analytics({ navigate }) {
                 </div>
               ))}
             </div>
-            <div style={{ background: "linear-gradient(135deg,#16103a,#1a0f3a)", border: `1px solid ${C.accentSoft}`, borderRadius: 22, padding: 22, marginBottom: 16 }}>
-              <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, letterSpacing: 1.5, marginBottom: 8 }}>TOTAL REVENUE</div>
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 48, fontWeight: 800, marginBottom: 4 }}>{displayRev}</div>
-              <div style={{ fontSize: 13, color: C.mid }}>From {confirmed.length} confirmed appointment{confirmed.length !== 1 ? "s" : ""}</div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
-              {[
-                { label: "Appointments", value: String(appts.length) },
-                { label: "Confirmed", value: String(confirmed.length) },
-                { label: "Avg per appt", value: "$" + Math.round(totalRev / Math.max(confirmed.length, 1)) },
-                { label: "Today's revenue", value: "$" + todayRev },
-              ].map((s, i) => (
-                <Card key={i} style={{ padding: "14px 16px" }}>
-                  <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>{s.label}</div>
-                  <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, color: C.accent }}>{s.value}</div>
+            <div style={{ display: isDesktop ? "grid" : "block", gridTemplateColumns: isDesktop ? "1fr 1fr" : undefined, gap: isDesktop ? 24 : undefined, alignItems: "start" }}>
+              <div>
+                <div style={{ background: "linear-gradient(135deg,#16103a,#1a0f3a)", border: `1px solid ${C.accentSoft}`, borderRadius: 22, padding: 22, marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, letterSpacing: 1.5, marginBottom: 8 }}>TOTAL REVENUE</div>
+                  <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 48, fontWeight: 800, marginBottom: 4 }}>{displayRev}</div>
+                  <div style={{ fontSize: 13, color: C.mid }}>From {confirmed.length} confirmed appointment{confirmed.length !== 1 ? "s" : ""}</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
+                  {[
+                    { label: "Appointments", value: String(appts.length) },
+                    { label: "Confirmed", value: String(confirmed.length) },
+                    { label: "Avg per appt", value: "$" + Math.round(totalRev / Math.max(confirmed.length, 1)) },
+                    { label: "Today's revenue", value: "$" + todayRev },
+                  ].map((s, i) => (
+                    <Card key={i} style={{ padding: "14px 16px" }}>
+                      <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>{s.label}</div>
+                      <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, color: C.accent }}>{s.value}</div>
+                    </Card>
+                  ))}
+                </div>
+                <SectionLabel>{barLabel}</SectionLabel>
+                <Card style={{ padding: 20, marginBottom: 24 }}>
+                  <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 100, marginBottom: 12 }}>
+                    {bars.map((b, i) => (
+                      <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%" }}>
+                        <div style={{ flex: 1, display: "flex", alignItems: "flex-end", width: "100%" }}>
+                          <div style={{ width: "100%", borderRadius: "6px 6px 0 0", background: b.revenue > 0 ? `linear-gradient(180deg,${C.accent},${C.accentDark})` : C.border, height: `${(b.revenue / maxBar) * 100}%`, minHeight: b.revenue > 0 ? 4 : 2, transition: "height 0.4s ease" }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {bars.map(b => <div key={b.day} style={{ flex: 1, textAlign: "center", fontSize: 9, color: C.dim, fontWeight: 600 }}>{b.day}</div>)}
+                  </div>
                 </Card>
-              ))}
+              </div>
+              <div>
+                <SectionLabel>Top Services</SectionLabel>
+                {topServices.length === 0 ? (
+                  <Card style={{ padding: 24, textAlign: "center", marginBottom: 24 }}>
+                    <div style={{ fontSize: 13, color: C.dim }}>No confirmed appointments yet — service breakdown will appear here.</div>
+                  </Card>
+                ) : (
+                  <Card style={{ marginBottom: 24 }}>
+                    {topServices.map((s, i) => (
+                      <div key={i} style={{ padding: "14px 16px", borderBottom: i < topServices.length - 1 ? `1px solid ${C.border}` : "none" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                          <span style={{ fontSize: 14, fontWeight: 600 }}>{s.name}</span>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>${Math.round(s.revenue)}</span>
+                        </div>
+                        <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${(s.revenue / maxSvcRev) * 100}%`, background: `linear-gradient(90deg,${C.accentDark},${C.accent})`, borderRadius: 2 }} />
+                        </div>
+                        <div style={{ fontSize: 11, color: C.dim, marginTop: 6 }}>{s.count} appointment{s.count !== 1 ? "s" : ""}</div>
+                      </div>
+                    ))}
+                  </Card>
+                )}
+                <SectionLabel>AI Insights</SectionLabel>
+                {insights.map((ins, i) => (
+                  <div key={i} style={{ background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 14, padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
+                    <span style={{ fontSize: 16, flexShrink: 0 }}>{"📅💰👥⭐".split("")[i]}</span>
+                    <span style={{ fontSize: 13, color: C.mid, lineHeight: 1.5 }}>{ins}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <SectionLabel>{barLabel}</SectionLabel>
-            <Card style={{ padding: 20, marginBottom: 24 }}>
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 100, marginBottom: 12 }}>
-                {bars.map((b, i) => (
-                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%" }}>
-                    <div style={{ flex: 1, display: "flex", alignItems: "flex-end", width: "100%" }}>
-                      <div style={{ width: "100%", borderRadius: "6px 6px 0 0", background: b.revenue > 0 ? `linear-gradient(180deg,${C.accent},${C.accentDark})` : C.border, height: `${(b.revenue / maxBar) * 100}%`, minHeight: b.revenue > 0 ? 4 : 2, transition: "height 0.4s ease" }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: "flex", gap: 4 }}>
-                {bars.map(b => <div key={b.day} style={{ flex: 1, textAlign: "center", fontSize: 9, color: C.dim, fontWeight: 600 }}>{b.day}</div>)}
-              </div>
-            </Card>
-            <SectionLabel>Top Services</SectionLabel>
-            {topServices.length === 0 ? (
-              <Card style={{ padding: 24, textAlign: "center" }}>
-                <div style={{ fontSize: 13, color: C.dim }}>No confirmed appointments yet — service breakdown will appear here.</div>
-              </Card>
-            ) : (
-              <Card style={{ marginBottom: 24 }}>
-                {topServices.map((s, i) => (
-                  <div key={i} style={{ padding: "14px 16px", borderBottom: i < topServices.length - 1 ? `1px solid ${C.border}` : "none" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                      <span style={{ fontSize: 14, fontWeight: 600 }}>{s.name}</span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>${Math.round(s.revenue)}</span>
-                    </div>
-                    <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${(s.revenue / maxSvcRev) * 100}%`, background: `linear-gradient(90deg,${C.accentDark},${C.accent})`, borderRadius: 2 }} />
-                    </div>
-                    <div style={{ fontSize: 11, color: C.dim, marginTop: 6 }}>{s.count} appointment{s.count !== 1 ? "s" : ""}</div>
-                  </div>
-                ))}
-              </Card>
-            )}
-            <SectionLabel>AI Insights</SectionLabel>
-            {insights.map((ins, i) => (
-              <div key={i} style={{ background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 14, padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{"📅💰👥⭐".split("")[i]}</span>
-                <span style={{ fontSize: 13, color: C.mid, lineHeight: 1.5 }}>{ins}</span>
-              </div>
-            ))}
           </>
         )}
       </div>
@@ -2091,6 +2416,7 @@ function Analytics({ navigate }) {
 
 // ── PROMOTIONS ─────────────────────────────────────────────────────────────────
 function Promotions({ navigate }) {
+  const isDesktop = useDesktop();
   const [creating, setCreating] = useState(false);
   const [promoTitle, setPromoTitle] = useState("");
   const [promoMsg, setPromoMsg] = useState("");
@@ -2199,19 +2525,34 @@ function Booking({ navigate }) {
   const [cardName, setCardName] = useState("");
   const [booked, setBooked] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [services, setServices] = useState([]);
+  const [bizName, setBizName] = useState("Your Business");
+  const [bizLocation, setBizLocation] = useState("");
+  const [loadingServices, setLoadingServices] = useState(true);
 
-  const services = [
-    { id: 1, name: "Knotless Braids", price: 180, duration: "4h", icon: "✨", desc: "Medium to jumbo, any length" },
-    { id: 2, name: "Box Braids", price: 160, duration: "3.5h", icon: "💫", desc: "Small, medium, or large" },
-    { id: 3, name: "Silk Press", price: 120, duration: "2h", icon: "🌟", desc: "Sleek and straight finish" },
-    { id: 4, name: "Natural Blowout", price: 85, duration: "1.5h", icon: "💨", desc: "Stretched and fluffy" },
-    { id: 5, name: "Loc Retwist", price: 95, duration: "2h", icon: "🌀", desc: "Fresh and neat locs" },
-    { id: 6, name: "Wig Install", price: 75, duration: "1h", icon: "👑", desc: "Lace front or closure" },
-  ];
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLoadingServices(false); return; }
+      const [profRes, svcRes] = await Promise.all([
+        supabase.from("business_profiles").select("biz_name,location").eq("user_id", session.user.id).single(),
+        supabase.from("services").select("*").eq("owner_id", session.user.id).eq("active", true).order("created_at", { ascending: true })
+      ]);
+      if (profRes.data) { setBizName(profRes.data.biz_name || "Your Business"); setBizLocation(profRes.data.location || ""); }
+      setServices((svcRes.data || []).map(s => ({ id: s.id, name: s.name, price: Number(s.price), duration: s.duration, icon: s.icon || "✨", desc: s.description || "" })));
+      setLoadingServices(false);
+    };
+    load();
+  }, []);
 
-  const dates = ["Fri Mar 7", "Sat Mar 8", "Mon Mar 10", "Tue Mar 11", "Wed Mar 12", "Thu Mar 13"];
+  const dates = (() => {
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const out = []; const today = new Date();
+    for (let i = 1; i <= 8; i++) { const d = new Date(today); d.setDate(today.getDate() + i); out.push(`${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}`); }
+    return out;
+  })();
   const times = ["9:00 AM", "10:30 AM", "12:00 PM", "1:30 PM", "3:00 PM", "4:30 PM", "6:00 PM"];
-
   const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
   const depositAmount = Math.round(totalPrice * 0.3);
   const depositStr = "$" + depositAmount;
@@ -2237,7 +2578,7 @@ function Booking({ navigate }) {
       <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.8, marginBottom: 16 }}>
         {selectedServices.map(s => s.name).join(" + ")}<br />
         {selectedDate} at {selectedTime}<br />
-        <span style={{ color: C.accent, fontWeight: 600 }}>Luxe Hair Studio · Atlanta, GA</span>
+        <span style={{ color: C.accent, fontWeight: 600 }}>{bizName}{bizLocation ? " · " + bizLocation : ""}</span>
       </div>
       <Card style={{ padding: 16, width: "100%", marginBottom: 24, textAlign: "left" }}>
         {[["Services", selectedServices.map(s => s.name).join(", ")], ["Deposit paid", depositStr], ["Remaining balance", "$" + (totalPrice - depositAmount) + "+"], ["Confirmation sent to", phone]].map(([k, v]) => (
@@ -2261,8 +2602,8 @@ function Booking({ navigate }) {
           </div>
         )}
         <div style={{ width: 72, height: 72, borderRadius: 22, background: "linear-gradient(135deg," + C.accentDark + "," + C.accent + ")", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 14px", boxShadow: "0 0 40px " + C.accentDark + "55" }}>✦</div>
-        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Luxe Hair Studio</div>
-        <div style={{ fontSize: 13, color: C.mid, marginTop: 5 }}>Atlanta, GA · ⭐ 4.9 · 128 reviews</div>
+        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>{bizName}</div>
+        <div style={{ fontSize: 13, color: C.mid, marginTop: 5 }}>{bizLocation || "Book an appointment"}</div>
       </div>
 
       <div style={{ display: "flex", gap: 6, padding: "0 24px 20px" }}>
@@ -2279,7 +2620,16 @@ function Booking({ navigate }) {
           <div className="fade-in">
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 4 }}>What are you coming in for?</div>
             <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>You can select multiple services</div>
-            {services.map(s => {
+            {loadingServices ? (
+              <div style={{ textAlign: "center", padding: 40, color: C.dim, fontSize: 14 }}>Loading services...</div>
+            ) : services.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px 20px" }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>✂️</div>
+                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No services yet</div>
+                <div style={{ fontSize: 13, color: C.dim, marginBottom: 20 }}>Add your services in Settings → Services first</div>
+                <BtnPrimary onClick={() => navigate("services")} style={{ padding: "10px 24px", fontSize: 13 }}>Add Services</BtnPrimary>
+              </div>
+            ) : services.map(s => {
               const selected = selectedServices.find(x => x.id === s.id);
               return (
                 <div key={s.id} onClick={() => toggleService(s)} style={{ display: "flex", alignItems: "center", gap: 14, background: selected ? C.accentSoft : C.surface, border: "1px solid " + (selected ? C.accent : C.border), borderRadius: 18, padding: "16px", marginBottom: 10, cursor: "pointer", transition: "all 0.2s" }}>
@@ -2416,6 +2766,7 @@ function Booking({ navigate }) {
 
 // ── STAFF ──────────────────────────────────────────────────────────────────────
 function Staff({ navigate }) {
+  const isDesktop = useDesktop();
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMsg, setChatMsg] = useState("");
@@ -2424,11 +2775,7 @@ function Staff({ navigate }) {
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
   const [newPhone, setNewPhone] = useState("");
-  const [staff, setStaff] = useState([
-    { id: 1, name: "Aaliyah Brooks", role: "Senior Braider", avatar: "AB", phone: "+1 (404) 555-0311", status: "active", appts: 4, revenue: "$520", rating: 4.9, services: ["Knotless Braids", "Box Braids", "Locs"] },
-    { id: 2, name: "Nia Thompson", role: "Stylist", avatar: "NT", phone: "+1 (404) 555-0344", status: "active", appts: 2, revenue: "$180", rating: 4.7, services: ["Silk Press", "Natural Blowout", "Color"] },
-    { id: 3, name: "Camille Davis", role: "Nail Tech", avatar: "CD", phone: "+1 (404) 555-0388", status: "day-off", appts: 0, revenue: "$0", rating: 4.8, services: ["Manicure", "Pedicure", "Gel Nails"] },
-  ]);
+  const [staff, setStaff] = useState([]);
 
   const statusColor = s => s === "active" ? C.green : C.yellow;
 
@@ -2540,30 +2887,72 @@ function Staff({ navigate }) {
         <div style={{ fontSize: 13, color: C.mid, marginTop: 4 }}>{staff.filter(s => s.status === "active").length} active · {staff.length} total</div>
       </div>
       <div style={{ padding: "0 20px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
-          {[{ label: "On shift", value: staff.filter(s => s.status === "active").length, color: C.green }, { label: "Total appts", value: staff.reduce((a, s) => a + s.appts, 0), color: C.accent }, { label: "Staff", value: staff.length, color: C.gold }].map((s, i) => (
-            <Card key={i} style={{ padding: "14px 10px", textAlign: "center" }}>
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800, color: s.color }}>{s.value}</div>
-              <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>{s.label}</div>
-            </Card>
-          ))}
-        </div>
-        {staff.map(s => (
-          <Card key={s.id} onClick={() => setSelectedStaff(s)} style={{ padding: 16, marginBottom: 12, display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}>
-            <div style={{ position: "relative" }}>
-              <div style={{ width: 52, height: 52, borderRadius: 16, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: C.accent }}>{s.avatar}</div>
-              <div style={{ position: "absolute", bottom: -2, right: -2, width: 14, height: 14, borderRadius: "50%", background: statusColor(s.status), border: `2px solid ${C.bg}` }} />
+        {staff.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 20px" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>👥</div>
+            <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>No staff yet</div>
+            <div style={{ fontSize: 13, color: C.dim, marginBottom: 24 }}>Add team members to manage their schedules and revenue</div>
+            <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "12px 28px" }}>+ Add First Staff Member</BtnPrimary>
+          </div>
+        ) : (
+          <div style={{ display: isDesktop ? "grid" : "block", gridTemplateColumns: isDesktop ? "1fr 1fr" : undefined, gap: isDesktop ? 24 : undefined, alignItems: "start" }}>
+            <div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+                {[{ label: "On shift", value: staff.filter(s => s.status === "active").length, color: C.green }, { label: "Total appts", value: staff.reduce((a, s) => a + s.appts, 0), color: C.accent }, { label: "Staff", value: staff.length, color: C.gold }].map((s, i) => (
+                  <Card key={i} style={{ padding: "14px 10px", textAlign: "center" }}>
+                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800, color: s.color }}>{s.value}</div>
+                    <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>{s.label}</div>
+                  </Card>
+                ))}
+              </div>
+              {staff.map(s => (
+                <Card key={s.id} onClick={() => setSelectedStaff(s)} style={{ padding: 16, marginBottom: 12, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", border: `1px solid ${selectedStaff?.id === s.id ? C.accent : C.border}` }}>
+                  <div style={{ position: "relative" }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 16, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: C.accent }}>{s.avatar}</div>
+                    <div style={{ position: "absolute", bottom: -2, right: -2, width: 14, height: 14, borderRadius: "50%", background: statusColor(s.status), border: `2px solid ${C.bg}` }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700 }}>{s.name}</div>
+                    <div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{s.role} · {s.appts} appts today</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{s.revenue}</div>
+                    <div style={{ fontSize: 11, color: C.dim, marginTop: 3 }}>{s.rating} ⭐</div>
+                  </div>
+                </Card>
+              ))}
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>{s.name}</div>
-              <div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{s.role} · {s.appts} appts today</div>
+            <div style={{ position: isDesktop ? "sticky" : undefined, top: isDesktop ? 80 : undefined }}>
+              {selectedStaff ? (
+                <Card style={{ padding: 0, overflow: "hidden" }}>
+                  <div style={{ background: "linear-gradient(180deg,#16103a,#0d0d1a)", padding: "24px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ width: 56, height: 56, borderRadius: 18, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: C.accent, flexShrink: 0 }}>{selectedStaff.avatar}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 18, fontWeight: 800 }}>{selectedStaff.name}</div>
+                      <div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{selectedStaff.role}</div>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(selectedStaff.status), background: `${statusColor(selectedStaff.status)}18`, border: `1px solid ${statusColor(selectedStaff.status)}33`, borderRadius: 100, padding: "3px 10px", textTransform: "capitalize" }}>{selectedStaff.status}</span>
+                  </div>
+                  <div style={{ padding: 16 }}>
+                    <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+                      <button onClick={() => { setStaff(p => p.map(s => s.id === selectedStaff.id ? { ...s, status: s.status === "active" ? "day-off" : "active" } : s)); setSelectedStaff(p => ({ ...p, status: p.status === "active" ? "day-off" : "active" })); }} style={{ flex: 1, padding: 11, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>
+                        {selectedStaff.status === "active" ? "Mark Day Off" : "Mark Active"}
+                      </button>
+                      <BtnPrimary onClick={() => setChatOpen(true)} style={{ flex: 1, padding: 11, fontSize: 13 }}>💬 Message</BtnPrimary>
+                    </div>
+                    <div style={{ fontSize: 12, color: C.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Contact</div>
+                    <div style={{ fontSize: 14, color: C.mid }}>{selectedStaff.phone || "No phone number"}</div>
+                  </div>
+                </Card>
+              ) : (
+                <div style={{ textAlign: "center", padding: "40px 20px", color: C.dim }}>
+                  <div style={{ fontSize: 32, marginBottom: 10 }}>👤</div>
+                  <div style={{ fontSize: 13 }}>Select a staff member</div>
+                </div>
+              )}
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{s.revenue}</div>
-              <div style={{ fontSize: 11, color: C.dim, marginTop: 3 }}>{s.rating} ⭐</div>
-            </div>
-          </Card>
-        ))}
+          </div>
+        )}
       </div>
       {showAdd && (
         <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
@@ -2577,18 +2966,15 @@ function Staff({ navigate }) {
           </div>
         </div>
       )}
+      </div>{/* end padding */}
     </div>
   );
 }
 
 // ── WAITLIST ───────────────────────────────────────────────────────────────────
 function Waitlist({ navigate }) {
-  const [waitlist, setWaitlist] = useState([
-    { id: 1, name: "Priya Patel", service: "Knotless Braids", requestedDate: "This Friday", addedTime: "2h ago", avatar: "PP", phone: "+1 (404) 555-0421", notified: false },
-    { id: 2, name: "Zoe Carter", service: "Silk Press", requestedDate: "This Weekend", addedTime: "5h ago", avatar: "ZC", phone: "+1 (404) 555-0432", notified: false },
-    { id: 3, name: "Maya Johnson", service: "Box Braids", requestedDate: "Next Week", addedTime: "Yesterday", avatar: "MJ", phone: "+1 (404) 555-0445", notified: true },
-    { id: 4, name: "Fatima Diallo", service: "Natural Blowout", requestedDate: "Flexible", addedTime: "2 days ago", avatar: "FD", phone: "+1 (404) 555-0456", notified: false },
-  ]);
+  const isDesktop = useDesktop();
+  const [waitlist, setWaitlist] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
   const [newService, setNewService] = useState("");
@@ -2652,8 +3038,8 @@ function Waitlist({ navigate }) {
       </div>
 
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", maxWidth: 400, margin: "0 auto" }} onClick={() => setShowAdd(false)}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add to Waitlist</div>
             <input placeholder="Client name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
@@ -2917,6 +3303,7 @@ function Sidebar({ active, navigate }) {
     { id: "clients", icon: "◯", label: "Clients" },
   ];
   const secondaryNav = [
+    { id: "services", icon: "✂️", label: "Services" },
     { id: "payments", icon: "💳", label: "Payments" },
     { id: "analytics", icon: "📊", label: "Analytics" },
     { id: "promotions", icon: "📣", label: "Promotions" },
@@ -3012,7 +3399,7 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
-  const screens = { login: Login, onboarding: Onboarding, home: Home, schedule: Schedule, inbox: Inbox, assistant: Assistant, clients: Clients, payments: Payments, settings: Settings, loyalty: Loyalty, notifications: Notifications, analytics: Analytics, promotions: Promotions, booking: Booking, staff: Staff, waitlist: Waitlist, profile: BusinessProfile, connections: ConnectedAccounts, subscription: Subscription, sharelink: ShareLink };
+  const screens = { login: Login, onboarding: Onboarding, home: Home, schedule: Schedule, inbox: Inbox, assistant: Assistant, clients: Clients, payments: Payments, settings: Settings, loyalty: Loyalty, notifications: Notifications, analytics: Analytics, promotions: Promotions, booking: Booking, staff: Staff, waitlist: Waitlist, profile: BusinessProfile, connections: ConnectedAccounts, subscription: Subscription, sharelink: ShareLink, services: Services };
   const Screen = screens[screen] || Home;
 
   const isAuthScreen = screen === "login" || screen === "onboarding" || screen === "booking";
