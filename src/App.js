@@ -877,11 +877,20 @@ function Assistant({ navigate }) {
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, loading]);
   useEffect(() => { voiceChatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [voiceSession, voiceLoading]);
 
+  const getAudioCtx = () => {
+    if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtxRef.current.state === "suspended") {
+      audioCtxRef.current.resume().catch(() => {});
+    }
+    return audioCtxRef.current;
+  };
+
   const stopAudio = () => {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.onended = null; audioRef.current = null; }
     cancelAnimationFrame(animFrameRef.current);
-    audioCtxRef.current?.close().catch(() => {});
-    audioCtxRef.current = null; analyserRef.current = null;
+    analyserRef.current = null;
     setSpeaking(false); setOrbScale(1);
   };
 
@@ -889,8 +898,7 @@ function Assistant({ navigate }) {
 
   const startOrbAnalyser = (audio) => {
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      audioCtxRef.current = ctx;
+      const ctx = getAudioCtx();
       const src = ctx.createMediaElementSource(audio);
       const analyser = ctx.createAnalyser(); analyser.fftSize = 64;
       src.connect(analyser); analyser.connect(ctx.destination);
@@ -907,28 +915,37 @@ function Assistant({ navigate }) {
       audio.onended = () => {
         cancelAnimationFrame(animFrameRef.current);
         setOrbScale(1); setSpeaking(false);
-        ctx.close().catch(() => {});
-        audioCtxRef.current = null; analyserRef.current = null;
+        analyserRef.current = null;
       };
     } catch { audio.onended = () => { setSpeaking(false); setOrbScale(1); }; }
   };
 
   const speakText = async (text, onDone) => {
     try {
-      const plain = text.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1");
+      const plain = text.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1").replace(/\n+/g, " ").trim();
+      const sentences = plain.match(/[^.!?]+[.!?]+/g) || [plain];
+      const short = sentences.slice(0, 2).join(" ").trim() || plain;
+      getAudioCtx();
       const audioRes = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: plain }),
+        body: JSON.stringify({ text: short }),
       });
       if (!audioRes.ok) { onDone?.(); return; }
       const blob = await audioRes.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
+      audio.preload = "auto";
       audioRef.current = audio; setSpeaking(true);
       startOrbAnalyser(audio);
-      audio.play();
-      const orig = audio.onended;
-      audio.onended = () => { orig?.call(audio); URL.revokeObjectURL(url); onDone?.(); };
+      const playPromise = audio.play();
+      if (playPromise) playPromise.catch(() => {
+        const a2 = new Audio(url);
+        a2.onended = () => { setSpeaking(false); setOrbScale(1); onDone?.(); };
+        a2.play().catch(() => {});
+        return;
+      });
+      const origEnded = audio.onended;
+      audio.onended = () => { origEnded?.call(audio); URL.revokeObjectURL(url); onDone?.(); };
     } catch { onDone?.(); }
   };
 
@@ -964,7 +981,20 @@ Examples:
     return { navigating: false, text: raw };
   };
 
+  const unlockAudio = () => {
+    // Unlock mobile audio by playing a silent buffer inside the tap event
+    try {
+      const ctx = getAudioCtx();
+      const buf = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+    } catch {}
+  };
+
   const openVoiceMode = () => {
+    unlockAudio(); // must be called synchronously inside the tap event
     stopAudio();
     setVoiceSession([]); voiceSessionRef.current = [];
     setVoiceLabel("Tap to speak"); setVoiceMode(true);
