@@ -778,245 +778,328 @@ function Inbox({ navigate }) {
 function Assistant({ navigate }) {
   const [chatInput, setChatInput] = useState("");
   const [aiName, setAiName] = useState("Aria");
+  const [bizContext, setBizContext] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingLabel, setLoadingLabel] = useState("Thinking...");
   const [speaking, setSpeaking] = useState(false);
   const [chatHistory, setChatHistory] = useState(null);
-  const [listening, setListening] = useState(false);
   const [voiceSupported] = useState(() => "webkitSpeechRecognition" in window || "SpeechRecognition" in window);
   const [voiceMode, setVoiceMode] = useState(false);
-  const [voiceSession, setVoiceSession] = useState([]); // messages captured during voice mode
+  const [voiceSession, setVoiceSession] = useState([]);
   const voiceSessionRef = useRef([]);
   const [voiceLoading, setVoiceLoading] = useState(false);
   const [voiceListening, setVoiceListening] = useState(false);
   const [voiceLabel, setVoiceLabel] = useState("Tap to speak");
   const voiceRecogRef = useRef(null);
   const chatEndRef = useRef(null);
-  const recognitionRef = useRef(null);
+  const voiceChatEndRef = useRef(null);
   const audioRef = useRef(null);
   const analyserRef = useRef(null);
   const animFrameRef = useRef(null);
+  const audioCtxRef = useRef(null);
   const [orbScale, setOrbScale] = useState(1);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  const isDesktop = useDesktop();
+  const [suggestions, setSuggestions] = useState([
+    "What's on my schedule today?",
+    "Any unread messages?",
+    "How's my revenue this week?",
+    "Draft a promo for slow days",
+    "Which service makes me the most?",
+  ]);
 
-  useEffect(() => {
-    const onResize = () => setIsDesktop(window.innerWidth >= 768);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
+  // Single load effect — no duplicates
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase.from("business_profiles").select("ai_name, biz_name").eq("user_id", session.user.id).single();
-      const name = data?.ai_name || "Aria";
-      const biz  = data?.biz_name || "your business";
+      const uid = session.user.id;
+      const [profRes, apptRes, clientRes, msgRes, svcRes] = await Promise.all([
+        supabase.from("business_profiles").select("ai_name,biz_name,location").eq("user_id", uid).single(),
+        supabase.from("appointments").select("client_name,service,time,day,status,price").eq("owner_id", uid).order("created_at", { ascending: false }).limit(30),
+        supabase.from("clients").select("name,total_visits,total_spent").eq("owner_id", uid).limit(8),
+        supabase.from("messages").select("name,platform,preview,handled").eq("owner_id", uid).eq("handled", false).limit(10),
+        supabase.from("services").select("name,price,duration").eq("owner_id", uid).eq("active", true).limit(10),
+      ]);
+      const name = profRes.data?.ai_name || "Aria";
+      const biz = profRes.data?.biz_name || "your business";
+      const loc = profRes.data?.location || "";
+      const allAppts = apptRes.data || [];
+      const todayAppts = allAppts.filter(a => a.day === "Today" || a.status === "pending");
+      const confirmedAppts = allAppts.filter(a => a.status === "confirmed");
+      const unhandled = (msgRes.data || []).length;
+      const services = (svcRes.data || []).map(s => `${s.name} ($${s.price}, ${s.duration})`).join(", ");
+      const parseP = p => parseFloat(String(p || "0").replace(/[^0-9.]/g, "")) || 0;
+      const revenue = confirmedAppts.reduce((s, a) => s + parseP(a.price), 0);
+      const ctx = [
+        `Business: ${biz}${loc ? ` in ${loc}` : ""}`,
+        services ? `Services: ${services}` : "",
+        todayAppts.length
+          ? `Today's appointments: ${todayAppts.map(a => `${a.client_name} (${a.service} at ${a.time})`).join("; ")}`
+          : "No appointments today yet.",
+        `Confirmed revenue (all time): $${revenue.toLocaleString()}`,
+        `Total appointments on record: ${allAppts.length}`,
+        unhandled ? `Unread messages needing attention: ${unhandled}` : "No unread messages.",
+        (clientRes.data || []).length ? `Top clients: ${(clientRes.data || []).map(c => c.name).join(", ")}` : "",
+      ].filter(Boolean).join("\n");
+      setBizContext(ctx);
       setAiName(name);
-      setChatHistory([{ role: "assistant", text: `Hey! I'm ${name}, your AI assistant for ${biz}. I'm here 24/7 to handle bookings, messages, and keep things running. What do you need?` }]);
+      const hour = new Date().getHours();
+      const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Hey" : "Good evening";
+      const todayLine = todayAppts.length
+        ? `You have **${todayAppts.length} appointment${todayAppts.length > 1 ? "s" : ""}** today.`
+        : "No appointments booked yet today.";
+      const msgLine = unhandled
+        ? ` There ${unhandled === 1 ? "is" : "are"} **${unhandled} unread message${unhandled > 1 ? "s" : ""}** waiting.`
+        : "";
+      setChatHistory([{
+        role: "assistant",
+        text: `${greeting}! I'm **${name}**, your AI assistant for **${biz}**. ${todayLine}${msgLine} What do you need?`,
+        time: new Date(),
+      }]);
+      // Smart contextual suggestions
+      const s = [];
+      if (todayAppts.length) s.push("Who's my next client today?");
+      if (unhandled) s.push(`Handle my ${unhandled} unread message${unhandled > 1 ? "s" : ""}`);
+      if (!s.length) s.push("What's on my schedule today?");
+      s.push("How's my revenue this week?");
+      s.push("Draft a promo message");
+      s.push("Which service makes me the most?");
+      if (revenue === 0) s.push("How do I get my first booking?");
+      setSuggestions(s.slice(0, 5));
     };
     load();
-    return () => { cancelAnimationFrame(animFrameRef.current); };
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      audioCtxRef.current?.close().catch(() => {});
+    };
   }, []);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, loading]);
+  useEffect(() => { voiceChatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [voiceSession, voiceLoading]);
+
+  const stopAudio = () => {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current.onended = null; audioRef.current = null; }
+    cancelAnimationFrame(animFrameRef.current);
+    audioCtxRef.current?.close().catch(() => {});
+    audioCtxRef.current = null; analyserRef.current = null;
+    setSpeaking(false); setOrbScale(1);
+  };
+
+  const handleChatInput = (e) => { if (speaking) stopAudio(); setChatInput(e.target.value); };
 
   const startOrbAnalyser = (audio) => {
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      audioCtxRef.current = ctx;
       const src = ctx.createMediaElementSource(audio);
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 64;
-      src.connect(analyser);
-      analyser.connect(ctx.destination);
+      const analyser = ctx.createAnalyser(); analyser.fftSize = 64;
+      src.connect(analyser); analyser.connect(ctx.destination);
       analyserRef.current = analyser;
       const data = new Uint8Array(analyser.frequencyBinCount);
       const tick = () => {
+        if (!analyserRef.current) return;
         analyser.getByteFrequencyData(data);
         const avg = data.reduce((a, b) => a + b, 0) / data.length;
-        setOrbScale(1 + avg / 255 * 0.5);
+        setOrbScale(1 + (avg / 255) * 0.6);
         animFrameRef.current = requestAnimationFrame(tick);
       };
       tick();
       audio.onended = () => {
         cancelAnimationFrame(animFrameRef.current);
-        setOrbScale(1);
-        setSpeaking(false);
-        ctx.close();
+        setOrbScale(1); setSpeaking(false);
+        ctx.close().catch(() => {});
+        audioCtxRef.current = null; analyserRef.current = null;
       };
-    } catch {
-      // fallback — just animate without analyser
-      audio.onended = () => { setSpeaking(false); setOrbScale(1); };
+    } catch { audio.onended = () => { setSpeaking(false); setOrbScale(1); }; }
+  };
+
+  const speakText = async (text, onDone) => {
+    try {
+      const plain = text.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1");
+      const audioRes = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: plain }),
+      });
+      if (!audioRes.ok) { onDone?.(); return; }
+      const blob = await audioRes.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio; setSpeaking(true);
+      startOrbAnalyser(audio);
+      audio.play();
+      const orig = audio.onended;
+      audio.onended = () => { orig?.call(audio); URL.revokeObjectURL(url); onDone?.(); };
+    } catch { onDone?.(); }
+  };
+
+  const buildSystemPrompt = (isVoice = false) => {
+    const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+    const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    return `You are ${aiName}, an AI business assistant built into Pocketflow — a beauty & personal care business app.
+Today: ${today} at ${time}.
+
+YOUR BUSINESS DATA:
+${bizContext || "No business data loaded yet."}
+
+PERSONALITY: Warm, sharp, direct. Like a smart best friend who knows this business inside out. Never robotic.
+${isVoice
+  ? "VOICE MODE: Reply in 1-2 natural sentences only. No lists, no markdown, no asterisks."
+  : "TEXT MODE: Use **bold** for key figures/names. Max 4 sentences unless detail is requested. Use line breaks between points if listing multiple things."}
+
+NAVIGATION: If user asks to open/go to/show a screen, reply with NAV:[screen] on the first line then your message. Valid screens: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings.
+
+Examples:
+- "show me my schedule" → NAV:schedule\\nOpening your schedule now!
+- "go to payments" → NAV:payments\\nHere's your payments screen.`;
+  };
+
+  const handleNavIntent = (raw) => {
+    const match = raw.match(/^NAV:(\w+)\n?/i);
+    if (match) {
+      const screen = match[1].toLowerCase();
+      const rest = raw.replace(/^NAV:\w+\n?/i, "").trim();
+      setTimeout(() => navigate(screen), 700);
+      return { navigating: true, screen, text: rest || `Opening **${screen}**...` };
     }
+    return { navigating: false, text: raw };
   };
 
   const openVoiceMode = () => {
-    setVoiceSession([]);
-    voiceSessionRef.current = [];
-    setVoiceLabel("Tap to speak");
+    stopAudio();
+    setVoiceSession([]); voiceSessionRef.current = [];
+    setVoiceLabel("Tap to speak"); setVoiceMode(true);
     setTimeout(() => startVoiceListen(), 400);
   };
 
   const closeVoiceMode = () => {
-    voiceRecogRef.current?.stop();
-    audioRef.current?.pause();
-    cancelAnimationFrame(animFrameRef.current);
-    setVoiceMode(false);
-    setVoiceListening(false);
-    setVoiceLoading(false);
-    setSpeaking(false);
-    setOrbScale(1);
-    // Merge voice session into main chat
-    if (voiceSessionRef.current.length > 0) {
-      setChatHistory(prev => [...(prev || []), ...voiceSessionRef.current]);
+    voiceRecogRef.current?.stop(); stopAudio();
+    setVoiceMode(false); setVoiceListening(false); setVoiceLoading(false); setVoiceLabel("Tap to speak");
+    const session = voiceSessionRef.current;
+    if (session.length > 0) {
+      setChatHistory(prev => [...(prev || []), ...session.map(m => ({ ...m, time: new Date() }))]);
     }
+    voiceSessionRef.current = []; setVoiceSession([]);
   };
 
   const startVoiceListen = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return;
-    const recognition = new SR();
-    recognition.lang = "en-US"; recognition.continuous = false; recognition.interimResults = false;
-    recognition.onresult = e => {
-      const text = e.results[0][0].transcript;
-      setVoiceListening(false);
-      setVoiceLabel("Thinking...");
-      handleVoiceMessage(text);
+    const r = new SR(); r.lang = "en-US"; r.continuous = false; r.interimResults = false;
+    r.onresult = e => {
+      const t = e.results[0][0].transcript;
+      setVoiceListening(false); setVoiceLabel("Thinking...");
+      handleVoiceMessage(t);
     };
-    recognition.onerror = () => { setVoiceListening(false); setVoiceLabel("Tap to speak"); };
-    recognition.onend = () => setVoiceListening(false);
-    voiceRecogRef.current = recognition;
-    recognition.start();
-    setVoiceListening(true);
-    setVoiceLabel("Listening...");
+    r.onerror = () => { setVoiceListening(false); setVoiceLabel("Tap to speak"); };
+    r.onend = () => setVoiceListening(false);
+    voiceRecogRef.current = r; r.start();
+    setVoiceListening(true); setVoiceLabel("Listening...");
   };
 
   const handleVoiceMessage = async (text) => {
     const userMsg = { role: "user", text };
-    setVoiceSession(prev => { const next = [...prev, userMsg]; voiceSessionRef.current = next; return next; });
-    setVoiceLoading(true);
-    setVoiceLabel("Thinking...");
+    const updated = [...voiceSessionRef.current, userMsg];
+    voiceSessionRef.current = updated; setVoiceSession([...updated]);
+    setVoiceLoading(true); setVoiceLabel("Thinking...");
     try {
-      const history = [...(chatHistory || []), ...voiceSessionRef.current, userMsg];
+      const history = [...(chatHistory || []), ...updated];
       const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile", max_tokens: 300,
+          model: "llama-3.3-70b-versatile", max_tokens: 120,
           messages: [
-            { role: "system", content: `You are ${aiName}, an AI business assistant for a beauty/personal care business using Pocketflow. Your name is ${aiName}. Help the owner manage appointments, clients, messages, revenue, and promotions. Be concise (1-3 sentences), casual but professional. Today: ${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}.` },
+            { role: "system", content: buildSystemPrompt(true) },
             ...history.map(m => ({ role: m.role, content: m.text }))
-          ]
-        })
+          ],
+        }),
       });
       const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || "Got it.";
+      const raw = data.choices?.[0]?.message?.content || "Got it.";
+      const { text: reply } = handleNavIntent(raw);
       const assistantMsg = { role: "assistant", text: reply };
-      setVoiceSession(prev => { const next = [...prev, assistantMsg]; voiceSessionRef.current = next; return next; });
-      setVoiceLoading(false);
-      setVoiceLabel("Speaking...");
-      // Speak reply
-      try {
-        const audioRes = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: reply })
-        });
-        if (audioRes.ok) {
-          const blob = await audioRes.blob();
-          const url = URL.createObjectURL(blob);
-          const audio = new Audio(url);
-          audioRef.current = audio;
-          setSpeaking(true);
-          startOrbAnalyser(audio);
-          audio.play();
-          audio.onended = () => {
-            URL.revokeObjectURL(url);
-            setSpeaking(false);
-            setOrbScale(1);
-            cancelAnimationFrame(animFrameRef.current);
-            setVoiceLabel("Tap to speak");
-            // Auto-listen again
-            setTimeout(() => startVoiceListen(), 500);
-          };
-        } else { setVoiceLabel("Tap to speak"); setTimeout(() => startVoiceListen(), 500); }
-      } catch { setVoiceLabel("Tap to speak"); setTimeout(() => startVoiceListen(), 500); }
+      const withReply = [...voiceSessionRef.current, assistantMsg];
+      voiceSessionRef.current = withReply; setVoiceSession([...withReply]);
+      setVoiceLoading(false); setVoiceLabel("Speaking...");
+      speakText(reply, () => {
+        setVoiceLabel("Tap to speak");
+        setTimeout(() => { if (voiceRecogRef.current !== null) startVoiceListen(); }, 600);
+      });
     } catch {
-      setVoiceSession(prev => [...prev, { role: "assistant", text: "Connection issue, try again." }]);
-      setVoiceLoading(false);
-      setVoiceLabel("Tap to speak");
+      const err = { role: "assistant", text: "Connection issue, try again." };
+      voiceSessionRef.current = [...voiceSessionRef.current, err];
+      setVoiceSession([...voiceSessionRef.current]);
+      setVoiceLoading(false); setVoiceLabel("Tap to speak");
     }
   };
 
-  const toggleVoice = () => {
-    if (listening) { recognitionRef.current?.stop(); setListening(false); return; }
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SR();
-    recognition.lang = "en-US"; recognition.continuous = false; recognition.interimResults = false;
-    recognition.onresult = e => { setChatInput(e.results[0][0].transcript); setListening(false); };
-    recognition.onerror = () => setListening(false);
-    recognition.onend = () => setListening(false);
-    recognitionRef.current = recognition;
-    recognition.start(); setListening(true);
-  };
-
-  const sendChat = async () => {
-    const text = chatInput.trim();
+  const sendChat = async (overrideText) => {
+    const text = (typeof overrideText === "string" ? overrideText : chatInput).trim();
     if (!text || loading) return;
-    setChatInput("");
-    setChatHistory(p => [...p, { role: "user", text }]);
+    stopAudio(); setChatInput("");
+    setChatHistory(p => [...(p || []), { role: "user", text, time: new Date() }]);
     setLoading(true);
+    const labels = ["Thinking...", "Checking your data...", "On it..."];
+    let li = 0; setLoadingLabel(labels[0]);
+    const iv = setInterval(() => { li = (li + 1) % labels.length; setLoadingLabel(labels[li]); }, 1800);
     try {
       const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile", max_tokens: 300,
+          model: "llama-3.3-70b-versatile", max_tokens: 400,
           messages: [
-            { role: "system", content: `You are ${aiName}, an AI business assistant for a beauty/personal care business using Pocketflow. Your name is ${aiName}. Help the owner manage appointments, clients, messages, revenue, and promotions. Be concise (2-4 sentences), casual but professional. Today: ${new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}.` },
-            ...(chatHistory||[]).map(m => ({ role: m.role, content: m.text })),
-            { role: "user", content: text }
-          ]
-        })
+            { role: "system", content: buildSystemPrompt(false) },
+            ...(chatHistory || []).map(m => ({ role: m.role, content: m.text })),
+            { role: "user", content: text },
+          ],
+        }),
       });
       const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || "On it.";
-      setChatHistory(p => [...p, { role: "assistant", text: reply }]);
-      // ElevenLabs voice + orb
-      try {
-        const audioRes = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: reply })
-        });
-        if (audioRes.ok) {
-          const blob = await audioRes.blob();
-          const url = URL.createObjectURL(blob);
-          const audio = new Audio(url);
-          audioRef.current = audio;
-          setSpeaking(true);
-          startOrbAnalyser(audio);
-          audio.play();
-          audio.onended = () => { URL.revokeObjectURL(url); setSpeaking(false); setOrbScale(1); cancelAnimationFrame(animFrameRef.current); };
-        }
-      } catch { /* voice fails silently */ }
+      const raw = data.choices?.[0]?.message?.content || "On it.";
+      const { navigating, screen, text: reply } = handleNavIntent(raw);
+      const displayText = navigating ? `Opening **${screen}**... ${reply}` : reply;
+      setChatHistory(p => [...p, { role: "assistant", text: displayText, time: new Date() }]);
+      speakText(reply, null);
     } catch {
-      setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again in a second." }]);
+      setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again in a second.", time: new Date() }]);
     }
+    clearInterval(iv);
     setLoading(false);
   };
 
-  // Orb state: idle / loading / speaking / listening
-  const orbState = listening ? "listening" : loading ? "loading" : speaking ? "speaking" : "idle";
+  // Render **bold** and line breaks
+  const renderText = (text) => {
+    if (!text) return null;
+    return text.split(/(\*\*[^*]+\*\*)/g).map((chunk, i) =>
+      chunk.startsWith("**") && chunk.endsWith("**")
+        ? <strong key={i} style={{ fontWeight: 700 }}>{chunk.slice(2, -2)}</strong>
+        : <span key={i}>{chunk.split("\n").map((line, j, arr) =>
+            j < arr.length - 1 ? <span key={j}>{line}<br /></span> : <span key={j}>{line}</span>
+          )}</span>
+    );
+  };
+
+  const formatTime = (d) => { try { return new Date(d).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
+
+  // Orb state
+  const orbState = voiceListening ? "listening" : (loading || voiceLoading) ? "loading" : speaking ? "speaking" : "idle";
   const orbColor1 = orbState === "listening" ? "#ef4444" : orbState === "loading" ? "#6366f1" : "#7c3aed";
   const orbColor2 = orbState === "listening" ? "#f97316" : orbState === "loading" ? "#a78bfa" : "#a78bfa";
   const orbColor3 = orbState === "speaking" ? "#38bdf8" : "#4f46e5";
-  const orbSize = isDesktop ? 200 : 140;
-  const orbBlobSize = isDesktop ? 140 : 100;
+  const orbSize = isDesktop ? 190 : 120;
+  const orbBlobSize = isDesktop ? 130 : 82;
+  const smoothScale = speaking ? orbScale : 1;
 
   const OrbWidget = () => (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: isDesktop ? "40px 0 32px" : "8px 0 16px" }}>
-      <div style={{ position: "relative", width: orbSize, height: orbSize, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: isDesktop ? "36px 0 28px" : "6px 0 8px" }}>
+      <div
+        onClick={() => { if (!isDesktop && voiceSupported && orbState === "idle") openVoiceMode(); }}
+        style={{ position: "relative", width: orbSize, height: orbSize, display: "flex", alignItems: "center", justifyContent: "center", cursor: !isDesktop && voiceSupported && orbState === "idle" ? "pointer" : "default" }}
+      >
         {[1.6, 1.35, 1.15].map((scale, i) => (
           <div key={i} style={{
             position: "absolute", width: orbSize, height: orbSize, borderRadius: "50%",
             background: `radial-gradient(circle, ${orbColor1}${["08","12","18"][i]}, transparent 70%)`,
-            transform: `scale(${speaking ? scale * (1 + (orbScale - 1) * (1 - i * 0.3)) : scale * (orbState === "idle" ? 1 : 1.05)})`,
+            transform: `scale(${scale * smoothScale})`,
             transition: speaking ? "none" : "transform 0.3s ease",
             animation: orbState !== "idle" ? `orbPulse ${1.5 + i * 0.4}s ease-in-out infinite` : "none",
             animationDelay: `${i * 0.2}s`,
@@ -1028,39 +1111,38 @@ function Assistant({ navigate }) {
           borderRadius: "60% 40% 30% 70%/60% 30% 70% 40%",
           boxShadow: `0 0 ${speaking ? 40 : 20}px ${orbColor1}66, 0 0 ${speaking ? 80 : 40}px ${orbColor1}33, inset 0 0 30px rgba(255,255,255,0.1)`,
           animation: `blobMorph ${orbState === "speaking" ? 1.2 : orbState === "loading" ? 1.8 : 4}s ease-in-out infinite`,
-          transform: `scale(${orbScale})`,
-          transition: "transform 0.05s linear, box-shadow 0.3s ease, background 0.4s ease",
+          transform: `scale(${smoothScale})`, transition: speaking ? "transform 0.08s linear" : "transform 0.3s ease, box-shadow 0.3s, background 0.4s",
           position: "relative", zIndex: 2,
         }}>
           <div style={{ position: "absolute", inset: 0, borderRadius: "inherit", background: "radial-gradient(circle at 30% 25%, rgba(255,255,255,0.35), transparent 60%)", animation: `orbSpinRev ${orbState === "speaking" ? 2 : 6}s linear infinite` }} />
         </div>
-        <div style={{ position: "absolute", width: orbSize - 10, height: orbSize - 10, borderRadius: "50%", border: `1px dashed ${orbColor1}33`, animation: `orbSpin ${orbState === "speaking" ? 2 : 8}s linear infinite` }}>
+        <div style={{ position: "absolute", width: orbSize - 8, height: orbSize - 8, borderRadius: "50%", border: `1px dashed ${orbColor1}33`, animation: `orbSpin ${orbState === "speaking" ? 2 : 8}s linear infinite` }}>
           {[0, 120, 240].map((deg, i) => (
-            <div key={i} style={{ position: "absolute", width: 6, height: 6, borderRadius: "50%", background: orbColor2, opacity: 0.8, top: "50%", left: "50%", transform: `rotate(${deg}deg) translateX(${orbSize/2 - 7}px) translateY(-50%)`, boxShadow: `0 0 6px ${orbColor2}` }} />
+            <div key={i} style={{ position: "absolute", width: 5, height: 5, borderRadius: "50%", background: orbColor2, opacity: 0.7, top: "50%", left: "50%", transform: `rotate(${deg}deg) translateX(${orbSize / 2 - 6}px) translateY(-50%)`, boxShadow: `0 0 5px ${orbColor2}` }} />
           ))}
         </div>
       </div>
-      <div style={{ fontSize: 12, fontWeight: 600, color: orbState === "listening" ? C.red : orbState === "speaking" ? C.accent : C.dim, marginTop: 10, letterSpacing: 1, textTransform: "uppercase", transition: "color 0.3s" }}>
-        {orbState === "listening" ? "Listening..." : orbState === "loading" ? "Thinking..." : orbState === "speaking" ? "Speaking" : aiName}
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: orbState === "listening" ? "#ef4444" : orbState === "speaking" ? C.accent : C.dim, marginTop: 10, transition: "color 0.3s" }}>
+        {orbState === "listening" ? "Listening..." : orbState === "loading" ? loadingLabel : orbState === "speaking" ? "Speaking..." : aiName}
       </div>
-      {isDesktop && (
-        <div style={{ marginTop: 6, fontSize: 12, color: C.dim, textAlign: "center", maxWidth: 200 }}>
-          Your AI business assistant, online 24/7
-        </div>
+      {isDesktop && <div style={{ fontSize: 11, color: C.dim, marginTop: 3, textAlign: "center" }}>AI assistant · online 24/7</div>}
+      {!isDesktop && voiceSupported && orbState === "idle" && (
+        <div style={{ fontSize: 11, color: C.dim, marginTop: 4 }}>Tap orb for voice</div>
       )}
       {isDesktop && voiceSupported && (
-        <div onClick={openVoiceMode} style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 100, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff", boxShadow: `0 4px 20px ${C.accent}44` }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-          Start Voice Chat
+        <div onClick={openVoiceMode} style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 8, padding: "9px 20px", borderRadius: 100, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff", boxShadow: `0 4px 18px ${C.accent}44` }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          Voice Chat
         </div>
       )}
       {isDesktop && (
-        <div style={{ marginTop: 28, width: "100%", padding: "0 12px" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Quick actions</div>
-          {["Who's next?", "Urgent messages?", "This week's revenue", "Send a promo", "Block Sunday"].map(c => (
-            <div key={c} onClick={() => setChatInput(c)} style={{ padding: "10px 14px", borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", marginBottom: 8, transition: "background 0.2s" }}
-              onMouseEnter={e => e.currentTarget.style.background = C.border}
-              onMouseLeave={e => e.currentTarget.style.background = C.surface}
+        <div style={{ marginTop: 24, width: "100%", padding: "0 16px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: C.dim, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Quick Actions</div>
+          {suggestions.map(c => (
+            <div key={c} onClick={() => sendChat(c)}
+              style={{ padding: "9px 14px", borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontSize: 13, color: C.mid, cursor: "pointer", marginBottom: 7, transition: "all 0.15s", fontWeight: 500, lineHeight: 1.4 }}
+              onMouseEnter={e => { e.currentTarget.style.background = C.surfaceHigh; e.currentTarget.style.color = C.text; e.currentTarget.style.borderColor = C.accent + "55"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.mid; e.currentTarget.style.borderColor = C.border; }}
             >{c}</div>
           ))}
         </div>
@@ -1071,96 +1153,128 @@ function Assistant({ navigate }) {
   const ChatArea = () => (
     <>
       {!isDesktop && (
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "0 20px 12px", flexShrink: 0 }}>
-          {["Who's next?", "Urgent messages?", "This week's revenue", "Send a promo", "Block Sunday"].map(c => (
-            <div key={c} onClick={() => setChatInput(c)} style={{ padding: "7px 14px", borderRadius: 100, background: C.surface, border: `1px solid ${C.border}`, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>{c}</div>
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "0 16px 10px", flexShrink: 0 }}>
+          {suggestions.map(c => (
+            <div key={c} onClick={() => sendChat(c)}
+              style={{ padding: "6px 14px", borderRadius: 100, background: C.surface, border: `1px solid ${C.border}`, fontSize: 11, fontWeight: 600, color: C.mid, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>{c}</div>
           ))}
         </div>
       )}
-      <div style={{ flex: 1, overflowY: "auto", padding: isDesktop ? "20px 24px" : "0 20px 20px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: isDesktop ? "20px 28px" : "0 16px 12px" }}>
         {chatHistory === null ? (
           <div style={{ textAlign: "center", padding: 40, color: C.dim, fontSize: 13 }}>Loading {aiName}...</div>
         ) : chatHistory.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 12, alignItems: "flex-start" }}>
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 16, alignItems: "flex-end", gap: 8 }}>
             {m.role === "assistant" && (
-              <div style={{ width: 28, height: 28, borderRadius: 9, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, marginRight: 10, flexShrink: 0, marginTop: 2 }}>✦</div>
+              <div style={{ width: 28, height: 28, borderRadius: 9, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>✦</div>
             )}
-            <div style={{ maxWidth: isDesktop ? "70%" : "78%", padding: "11px 15px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surface, border: m.role === "user" ? "none" : `1px solid ${C.border}`, fontSize: 14, lineHeight: 1.6, color: m.role === "user" ? "#fff" : C.text }}>{m.text}</div>
+            <div style={{ maxWidth: isDesktop ? "68%" : "80%" }}>
+              <div style={{ padding: "11px 15px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surface, border: m.role === "user" ? "none" : `1px solid ${C.border}`, fontSize: 14, lineHeight: 1.65, color: m.role === "user" ? "#fff" : C.text }}>
+                {renderText(m.text)}
+              </div>
+              {m.time && <div style={{ fontSize: 10, color: C.dim, marginTop: 3, textAlign: m.role === "user" ? "right" : "left", paddingLeft: 3, paddingRight: 3 }}>{formatTime(m.time)}</div>}
+            </div>
           </div>
         ))}
         {loading && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 9, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>✦</div>
-            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "18px 18px 18px 4px", padding: "12px 16px", display: "flex", gap: 5 }}>
-              {[0,1,2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: C.accent, animation: "pulse 1.2s infinite", animationDelay: `${d*0.2}s` }} />)}
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, marginBottom: 16 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 9, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>✦</div>
+            <div>
+              <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "18px 18px 18px 4px", padding: "13px 16px", display: "flex", gap: 5, alignItems: "center" }}>
+                {[0,1,2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: C.accent, animation: "pulse 1.2s infinite", animationDelay: `${d * 0.2}s` }} />)}
+              </div>
+              <div style={{ fontSize: 10, color: C.dim, marginTop: 3, paddingLeft: 4 }}>{loadingLabel}</div>
             </div>
           </div>
         )}
         <div ref={chatEndRef} />
       </div>
-      <div style={{ padding: isDesktop ? "16px 24px 24px" : "12px 20px 32px", background: C.bg, borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
-        <div style={{ display: "flex", gap: 8, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "6px 6px 6px 16px", alignItems: "center" }}>
-          <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendChat()} placeholder={`Ask ${aiName} anything...`} style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", outline: "none" }} />
+      <div style={{ padding: isDesktop ? "12px 28px 24px" : "10px 16px 28px", background: C.bg, borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
+        {speaking && (
+          <div onClick={stopAudio} style={{ textAlign: "center", marginBottom: 8, fontSize: 12, color: C.accent, cursor: "pointer", fontWeight: 600 }}>
+            ⏹ Tap to stop speaking
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8, background: C.surface, border: `1px solid ${speaking ? C.accent : C.border}`, borderRadius: 16, padding: "6px 6px 6px 16px", alignItems: "center", transition: "border-color 0.2s", boxShadow: speaking ? `0 0 0 2px ${C.accent}22` : "none" }}>
+          <input
+            value={chatInput} onChange={handleChatInput} onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendChat()}
+            placeholder={speaking ? `${aiName} is speaking — type to interrupt...` : `Ask ${aiName} anything...`}
+            style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", outline: "none" }}
+          />
           {voiceSupported && !isDesktop && (
-            <div onClick={openVoiceMode} style={{ width: 38, height: 38, borderRadius: 11, background: C.border, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            <div onClick={openVoiceMode} style={{ width: 36, height: 36, borderRadius: 10, background: C.surfaceHigh, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
             </div>
           )}
-          <BtnPrimary onClick={sendChat} disabled={loading || !chatInput.trim()} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 11, flexShrink: 0, padding: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <BtnPrimary onClick={() => sendChat()} disabled={loading || !chatInput.trim()} style={{ width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 11, flexShrink: 0, padding: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </BtnPrimary>
+        </div>
+        <div style={{ textAlign: "center", marginTop: 7, fontSize: 10, color: C.dim }}>
+          Try: "open schedule" · "draft a promo" · "who's my top client?"
         </div>
       </div>
     </>
   );
 
   const VoiceOverlay = voiceMode ? (
-    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#0a0a0f", display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <div style={{ width: "100%", maxWidth: 680, padding: "52px 28px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#07070f", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ width: "100%", maxWidth: 680, padding: "52px 28px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
         <div>
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: "#fff" }}>{aiName}</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>Voice conversation</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>Voice conversation</div>
         </div>
-        <div onClick={closeVoiceMode} style={{ padding: "9px 22px", borderRadius: 100, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)", fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", letterSpacing: 0.3 }}>
-          End & Save to Chat
+        <div onClick={closeVoiceMode} style={{ padding: "9px 22px", borderRadius: 100, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>
+          End & Save
         </div>
       </div>
-      <div style={{ flex: 1, width: "100%", maxWidth: 680, overflowY: "auto", padding: "0 28px" }}>
+      <div style={{ flex: 1, width: "100%", maxWidth: 680, overflowY: "auto", padding: "0 28px 12px" }}>
         {voiceSession.length === 0 && (
-          <div style={{ textAlign: "center", color: "rgba(255,255,255,0.25)", fontSize: 14, marginTop: 60 }}>Start talking — your conversation appears here in real time</div>
+          <div style={{ textAlign: "center", marginTop: 60, color: "rgba(255,255,255,0.2)", fontSize: 14, lineHeight: 2 }}>
+            Tap the orb to start talking<br/>
+            <span style={{ fontSize: 12 }}>Conversation saves to chat when you end</span>
+          </div>
         )}
         {voiceSession.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 12, alignItems: "flex-start" }}>
-            {m.role === "assistant" && (
-              <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, marginRight: 10, flexShrink: 0, marginTop: 2 }}>✦</div>
-            )}
-            <div style={{ maxWidth: "76%", padding: "11px 15px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "rgba(255,255,255,0.07)", border: m.role === "user" ? "none" : "1px solid rgba(255,255,255,0.1)", fontSize: 14, lineHeight: 1.6, color: "#fff" }}>{m.text}</div>
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 12, alignItems: "flex-end", gap: 8 }}>
+            {m.role === "assistant" && <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>✦</div>}
+            <div style={{ maxWidth: "76%", padding: "10px 14px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "rgba(255,255,255,0.07)", border: m.role === "user" ? "none" : "1px solid rgba(255,255,255,0.1)", fontSize: 14, lineHeight: 1.6, color: "#fff" }}>{m.text}</div>
           </div>
         ))}
         {voiceLoading && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
             <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>✦</div>
             <div style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "18px 18px 18px 4px", padding: "12px 16px", display: "flex", gap: 5 }}>
-              {[0,1,2].map(d => <div key={d} style={{ width: 5, height: 5, borderRadius: "50%", background: C.accent, animation: "pulse 1.2s infinite", animationDelay: `${d*0.2}s` }} />)}
+              {[0,1,2].map(d => <div key={d} style={{ width: 5, height: 5, borderRadius: "50%", background: C.accent, animation: "pulse 1.2s infinite", animationDelay: `${d * 0.2}s` }} />)}
             </div>
           </div>
         )}
+        <div ref={voiceChatEndRef} />
       </div>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: 56, paddingTop: 16 }}>
-        <div onClick={() => { if (!voiceListening && !voiceLoading && !speaking) startVoiceListen(); }} style={{ position: "relative", width: 160, height: 160, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: 52, paddingTop: 8, flexShrink: 0 }}>
+        <div
+          onClick={() => { if (!voiceListening && !voiceLoading && !speaking) startVoiceListen(); }}
+          style={{ position: "relative", width: 160, height: 160, display: "flex", alignItems: "center", justifyContent: "center", cursor: voiceListening || voiceLoading || speaking ? "default" : "pointer" }}
+        >
           {[1.7, 1.4, 1.18].map((scale, i) => {
             const c1 = voiceListening ? "#ef4444" : voiceLoading ? "#6366f1" : speaking ? "#7c3aed" : "#6366f1";
-            return <div key={i} style={{ position: "absolute", width: 160, height: 160, borderRadius: "50%", background: `radial-gradient(circle, ${c1}${["08","12","18"][i]}, transparent 70%)`, transform: `scale(${scale * (voiceListening || speaking ? 1 + (orbScale-1)*(1-i*0.3) : 1)})`, animation: (voiceListening || voiceLoading || speaking) ? `orbPulse ${1.5+i*0.4}s ease-in-out infinite` : "none", animationDelay: `${i*0.2}s` }} />;
+            return <div key={i} style={{ position: "absolute", width: 160, height: 160, borderRadius: "50%", background: `radial-gradient(circle, ${c1}${["08","12","18"][i]}, transparent 70%)`, transform: `scale(${scale * (speaking ? smoothScale : 1)})`, transition: speaking ? "none" : "transform 0.3s", animation: (voiceListening || voiceLoading || speaking) ? `orbPulse ${1.5+i*0.4}s ease-in-out infinite` : "none", animationDelay: `${i * 0.2}s` }} />;
           })}
-          <div style={{ width: 110, height: 110, borderRadius: "60% 40% 30% 70%/60% 30% 70% 40%", background: voiceListening ? "radial-gradient(circle at 35% 35%,#f97316,#ef4444 50%,#dc2626)" : voiceLoading ? "radial-gradient(circle at 35% 35%,#a78bfa,#6366f1 50%,#4f46e5)" : speaking ? "radial-gradient(circle at 35% 35%,#a78bfa,#7c3aed 50%,#4f46e5)" : "radial-gradient(circle at 35% 35%,#818cf8,#6366f1 50%,#4338ca)", boxShadow: `0 0 ${speaking ? 50 : 25}px ${voiceListening?"#ef444466":"#7c3aed66"},0 0 ${speaking?100:50}px ${voiceListening?"#ef444422":"#7c3aed22"},inset 0 0 30px rgba(255,255,255,0.1)`, animation: `blobMorph ${speaking?1.2:voiceLoading?1.8:4}s ease-in-out infinite`, transform: `scale(${orbScale})`, transition: "transform 0.05s linear,box-shadow 0.3s,background 0.4s", position: "relative", zIndex: 2 }}>
+          <div style={{ width: 110, height: 110, borderRadius: "60% 40% 30% 70%/60% 30% 70% 40%",
+            background: voiceListening ? "radial-gradient(circle at 35% 35%,#f97316,#ef4444 50%,#dc2626)" : voiceLoading ? "radial-gradient(circle at 35% 35%,#a78bfa,#6366f1 50%,#4f46e5)" : speaking ? "radial-gradient(circle at 35% 35%,#a78bfa,#7c3aed 50%,#4f46e5)" : "radial-gradient(circle at 35% 35%,#818cf8,#6366f1 50%,#4338ca)",
+            boxShadow: `0 0 ${speaking ? 50 : 25}px ${voiceListening?"#ef444466":"#7c3aed66"},0 0 ${speaking?100:50}px ${voiceListening?"#ef444422":"#7c3aed22"},inset 0 0 30px rgba(255,255,255,0.1)`,
+            animation: `blobMorph ${speaking?1.2:voiceLoading?1.8:4}s ease-in-out infinite`,
+            transform: `scale(${speaking ? smoothScale : 1})`,
+            transition: speaking ? "transform 0.08s linear" : "transform 0.3s, box-shadow 0.3s, background 0.4s",
+            position: "relative", zIndex: 2 }}>
             <div style={{ position: "absolute", inset: 0, borderRadius: "inherit", background: "radial-gradient(circle at 30% 25%,rgba(255,255,255,0.35),transparent 60%)", animation: `orbSpinRev ${speaking?2:6}s linear infinite` }} />
           </div>
         </div>
-        <div style={{ marginTop: 14, fontSize: 13, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: voiceListening ? "#ef4444" : speaking ? C.accent : "rgba(255,255,255,0.45)" }}>
+        <div style={{ marginTop: 14, fontSize: 13, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: voiceListening ? "#ef4444" : speaking ? C.accent : "rgba(255,255,255,0.4)" }}>
           {voiceLabel}
         </div>
-        <div style={{ marginTop: 5, fontSize: 12, color: "rgba(255,255,255,0.2)" }}>
-          {voiceSession.length > 0 ? `${Math.ceil(voiceSession.length/2)} exchange${voiceSession.length>2?"s":""} · tap End & Save to save to chat` : "Tap End & Save when done"}
+        <div style={{ marginTop: 5, fontSize: 11, color: "rgba(255,255,255,0.18)", textAlign: "center" }}>
+          {voiceSession.length > 0 ? `${Math.ceil(voiceSession.length / 2)} exchange${voiceSession.length > 2 ? "s" : ""} · tap End & Save when done` : "Tap the orb to start speaking"}
         </div>
       </div>
     </div>
@@ -1170,20 +1284,22 @@ function Assistant({ navigate }) {
     return (
       <>
       <div style={{ display: "flex", height: "100vh", background: C.bg, overflow: "hidden" }}>
-        {/* Left panel — orb + controls */}
-        <div style={{ width: 280, flexShrink: 0, borderRight: `1px solid ${C.border}`, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-          <div style={{ padding: "32px 20px 12px", borderBottom: `1px solid ${C.border}` }}>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>{aiName}</div>
-            <div style={{ fontSize: 11, color: C.accent, fontWeight: 600, marginTop: 4 }}>● Online</div>
+        <div style={{ width: 272, flexShrink: 0, borderRight: `1px solid ${C.border}`, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+          <div style={{ padding: "32px 20px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800 }}>{aiName}</div>
+              <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 3 }}>● Online</div>
+            </div>
+            {chatHistory && chatHistory.length > 1 && (
+              <div onClick={() => setChatHistory(h => [h[0]])} title="Clear chat" style={{ width: 32, height: 32, borderRadius: 9, background: C.surfaceHigh, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, flexShrink: 0 }}>🗑</div>
+            )}
           </div>
           <OrbWidget />
         </div>
-
-        {/* Right panel — chat */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <div style={{ padding: "24px 28px 16px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+          <div style={{ padding: "20px 28px 14px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
             <div style={{ fontSize: 15, fontWeight: 700 }}>Chat with {aiName}</div>
-            <div style={{ fontSize: 12, color: C.dim, marginTop: 2 }}>Your AI business assistant — ask anything about your business</div>
+            <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>Ask anything · say "open schedule" to navigate · drafts · analytics</div>
           </div>
           <ChatArea />
         </div>
@@ -1196,10 +1312,14 @@ function Assistant({ navigate }) {
   return (
     <>
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: C.bg }}>
-      {/* Mobile Header */}
-      <div style={{ padding: "52px 20px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800 }}>{aiName}</div>
-        <div style={{ fontSize: 11, color: C.accent, fontWeight: 600 }}>● Online</div>
+      <div style={{ padding: "52px 20px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800 }}>{aiName}</div>
+          <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>● Online</div>
+        </div>
+        {chatHistory && chatHistory.length > 1 && (
+          <div onClick={() => setChatHistory(h => [h[0]])} style={{ width: 34, height: 34, borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>🗑</div>
+        )}
       </div>
       <OrbWidget />
       <ChatArea />
@@ -1209,6 +1329,8 @@ function Assistant({ navigate }) {
     </>
   );
 }
+
+
 
 // ── NOTE TAB (stateful sub-component for client notes) ─────────────────────────
 function NoteTab({ client, onNoteUpdate }) {
