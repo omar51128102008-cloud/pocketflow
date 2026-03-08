@@ -2966,7 +2966,6 @@ function Staff({ navigate }) {
           </div>
         </div>
       )}
-      </div>{/* end padding */}
     </div>
   );
 }
