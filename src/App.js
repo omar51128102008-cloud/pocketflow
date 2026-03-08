@@ -3324,13 +3324,115 @@ function ConnectedAccounts({ navigate }) {
 
 // ── SUBSCRIPTION ───────────────────────────────────────────────────────────────
 function Subscription({ navigate }) {
+  const PUBLISHABLE_KEY = "pk_test_51T8qBCRxHDrhPBhiYgQ6PWQICHiPKEVfvtss5dgPHr8KXAfgyJcqvuA1BkVbqYoT2I1qSm4wbJnffFdOMnEXhFnz00pAOhvMxG";
+  const [plan, setPlan] = useState(null); // null = loading
+  const [subInfo, setSubInfo] = useState(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+
   const plans = [
-    { name: "Starter", price: "$0", period: "/mo", features: ["Up to 20 clients", "Basic AI replies", "1 staff member"], current: false },
-    { name: "Pro", price: "$29", period: "/mo", features: ["Unlimited clients", "Full AI automation", "Up to 5 staff", "Analytics & reports", "Loyalty program", "Priority support"], current: true },
-    { name: "Agency", price: "$79", period: "/mo", features: ["Everything in Pro", "Up to 20 staff", "Multi-location", "White-label booking page", "Dedicated account manager"], current: false },
+    {
+      id: "starter", name: "Starter", price: 19, period: "/mo",
+      priceId: "price_1T8qP5RxHDrhPBhiNqLYFViQ",
+      features: ["Up to 50 clients", "AI chat assistant", "Basic scheduling", "Public booking page", "1 staff member"],
+      color: C.accent,
+    },
+    {
+      id: "pro", name: "Pro", price: 39, period: "/mo",
+      priceId: "price_1T8qPURxHDrhPBhifZ5MlxTH",
+      features: ["Unlimited clients", "Voice AI assistant", "Full analytics", "Loyalty & promotions", "Up to 10 staff", "Priority support", "Google Calendar sync", "ManyChat integration"],
+      color: "#f59e0b",
+      badge: "Most Popular",
+    },
   ];
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      try {
+        const res = await fetch("https://pocketflow-proxy-production.up.railway.app/subscription-status", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: session.user.id, email: session.user.email }),
+        });
+        const data = await res.json();
+        setPlan(data.plan || "free");
+        setSubInfo(data);
+      } catch {
+        setPlan("free");
+      }
+    };
+    load();
+  }, []);
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const startCheckout = async (p) => {
+    setCheckoutLoading(p.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/create-checkout", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: p.id,
+          price_id: p.priceId,
+          user_id: session.user.id,
+          email: session.user.email,
+          success_url: window.location.origin + "/pocketflow?checkout=success",
+          cancel_url: window.location.origin + "/pocketflow?checkout=cancel",
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        showToast("Could not start checkout. Try again.", "error");
+      }
+    } catch {
+      showToast("Connection error. Try again.", "error");
+    }
+    setCheckoutLoading(null);
+  };
+
+  const cancelSubscription = async () => {
+    if (!window.confirm("Cancel your subscription? You'll keep access until the end of the billing period.")) return;
+    setCancelLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/cancel-subscription", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: session.user.id, email: session.user.email }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast("Subscription cancelled. Access continues until billing period ends.");
+        setSubInfo(prev => ({ ...prev, cancel_at_period_end: true }));
+      } else {
+        showToast("Could not cancel. Contact support.", "error");
+      }
+    } catch {
+      showToast("Connection error.", "error");
+    }
+    setCancelLoading(false);
+  };
+
+  const currentPlan = plans.find(p => p.id === plan);
+  const isActive = plan && plan !== "free";
+  const renewDate = subInfo?.current_period_end
+    ? new Date(subInfo.current_period_end * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : null;
+
   return (
-    <div style={{ paddingBottom: 80 }}>
+    <div style={{ paddingBottom: 100 }}>
+      {toast && (
+        <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 999, background: toast.type === "error" ? C.red : C.green, color: "#fff", padding: "12px 24px", borderRadius: 12, fontSize: 13, fontWeight: 600, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", whiteSpace: "nowrap" }}>
+          {toast.msg}
+        </div>
+      )}
       <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BackBtn onBack={() => navigate("settings")} />
@@ -3338,29 +3440,134 @@ function Subscription({ navigate }) {
         </div>
       </div>
       <div style={{ padding: "0 20px" }}>
-        <Card style={{ padding: 18, marginBottom: 20, background: "linear-gradient(135deg,#16103a,#1a0f3a)", border: `1px solid ${C.accent}33` }}>
-          <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, letterSpacing: 1.5, marginBottom: 6 }}>CURRENT PLAN</div>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800, marginBottom: 4 }}>Pro Plan</div>
-          <div style={{ fontSize: 13, color: C.mid }}>Renews April 7, 2026 · $29/mo</div>
-          <div style={{ marginTop: 14 }}><div style={{ background: C.green + "18", border: `1px solid ${C.green}33`, borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: C.green, display: "inline-block" }}>Active ✓</div></div>
-        </Card>
-        <SectionLabel>All Plans</SectionLabel>
-        {plans.map((plan, i) => (
-          <Card key={i} style={{ padding: 18, marginBottom: 12, border: plan.current ? `1px solid ${C.accent}55` : `1px solid ${C.border}`, background: plan.current ? C.accentSoft : C.surface }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-              <div><div style={{ fontSize: 16, fontWeight: 700, color: plan.current ? C.accent : C.text }}>{plan.name}</div>{plan.current && <div style={{ fontSize: 11, color: C.accent, fontWeight: 600, marginTop: 2 }}>Your current plan</div>}</div>
-              <div style={{ textAlign: "right" }}><span style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800, color: plan.current ? C.accent : C.text }}>{plan.price}</span><span style={{ fontSize: 12, color: C.mid }}>{plan.period}</span></div>
-            </div>
-            {plan.features.map((f, j) => (<div key={j} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}><span style={{ color: C.green, fontSize: 12 }}>✓</span><span style={{ fontSize: 13, color: C.mid }}>{f}</span></div>))}
-            {!plan.current && <BtnPrimary onClick={() => {}} style={{ width: "100%", padding: 12, marginTop: 14, fontSize: 13 }}>{plan.name === "Starter" ? "Downgrade" : "Upgrade to " + plan.name}</BtnPrimary>}
+        {/* Current plan banner */}
+        {plan === null ? (
+          <Card style={{ padding: 20, marginBottom: 20, textAlign: "center" }}>
+            <div style={{ color: C.dim, fontSize: 13 }}>Loading plan info...</div>
           </Card>
-        ))}
-        <div style={{ textAlign: "center", padding: "8px 0 16px" }}><span style={{ fontSize: 13, color: C.red, cursor: "pointer", fontWeight: 600 }}>Cancel subscription</span></div>
+        ) : isActive ? (
+          <Card style={{ padding: 18, marginBottom: 20, background: "linear-gradient(135deg,#16103a,#1a0f3a)", border: `1px solid ${C.accent}33` }}>
+            <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, letterSpacing: 1.5, marginBottom: 6 }}>CURRENT PLAN</div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800, marginBottom: 4 }}>{currentPlan?.name || plan} Plan</div>
+            {renewDate && (
+              <div style={{ fontSize: 13, color: C.mid }}>
+                {subInfo?.cancel_at_period_end ? `Access until ${renewDate}` : `Renews ${renewDate} · $${currentPlan?.price}/mo`}
+              </div>
+            )}
+            <div style={{ marginTop: 14 }}>
+              <div style={{ background: C.green + "18", border: `1px solid ${C.green}33`, borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: C.green, display: "inline-block" }}>
+                {subInfo?.cancel_at_period_end ? "Cancels at period end" : "Active ✓"}
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <Card style={{ padding: 18, marginBottom: 20, border: `1px solid ${C.yellow}33`, background: "#1a1500" }}>
+            <div style={{ fontSize: 11, color: C.yellow, fontWeight: 700, letterSpacing: 1.5, marginBottom: 6 }}>FREE TRIAL</div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 800, marginBottom: 4 }}>No active plan</div>
+            <div style={{ fontSize: 13, color: C.mid }}>Choose a plan below to unlock all features</div>
+          </Card>
+        )}
+
+        {/* Trial banner */}
+        {!isActive && (
+          <div style={{ background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, borderRadius: 16, padding: "16px 20px", marginBottom: 20, display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ fontSize: 32 }}>🎁</div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>14-day free trial</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>No credit card required to start. Cancel anytime.</div>
+            </div>
+          </div>
+        )}
+
+        <SectionLabel>Plans</SectionLabel>
+        {plans.map((p) => {
+          const isCurrent = plan === p.id;
+          return (
+            <Card key={p.id} style={{ padding: 20, marginBottom: 14, border: isCurrent ? `1px solid ${p.color}66` : `1px solid ${C.border}`, background: isCurrent ? p.color + "10" : C.surface, position: "relative", overflow: "hidden" }}>
+              {p.badge && !isCurrent && (
+                <div style={{ position: "absolute", top: 14, right: 14, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, color: "#fff", fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 100, letterSpacing: 0.5 }}>{p.badge}</div>
+              )}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: isCurrent ? p.color : C.text }}>{p.name}</div>
+                  {isCurrent && <div style={{ fontSize: 11, color: p.color, fontWeight: 600, marginTop: 2 }}>Your current plan</div>}
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 800, color: isCurrent ? p.color : C.text }}>${p.price}</span>
+                  <span style={{ fontSize: 12, color: C.mid }}>{p.period}</span>
+                </div>
+              </div>
+              {p.features.map((f, j) => (
+                <div key={j} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+                  <span style={{ color: C.green, fontSize: 13, fontWeight: 700 }}>✓</span>
+                  <span style={{ fontSize: 13, color: C.mid }}>{f}</span>
+                </div>
+              ))}
+              {!isCurrent && (
+                <BtnPrimary
+                  onClick={() => startCheckout(p)}
+                  disabled={checkoutLoading !== null}
+                  style={{ width: "100%", padding: 13, marginTop: 16, fontSize: 14, background: checkoutLoading === p.id ? C.dim : `linear-gradient(135deg,${C.accentDark},${p.color})` }}
+                >
+                  {checkoutLoading === p.id ? "Opening checkout..." : (isActive ? "Switch to " : "Start free trial — ") + p.name}
+                </BtnPrimary>
+              )}
+            </Card>
+          );
+        })}
+
+        {isActive && (
+          <div style={{ marginBottom: 12 }}>
+            <BtnPrimary
+              onClick={async () => {
+                const { data: { session } } = await supabase.auth.getSession();
+                const res = await fetch("https://pocketflow-proxy-production.up.railway.app/billing-portal", {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ email: session.user.email, return_url: window.location.href }),
+                });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+              }}
+              style={{ width: "100%", padding: 13, fontSize: 14, background: C.surfaceHigh, color: C.text, border: `1px solid ${C.border}` }}
+            >
+              Manage Billing & Invoices
+            </BtnPrimary>
+          </div>
+        )}
+
+        {isActive && !subInfo?.cancel_at_period_end && (
+          <div style={{ textAlign: "center", padding: "8px 0 24px" }}>
+            <span onClick={cancelSubscription} style={{ fontSize: 13, color: cancelLoading ? C.dim : C.red, cursor: cancelLoading ? "default" : "pointer", fontWeight: 600 }}>
+              {cancelLoading ? "Cancelling..." : "Cancel subscription"}
+            </span>
+          </div>
+        )}
+
+        {isActive && subInfo?.cancel_at_period_end && (
+          <div style={{ textAlign: "center", padding: "8px 0 24px" }}>
+            <span onClick={async () => {
+              const { data: { session } } = await supabase.auth.getSession();
+              const res = await fetch("https://pocketflow-proxy-production.up.railway.app/resume-subscription", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: session.user.email }),
+              });
+              const data = await res.json();
+              if (data.ok) { showToast("Subscription resumed!"); setSubInfo(prev => ({ ...prev, cancel_at_period_end: false })); }
+            }} style={{ fontSize: 13, color: C.green, cursor: "pointer", fontWeight: 600 }}>
+              Resume subscription
+            </span>
+          </div>
+        )}
+
+        <div style={{ textAlign: "center", padding: "4px 0 16px", fontSize: 11, color: C.dim }}>
+          Payments secured by Stripe · Cancel anytime
+        </div>
       </div>
       <BottomNav active="settings" navigate={navigate} />
     </div>
   );
 }
+
 
 // ── SHARE LINK ─────────────────────────────────────────────────────────────────
 function ShareLink({ navigate }) {
@@ -3523,11 +3730,21 @@ export default function App() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Handle Stripe checkout return
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      window.history.replaceState({}, "", window.location.pathname);
+      setTimeout(() => setScreen("subscription"), 300);
+    } else if (params.get("checkout") === "cancel") {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   // Check for existing session on load
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        const isNew = session.user.user_metadata?.is_new_user;
         const hasOnboarded = localStorage.getItem("pocketflow_onboarded_" + session.user.id);
         if (!hasOnboarded) setScreen("onboarding");
         else setScreen("home");
@@ -3544,6 +3761,26 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const [subscriptionPlan, setSubscriptionPlan] = useState(null); // null=loading, "free", "starter", "pro", "trialing"
+
+  useEffect(() => {
+    const checkSub = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      try {
+        const res = await fetch("https://pocketflow-proxy-production.up.railway.app/subscription-status", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: session.user.id, email: session.user.email }),
+        });
+        const data = await res.json();
+        setSubscriptionPlan(data.plan || "free");
+      } catch {
+        setSubscriptionPlan("free");
+      }
+    };
+    checkSub();
+  }, [screen]); // re-check on every screen change
+
   const navigate = (s) => {
     setScreen(s);
     window.scrollTo(0, 0);
@@ -3555,10 +3792,32 @@ export default function App() {
   const isAuthScreen = screen === "login" || screen === "onboarding" || screen === "booking";
   const showSidebar = isDesktop && !isAuthScreen;
 
+  // Screens that are always free (no paywall)
+  const freeScreens = ["login", "onboarding", "booking", "subscription", "settings", "sharelink"];
+  const needsPaywall = !freeScreens.includes(screen) && subscriptionPlan === "free" && !isAuthScreen;
+
   return (
     <div style={{ fontFamily: "'Outfit',sans-serif", background: C.bg, minHeight: "100vh", color: C.text }}>
       <style>{GLOBAL_STYLES}</style>
       {showSidebar && <Sidebar active={screen} navigate={navigate} />}
+      {needsPaywall && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, padding: "36px 28px", maxWidth: 400, width: "100%", textAlign: "center" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>✦</div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800, marginBottom: 10 }}>Start your free trial</div>
+            <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7, marginBottom: 24 }}>
+              Get 14 days free — no credit card required.<br />
+              Unlock the full Pocketflow experience.
+            </div>
+            <BtnPrimary onClick={() => navigate("subscription")} style={{ width: "100%", padding: 15, fontSize: 15, marginBottom: 12 }}>
+              See Plans — from $19/mo
+            </BtnPrimary>
+            <div onClick={() => navigate("home")} style={{ fontSize: 13, color: C.dim, cursor: "pointer", marginTop: 4 }}>
+              Back to home
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{
         marginLeft: showSidebar ? 240 : 0,
         minHeight: "100vh",
