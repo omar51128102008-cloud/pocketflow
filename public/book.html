@@ -506,7 +506,7 @@ function bindEvents() {
 
   document.querySelectorAll('[data-service]').forEach(el=>
     el.addEventListener('click',()=>{
-      const s=S.services.find(x=>x.id===parseInt(el.dataset.service));
+      const s=S.services.find(x=>String(x.id)===String(el.dataset.service));
       if(s) toggleSvc(s);
     })
   );
