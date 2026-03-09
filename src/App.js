@@ -1061,8 +1061,13 @@ Examples:
     const r = new SR(); r.lang = "en-US"; r.continuous = false; r.interimResults = false;
     r.onresult = e => {
       const t = e.results[0][0].transcript;
-      setVoiceListening(false); setVoiceLabel("Thinking...");
-      handleVoiceMessage(t);
+      setVoiceListening(false); setVoiceLabel("Tap to speak");
+      if (voiceMode) {
+        handleVoiceMessage(t);
+      } else {
+        // Chat mode: show in chat bubbles AND speak back
+        sendChat(t, true);
+      }
     };
     r.onerror = () => { setVoiceListening(false); setVoiceLabel("Tap to speak"); };
     r.onend = () => setVoiceListening(false);
@@ -1106,7 +1111,7 @@ Examples:
     }
   };
 
-  const sendChat = async (overrideText) => {
+  const sendChat = async (overrideText, shouldSpeak = false) => {
     const text = (typeof overrideText === "string" ? overrideText : chatInput).trim();
     if (!text || loading) return;
     stopAudio(); setChatInput("");
@@ -1132,6 +1137,7 @@ Examples:
       const { navigating, screen, text: reply } = handleNavIntent(raw);
       const displayText = navigating ? `Opening **${screen}**... ${reply}` : reply;
       setChatHistory(p => [...p, { role: "assistant", text: displayText, time: new Date() }]);
+      if (shouldSpeak) speakText(reply, null);
     } catch {
       setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again in a second.", time: new Date() }]);
     }
