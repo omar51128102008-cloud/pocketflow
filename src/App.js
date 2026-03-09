@@ -17,7 +17,7 @@ const C = {
 
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   ::-webkit-scrollbar{display:none;}
   body{background:#050508;}
   .fade-in{animation:fadeUp 0.35s ease forwards;}
@@ -1162,7 +1162,7 @@ Examples:
   const orbBlobSize = isDesktop ? 130 : 82;
   const smoothScale = speaking ? orbScale : 1;
 
-  const OrbWidget = () => (
+  const orbWidgetJSX = (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: isDesktop ? "36px 0 28px" : "6px 0 8px" }}>
       <div
         onClick={() => { if (!isDesktop && voiceSupported && orbState === "idle") openVoiceMode(); }}
@@ -1223,7 +1223,7 @@ Examples:
     </div>
   );
 
-  const ChatArea = () => (
+  const chatAreaJSX = (
     <>
       {!isDesktop && (
         <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "0 16px 10px", flexShrink: 0 }}>
@@ -1367,14 +1367,14 @@ Examples:
               <div onClick={() => setChatHistory(h => [h[0]])} title="Clear chat" style={{ width: 32, height: 32, borderRadius: 9, background: C.surfaceHigh, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, flexShrink: 0 }}>🗑</div>
             )}
           </div>
-          <OrbWidget />
+          {orbWidgetJSX}
         </div>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <div style={{ padding: "20px 28px 14px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
             <div style={{ fontSize: 15, fontWeight: 700 }}>Chat with {aiName}</div>
             <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>Ask anything · say "open schedule" to navigate · drafts · analytics</div>
           </div>
-          <ChatArea />
+          {chatAreaJSX}
         </div>
       </div>
       {VoiceOverlay}
@@ -1394,8 +1394,8 @@ Examples:
           <div onClick={() => setChatHistory(h => [h[0]])} style={{ width: 34, height: 34, borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>🗑</div>
         )}
       </div>
-      <OrbWidget />
-      <ChatArea />
+      {orbWidgetJSX}
+      {chatAreaJSX}
       <BottomNav active="assistant" navigate={navigate} />
     </div>
     {VoiceOverlay}
@@ -1868,7 +1868,7 @@ function Payments({ navigate }) {
   const statusColor = s => s === "confirmed" || s === "completed" ? C.green : s === "pending" ? C.yellow : C.red;
   const statusLabel = s => s === "confirmed" ? "paid" : s === "completed" ? "paid" : s === "pending" ? "pending" : s || "unknown";
 
-  const SettingsPanel = () => (
+  const settingsPanelJSX = (
     <>
       <SectionLabel>Deposit Protection</SectionLabel>
       <Card style={{ marginBottom: 20 }}>
@@ -1911,7 +1911,7 @@ function Payments({ navigate }) {
     </>
   );
 
-  const InvoicesPanel = () => (
+  const invoicesPanelJSX = (
     <>
       <SectionLabel>Appointments</SectionLabel>
       {loading ? (
@@ -1956,11 +1956,11 @@ function Payments({ navigate }) {
         </div>
         {isDesktop ? (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }}>
-            <div><SettingsPanel /></div>
-            <div><InvoicesPanel /></div>
+            <div>{settingsPanelJSX}</div>
+            <div>{invoicesPanelJSX}</div>
           </div>
         ) : (
-          <><SettingsPanel /><InvoicesPanel /></>
+          <>{settingsPanelJSX}{invoicesPanelJSX}</>
         )}
       </div>
       {selectedInvoice && (
@@ -2761,13 +2761,22 @@ function Booking({ navigate }) {
   const [bizLocation, setBizLocation] = useState("");
   const [loadingServices, setLoadingServices] = useState(true);
 
+  // Get owner ID from URL param (public booking page) or from session (in-app)
+  const ownerIdFromUrl = new URLSearchParams(window.location.search).get("id");
+
   useEffect(() => {
     const load = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setLoadingServices(false); return; }
+      // Use URL param first (public booking), fall back to logged-in user
+      let ownerId = ownerIdFromUrl;
+      if (!ownerId) {
+        const { data: { session } } = await supabase.auth.getSession();
+        ownerId = session?.user?.id;
+      }
+      if (!ownerId) { setLoadingServices(false); return; }
+
       const [profRes, svcRes] = await Promise.all([
-        supabase.from("business_profiles").select("biz_name,location").eq("user_id", session.user.id).single(),
-        supabase.from("services").select("*").eq("owner_id", session.user.id).eq("active", true).order("created_at", { ascending: true })
+        supabase.from("business_profiles").select("biz_name,location").eq("user_id", ownerId).single(),
+        supabase.from("services").select("*").eq("owner_id", ownerId).eq("active", true).order("created_at", { ascending: true })
       ]);
       if (profRes.data) { setBizName(profRes.data.biz_name || "Your Business"); setBizLocation(profRes.data.location || ""); }
       setServices((svcRes.data || []).map(s => ({ id: s.id, name: s.name, price: Number(s.price), duration: s.duration, icon: s.icon || "✨", desc: s.description || "" })));
@@ -2800,9 +2809,13 @@ function Booking({ navigate }) {
   const handlePay = async () => {
     setPaying(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setPaying(false); return; }
-      const uid = session.user.id;
+      // Get owner ID from URL (public booking) or session (in-app)
+      let uid = ownerIdFromUrl;
+      if (!uid) {
+        const { data: { session } } = await supabase.auth.getSession();
+        uid = session?.user?.id;
+      }
+      if (!uid) { setPaying(false); return; }
 
       // 1. Save appointment to Supabase
       const apptData = {
@@ -2844,11 +2857,16 @@ function Booking({ navigate }) {
 
       // 3. Notify owner — email + in-app notification
       try {
+        // Get owner email from business profile
+        const { data: ownerProf } = await supabase.from("business_profiles").select("biz_name").eq("user_id", uid).single();
+        const { data: ownerAuth } = await supabase.from("profiles").select("email").eq("id", uid).single();
+        const ownerEmail = ownerAuth?.email || (ownerIdFromUrl ? null : null);
+
         // Email via proxy
         await fetch("https://pocketflow-proxy-production.up.railway.app/notify-booking", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            owner_email: session.user.email,
+            owner_email: ownerEmail || "omarnassan590@gmail.com",
             client_name: name,
             service: selectedServices.map(s => s.name).join(", "),
             date: selectedDate,
