@@ -969,28 +969,43 @@ function Assistant({ navigate }) {
       const plain = text.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1").replace(/\n+/g, " ").trim();
       const sentences = plain.match(/[^.!?]+[.!?]+/g) || [plain];
       const short = sentences.slice(0, 2).join(" ").trim() || plain;
-      getAudioCtx();
+
       const audioRes = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: short }),
       });
-      if (!audioRes.ok) { onDone?.(); return; }
+      if (!audioRes.ok) { console.warn("speak endpoint failed:", audioRes.status); onDone?.(); return; }
+
       const blob = await audioRes.blob();
       const url = URL.createObjectURL(blob);
+
+      const finish = () => {
+        setSpeaking(false);
+        setOrbScale(1);
+        URL.revokeObjectURL(url);
+        onDone?.();
+      };
+
       const audio = new Audio(url);
-      audio.preload = "auto";
-      audioRef.current = audio; setSpeaking(true);
+      audioRef.current = audio;
+      setSpeaking(true);
       startOrbAnalyser(audio);
-      const playPromise = audio.play();
-      if (playPromise) playPromise.catch(() => {
+      audio.onended = finish;
+      audio.onerror = finish;
+
+      try {
+        await audio.play();
+      } catch (playErr) {
+        console.warn("audio.play() failed, trying fallback:", playErr);
         const a2 = new Audio(url);
-        a2.onended = () => { setSpeaking(false); setOrbScale(1); onDone?.(); };
-        a2.play().catch(() => {});
-        return;
-      });
-      const origEnded = audio.onended;
-      audio.onended = () => { origEnded?.call(audio); URL.revokeObjectURL(url); onDone?.(); };
-    } catch { onDone?.(); }
+        a2.onended = finish;
+        a2.onerror = finish;
+        try { await a2.play(); } catch { finish(); }
+      }
+    } catch (err) {
+      console.error("speakText error:", err);
+      onDone?.();
+    }
   };
 
   const buildSystemPrompt = (isVoice = false) => {
@@ -1099,6 +1114,7 @@ Examples:
       const withReply = [...voiceSessionRef.current, assistantMsg];
       voiceSessionRef.current = withReply; setVoiceSession([...withReply]);
       setVoiceLoading(false); setVoiceLabel("Speaking...");
+      console.log("🔊 speakText called with:", reply.slice(0, 60));
       speakText(reply, () => {
         setVoiceLabel("Tap to speak");
         setTimeout(() => { if (voiceRecogRef.current !== null) startVoiceListen(); }, 600);
