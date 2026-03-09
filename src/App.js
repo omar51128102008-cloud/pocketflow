@@ -684,11 +684,55 @@ function Schedule({ navigate }) {
                 </div>
               ))}
             </Card>
+            {/* Add to Google Calendar */}
+            {(() => {
+              const a = selectedAppt;
+              if (!a.day || !a.time) return null;
+              try {
+                const months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+                const parts = a.day.split(" ");
+                const month = months[parts[1]]; const day = parseInt(parts[2]);
+                const year = new Date().getFullYear();
+                const timeParts = a.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if (!timeParts) return null;
+                let hour = parseInt(timeParts[1]); const min = timeParts[2];
+                if (timeParts[3].toUpperCase() === "PM" && hour !== 12) hour += 12;
+                if (timeParts[3].toUpperCase() === "AM" && hour === 12) hour = 0;
+                const start = new Date(year, month, day, hour, parseInt(min));
+                const end = new Date(start.getTime() + 60 * 60 * 1000);
+                const fmt = d => d.toISOString().replace(/[-:]/g,"").split(".")[0] + "Z";
+                const title = encodeURIComponent(`${a.service} — ${a.client_name}`);
+                const details = encodeURIComponent(`Client: ${a.client_name}
+Phone: ${a.client_phone || ""}
+Price: ${a.price || ""}`);
+                const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(start)}/${fmt(end)}&details=${details}`;
+                return (
+                  <a href={url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 0", borderRadius: 12, background: C.surface, border: `1px solid ${C.border}`, fontSize: 13, fontWeight: 700, color: C.text, textDecoration: "none", marginBottom: 10 }}>
+                    📅 Add to Google Calendar
+                  </a>
+                );
+              } catch { return null; }
+            })()}
             {reminderSent
               ? <div style={{ padding: 13, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Reminder sent!</div>
               : <div style={{ display: "flex", gap: 10 }}>
                   <button onClick={() => setSelectedAppt(null)} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Reschedule</button>
-                  <BtnPrimary onClick={() => setReminderSent(true)} style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
+                  <BtnPrimary onClick={async () => {
+                    setReminderSent(true);
+                    try {
+                      await fetch("https://pocketflow-proxy-production.up.railway.app/send-reminder", {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          client_name: selectedAppt.client_name,
+                          client_phone: selectedAppt.client_phone || "",
+                          service: selectedAppt.service,
+                          date: selectedAppt.day,
+                          time: selectedAppt.time,
+                          biz_name: "your business",
+                        }),
+                      });
+                    } catch {}
+                  }} style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
                 </div>}
           </div>
         </div>
@@ -2717,9 +2761,74 @@ function Booking({ navigate }) {
   const formatCard = (val) => val.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
   const formatExpiry = (val) => { const v = val.replace(/\D/g, "").slice(0, 4); return v.length >= 3 ? v.slice(0,2) + "/" + v.slice(2) : v; };
 
-  const handlePay = () => {
+  const handlePay = async () => {
     setPaying(true);
-    setTimeout(() => { setPaying(false); setBooked(true); }, 2000);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setPaying(false); return; }
+      const uid = session.user.id;
+
+      // 1. Save appointment to Supabase
+      const apptData = {
+        owner_id: uid,
+        client_name: name,
+        client_phone: phone,
+        client_instagram: instagram,
+        service: selectedServices.map(s => s.name).join(", "),
+        price: "$" + totalPrice,
+        deposit: "$" + depositAmount,
+        day: selectedDate,
+        time: selectedTime,
+        status: "pending",
+        note: note || "",
+      };
+      const { error: apptErr } = await supabase.from("appointments").insert(apptData);
+      if (apptErr) console.error("Appointment save error:", apptErr);
+
+      // 2. Save/update client record
+      const { data: existingClient } = await supabase.from("clients")
+        .select("id,total_visits,total_spent")
+        .eq("owner_id", uid)
+        .ilike("name", name.trim())
+        .single();
+      if (existingClient) {
+        await supabase.from("clients").update({
+          total_visits: (existingClient.total_visits || 0) + 1,
+          total_spent: (parseFloat(String(existingClient.total_spent || "0").replace(/[^0-9.]/g, "")) + totalPrice).toFixed(0),
+          last_visit: new Date().toISOString().split("T")[0],
+        }).eq("id", existingClient.id);
+      } else {
+        await supabase.from("clients").insert({
+          owner_id: uid, name: name.trim(), phone, instagram,
+          total_visits: 1, total_spent: "$" + totalPrice,
+          last_visit: new Date().toISOString().split("T")[0],
+          tags: [], notes: "",
+        });
+      }
+
+      // 3. Notify owner via proxy (booking confirmation)
+      try {
+        await fetch("https://pocketflow-proxy-production.up.railway.app/notify-booking", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            owner_email: session.user.email,
+            client_name: name,
+            service: selectedServices.map(s => s.name).join(", "),
+            date: selectedDate,
+            time: selectedTime,
+            phone,
+            deposit: depositStr,
+            biz_name: bizName,
+          }),
+        });
+      } catch (e) { console.log("Notify failed (non-critical):", e); }
+
+      setBooked(true);
+    } catch (err) {
+      console.error("Booking error:", err);
+      alert("Something went wrong. Please try again.");
+    }
+    setPaying(false);
   };
 
   if (booked) return (
@@ -2739,7 +2848,37 @@ function Booking({ navigate }) {
           </div>
         ))}
       </Card>
-      <div style={{ fontSize: 13, color: C.mid, marginBottom: 24, lineHeight: 1.6 }}>You'll receive a reminder 24 hours before your appointment. ✨</div>
+      <div style={{ fontSize: 13, color: C.mid, marginBottom: 20, lineHeight: 1.6 }}>You'll receive a reminder 24 hours before your appointment. ✨</div>
+
+      {/* Add to Google Calendar */}
+      {(() => {
+        const buildGCalUrl = () => {
+          try {
+            const months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+            const parts = selectedDate.split(" "); // "Mon Jan 13"
+            const month = months[parts[1]]; const day = parseInt(parts[2]);
+            const year = new Date().getFullYear();
+            const timeParts = selectedTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+            let hour = parseInt(timeParts[1]); const min = timeParts[2];
+            if (timeParts[3].toUpperCase() === "PM" && hour !== 12) hour += 12;
+            if (timeParts[3].toUpperCase() === "AM" && hour === 12) hour = 0;
+            const start = new Date(year, month, day, hour, parseInt(min));
+            const end = new Date(start.getTime() + 60 * 60 * 1000);
+            const fmt = d => d.toISOString().replace(/[-:]/g,"").split(".")[0] + "Z";
+            const title = encodeURIComponent(`${selectedServices.map(s=>s.name).join(" + ")} at ${bizName}`);
+            const details = encodeURIComponent(`Appointment booked via Pocketflow\nDeposit paid: ${depositStr}\nContact: ${phone}`);
+            const loc = encodeURIComponent(bizLocation || bizName);
+            return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(start)}/${fmt(end)}&details=${details}&location=${loc}`;
+          } catch { return null; }
+        };
+        const url = buildGCalUrl();
+        return url ? (
+          <a href={url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", padding: "13px 0", borderRadius: 14, background: C.surface, border: "1px solid " + C.border, fontSize: 14, fontWeight: 700, color: C.text, textDecoration: "none", marginBottom: 12 }}>
+            <span style={{ fontSize: 18 }}>📅</span> Add to Google Calendar
+          </a>
+        ) : null;
+      })()}
+
       <div style={{ fontSize: 12, color: C.dim }}>Powered by <span style={{ color: C.accent, fontWeight: 700 }}>Pocketflow</span></div>
     </div>
   );
