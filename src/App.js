@@ -2376,7 +2376,43 @@ function Loyalty({ navigate }) {
 }
 function Notifications({ navigate }) {
   const [filter, setFilter] = useState("all");
-  const notifs = [];
+  const [notifs, setNotifs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      setNotifs(data || []);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const markAllRead = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await supabase.from("notifications").update({ read: true }).eq("user_id", session.user.id).eq("read", false);
+    setNotifs(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const iconFor = (type) => ({ booking: "📅", payment: "💰", ai: "✦", alert: "⚠️", review: "⭐" })[type] || "🔔";
+  const timeAgo = (ts) => {
+    const diff = Date.now() - new Date(ts).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return "just now";
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  };
+
   const typeColor = t => ({ booking: C.accent, payment: C.gold, ai: C.blue, alert: C.red, review: C.yellow })[t] || C.mid;
   const filtered = filter === "all" ? notifs : notifs.filter(n => n.type === filter);
   const unread = notifs.filter(n => !n.read).length;
@@ -2403,16 +2439,16 @@ function Notifications({ navigate }) {
           </div>
         ) : (
           <>
-            {unread > 0 && <div style={{ background: `${C.accent}12`, border: `1px solid ${C.accent}22`, borderRadius: 14, padding: "12px 16px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 13, color: C.accent, fontWeight: 600 }}>{unread} unread</span><span style={{ fontSize: 12, color: C.mid, cursor: "pointer" }}>Mark all read</span></div>}
+            {unread > 0 && <div style={{ background: `${C.accent}12`, border: `1px solid ${C.accent}22`, borderRadius: 14, padding: "12px 16px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 13, color: C.accent, fontWeight: 600 }}>{unread} unread</span><span onClick={markAllRead} style={{ fontSize: 12, color: C.mid, cursor: "pointer" }}>Mark all read</span></div>}
             {filtered.map(n => (
               <div key={n.id} style={{ background: C.surface, border: `1px solid ${n.read ? C.border : typeColor(n.type) + "33"}`, borderRadius: 16, padding: "14px 16px", marginBottom: 10, position: "relative", overflow: "hidden" }}>
                 {!n.read && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: typeColor(n.type), borderRadius: "3px 0 0 3px" }} />}
                 <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: `${typeColor(n.type)}18`, border: `1px solid ${typeColor(n.type)}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{n.icon}</div>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: `${typeColor(n.type)}18`, border: `1px solid ${typeColor(n.type)}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{n.icon || iconFor(n.type)}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                       <span style={{ fontSize: 14, fontWeight: n.read ? 500 : 700, flex: 1, marginRight: 8 }}>{n.title}</span>
-                      <span style={{ fontSize: 10, color: C.dim, flexShrink: 0, marginTop: 2 }}>{n.time}</span>
+                      <span style={{ fontSize: 10, color: C.dim, flexShrink: 0, marginTop: 2 }}>{timeAgo(n.created_at)}</span>
                     </div>
                     <div style={{ fontSize: 12, color: C.mid, lineHeight: 1.5 }}>{n.body}</div>
                   </div>
@@ -2806,8 +2842,9 @@ function Booking({ navigate }) {
         });
       }
 
-      // 3. Notify owner via proxy (booking confirmation)
+      // 3. Notify owner — email + in-app notification
       try {
+        // Email via proxy
         await fetch("https://pocketflow-proxy-production.up.railway.app/notify-booking", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -2819,7 +2856,18 @@ function Booking({ navigate }) {
             phone,
             deposit: depositStr,
             biz_name: bizName,
+            note: note || "",
           }),
+        });
+
+        // In-app notification in Supabase
+        await supabase.from("notifications").insert({
+          user_id: uid,
+          type: "booking",
+          title: "New Booking!",
+          body: `${name} booked ${selectedServices.map(s => s.name).join(", ")} on ${selectedDate} at ${selectedTime}`,
+          read: false,
+          created_at: new Date().toISOString(),
         });
       } catch (e) { console.log("Notify failed (non-critical):", e); }
 
