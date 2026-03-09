@@ -218,17 +218,19 @@ async function handlePay() {
   }
 
   // Step 2: add client (best-effort, don't fail the booking if this errors)
-  await sb.from('clients').insert([{
-    name: S.name, phone: S.phone, instagram: S.instagram,
-    avatar: S.name.trim().split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(),
-    total_visits: 1, total_spent: total(),
-    joined: new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}),
-    owner_id: biz.userId,
-  }]).catch(()=>{});
+  try {
+    await sb.from('clients').insert([{
+      name: S.name, phone: S.phone, instagram: S.instagram,
+      avatar: S.name.trim().split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(),
+      total_visits: 1, total_spent: total(),
+      joined: new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}),
+      owner_id: biz.userId,
+    }]);
+  } catch(e) {}
 
   // Step 3: increment promo code usage (best-effort)
   if (S.promoResult?.success && S.promoResult?.codeId) {
-    await sb.rpc('increment_code_usage', { code_id: S.promoResult.codeId }).catch(()=>{});
+    try { await sb.rpc('increment_code_usage', { code_id: S.promoResult.codeId }); } catch(e) {}
   }
 
   set({ paying:false, booked:true });
