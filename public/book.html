@@ -221,9 +221,7 @@ async function handlePay() {
   try {
     await sb.from('clients').insert([{
       name: S.name, phone: S.phone, instagram: S.instagram,
-      avatar: S.name.trim().split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(),
       total_visits: 1, total_spent: total(),
-      joined: new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}),
       owner_id: biz.userId,
     }]);
   } catch(e) {}
@@ -260,10 +258,30 @@ function render() {
               <span style="font-size:14px;font-weight:600;color:${k==='Deposit paid'?C.green:C.text};text-align:right">${v}</span>
             </div>`).join('')}
         </div>
-        <div style="font-size:13px;color:${C.mid};line-height:1.8;margin-bottom:24px">
+        <div style="font-size:13px;color:${C.mid};line-height:1.8;margin-bottom:20px">
           You'll receive a reminder 24 hours before your appointment ✨<br/>
           <span style="font-size:12px;color:${C.dim}">Screenshot this page as your confirmation.</span>
         </div>
+        ${(() => {
+          try {
+            const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+            const parts = S.selectedDate.split(' ');
+            const month = months[parts[1]]; const day = parseInt(parts[2]);
+            const year = new Date().getFullYear();
+            const tp = S.selectedTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+            let hour = parseInt(tp[1]); const min = tp[2];
+            if (tp[3].toUpperCase()==='PM' && hour!==12) hour+=12;
+            if (tp[3].toUpperCase()==='AM' && hour===12) hour=0;
+            const start = new Date(year,month,day,hour,parseInt(min));
+            const end = new Date(start.getTime()+60*60*1000);
+            const fmt = d=>d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+            const title = encodeURIComponent(S.selectedServices.map(s=>s.name).join(' + ')+' at '+biz.name);
+            const details = encodeURIComponent('Booked via Pocketflow\nDeposit paid: $'+deposit()+'\nPhone: '+S.phone);
+            const loc = encodeURIComponent(biz.location||biz.name);
+            const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+title+'&dates='+fmt(start)+'/'+fmt(end)+'&details='+details+'&location='+loc;
+            return '<a href="'+url+'" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 0;border-radius:14px;background:'+C.surface+';border:1px solid '+C.border+';font-size:14px;font-weight:700;color:'+C.text+';text-decoration:none;margin-bottom:16px">📅 Add to Google Calendar</a>';
+          } catch(e) { return ''; }
+        })()}
         <div style="font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Pocketflow</span></div>
       </div>
     </div>`;
