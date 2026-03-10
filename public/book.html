@@ -210,9 +210,7 @@ function buildGCalUrl() {
     const end = new Date(start.getTime()+60*60*1000);
     const fmt = d=>d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
     const title = encodeURIComponent(S.selectedServices.map(s=>s.name).join(' + ')+' at '+biz.name);
-    const details = encodeURIComponent('Booked via Pocketflow
-Deposit paid: $'+deposit()+'
-Phone: '+S.phone);
+    const details = encodeURIComponent('Booked via Pocketflow\nDeposit paid: $'+deposit()+'\nPhone: '+S.phone);
     const loc = encodeURIComponent(biz.location||biz.name);
     return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+title+'&dates='+fmt(start)+'/'+fmt(end)+'&details='+details+'&location='+loc;
   } catch(e) { return null; }
