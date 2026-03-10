@@ -1045,7 +1045,7 @@ Examples:
   };
 
   const handleNavIntent = (raw, inVoiceMode = false) => {
-    const match = raw.match(/^NAV:(\w+)\n?/i);
+    const match = raw.match(/^NAV:\s*(\w+)/i);
     if (match) {
       const screen = match[1].toLowerCase();
       const rest = raw.replace(/^NAV:\w+\n?/i, "").trim();
@@ -4230,17 +4230,15 @@ BUSINESS DATA:
 ${bizContext || "Loading..."}
 PERSONALITY: Warm, sharp, confident. Like a brilliant friend who knows this business inside out.
 ${isVoice ? "VOICE MODE: 1-2 short natural sentences only. No markdown. Conversational." : "TEXT MODE: Use **bold** for key numbers/names. Max 3-4 sentences unless asked for more. No bullet spam."}
-NAVIGATION: If the user wants to go to a page/section, respond EXACTLY like this (replace [screen] with the real screen name):
-NAV:[screen]
-Taking you to the [screen] page — [one short relevant sentence about what they'll find there].
-Available screens: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings, home.
-IMPORTANT: Do NOT say the word "NAV" in your response text. The NAV:[screen] prefix is stripped automatically. Just write the sentence after it naturally.
+NAVIGATION: When user wants to go somewhere, your ENTIRE response must start with NAV:screenname (no space after colon), then a newline, then one short sentence. Example: "NAV:inbox\nHere's your inbox!"
+Screens: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings, home.
+Never write the word NAV in your displayed sentence — it gets stripped automatically.
 You remember this conversation — reference earlier messages when relevant.`;
   };
 
   // Strips NAV: prefix, triggers navigation, returns clean display text
   const handleNavIntent = (raw) => {
-    const match = raw.match(/^NAV:(\w+)\n?/i);
+    const match = raw.match(/^NAV:\s*(\w+)/i);
     if (match) {
       const screen = match[1].toLowerCase();
       const rest = raw.replace(/^NAV:\w+\n?/i, "").trim();
@@ -4287,7 +4285,7 @@ You remember this conversation — reference earlier messages when relevant.`;
       const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile", max_tokens: 100,
+          model: "llama-3.1-8b-instant", max_tokens: 100,
           messages: [
             { role: "system", content: buildSystemPrompt(true) },
             ...history.map(m => ({ role: m.role, content: m.text })),
@@ -4320,7 +4318,7 @@ You remember this conversation — reference earlier messages when relevant.`;
       const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile", max_tokens: 400,
+          model: "llama-3.1-8b-instant", max_tokens: 300,
           messages: [
             { role: "system", content: buildSystemPrompt(false) },
             ...(chatHistory || []).map(m => ({ role: m.role, content: m.text })),
