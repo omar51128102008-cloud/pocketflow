@@ -826,7 +826,13 @@ function Assistant({ navigate }) {
   const [loading, setLoading] = useState(false);
   const [loadingLabel, setLoadingLabel] = useState("Thinking...");
   const [speaking, setSpeaking] = useState(false);
-  const [chatHistory, setChatHistory] = useState(null);
+  const [chatHistory, setChatHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem("aria_chat_history");
+      if (saved) { const parsed = JSON.parse(saved); if (Array.isArray(parsed) && parsed.length > 0) return parsed; }
+    } catch {}
+    return null;
+  });
   const [voiceSupported] = useState(() => "webkitSpeechRecognition" in window || "SpeechRecognition" in window);
   const [voiceMode, setVoiceMode] = useState(false);
   const [voiceSession, setVoiceSession] = useState([]);
@@ -895,11 +901,15 @@ function Assistant({ navigate }) {
       const msgLine = unhandled
         ? ` There ${unhandled === 1 ? "is" : "are"} **${unhandled} unread message${unhandled > 1 ? "s" : ""}** waiting.`
         : "";
-      setChatHistory([{
-        role: "assistant",
-        text: `${greeting}! I'm **${name}**, your AI assistant for **${biz}**. ${todayLine}${msgLine} What do you need?`,
-        time: new Date(),
-      }]);
+      // Only set greeting if no existing memory
+      setChatHistory(prev => {
+        if (prev && prev.length > 0) return prev; // keep memory
+        return [{
+          role: "assistant",
+          text: `${greeting}! I'm **${name}**, your AI assistant for **${biz}**. ${todayLine}${msgLine} What do you need?`,
+          time: new Date(),
+        }];
+      });
       // Smart contextual suggestions
       const s = [];
       if (todayAppts.length) s.push("Who's my next client today?");
@@ -919,6 +929,11 @@ function Assistant({ navigate }) {
   }, []);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, loading]);
+  // Persist chat history to localStorage (AI memory)
+  useEffect(() => {
+    if (!chatHistory || chatHistory.length === 0) return;
+    try { localStorage.setItem("aria_chat_history", JSON.stringify(chatHistory.slice(-60))); } catch {}
+  }, [chatHistory]);
   useEffect(() => { voiceChatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [voiceSession, voiceLoading]);
 
   const getAudioCtx = () => {
@@ -1029,13 +1044,14 @@ Examples:
 - "go to payments" → NAV:payments\\nHere's your payments screen.`;
   };
 
-  const handleNavIntent = (raw) => {
+  const handleNavIntent = (raw, inVoiceMode = false) => {
     const match = raw.match(/^NAV:(\w+)\n?/i);
     if (match) {
       const screen = match[1].toLowerCase();
       const rest = raw.replace(/^NAV:\w+\n?/i, "").trim();
+      // Navigate but DON'T close voice mode — stay in voice
       setTimeout(() => navigate(screen), 700);
-      return { navigating: true, screen, text: rest || `Opening **${screen}**...` };
+      return { navigating: true, screen, text: rest || `Opening ${screen} now!` };
     }
     return { navigating: false, text: raw };
   };
@@ -1386,7 +1402,7 @@ Examples:
               <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 3 }}>● Online</div>
             </div>
             {chatHistory && chatHistory.length > 1 && (
-              <div onClick={() => setChatHistory(h => [h[0]])} title="Clear chat" style={{ width: 32, height: 32, borderRadius: 9, background: C.surfaceHigh, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, flexShrink: 0 }}>🗑</div>
+              <div onClick={() => { setChatHistory(h => [h[0]]); localStorage.removeItem("aria_chat_history"); }} title="Clear chat" style={{ width: 32, height: 32, borderRadius: 9, background: C.surfaceHigh, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, flexShrink: 0 }}>🗑</div>
             )}
           </div>
           {orbWidgetJSX}
@@ -3978,7 +3994,6 @@ function Sidebar({ active, navigate }) {
     { id: "home", icon: "⌂", label: "Home" },
     { id: "schedule", icon: "◫", label: "Schedule" },
     { id: "inbox", icon: "◻", label: "Inbox" },
-    { id: "assistant", icon: "✦", label: "AI Assistant" },
     { id: "clients", icon: "◯", label: "Clients" },
   ];
   const secondaryNav = [
@@ -4057,6 +4072,784 @@ async function addToGoogleCalendar({ ownerId, service, date, time, clientName, b
     console.log("Google Calendar sync failed:", e);
     return false;
   }
+}
+
+// ── AI SIDEBAR PANEL (desktop only, persists across all screens) ──────────────
+function AISidebarPanel({ navigate }) {
+  const [chatInput, setChatInput] = useState("");
+  const [aiName, setAiName] = useState("Aria");
+  const [bizContext, setBizContext] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [chatHistory, setChatHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem("aria_chat_history");
+      if (saved) { const parsed = JSON.parse(saved); if (Array.isArray(parsed) && parsed.length > 0) return parsed; }
+    } catch {}
+    return null;
+  });
+  const [voiceSupported] = useState(() => "webkitSpeechRecognition" in window || "SpeechRecognition" in window);
+  const [voiceMode, setVoiceMode] = useState(false);
+  const [voiceSession, setVoiceSession] = useState([]);
+  const voiceSessionRef = useRef([]);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceLabel, setVoiceLabel] = useState("Tap to speak");
+  const voiceRecogRef = useRef(null);
+  const chatEndRef = useRef(null);
+  const voiceChatEndRef = useRef(null);
+  const audioRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animFrameRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const [orbScale, setOrbScale] = useState(1);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const uid = session.user.id;
+      const [profRes, apptRes, clientRes, msgRes, svcRes] = await Promise.all([
+        supabase.from("business_profiles").select("ai_name,biz_name,location").eq("user_id", uid).single(),
+        supabase.from("appointments").select("client_name,service,time,day,status,price").eq("owner_id", uid).order("created_at", { ascending: false }).limit(30),
+        supabase.from("clients").select("name,total_visits,total_spent").eq("owner_id", uid).limit(8),
+        supabase.from("messages").select("name,platform,preview,handled").eq("owner_id", uid).eq("handled", false).limit(10),
+        supabase.from("services").select("name,price,duration").eq("owner_id", uid).eq("active", true).limit(10),
+      ]);
+      const name = profRes.data?.ai_name || "Aria";
+      const biz = profRes.data?.biz_name || "your business";
+      const loc = profRes.data?.location || "";
+      const allAppts = apptRes.data || [];
+      const todayAppts = allAppts.filter(a => a.day === "Today" || a.status === "pending");
+      const confirmedAppts = allAppts.filter(a => a.status === "confirmed");
+      const unhandled = (msgRes.data || []).length;
+      const services = (svcRes.data || []).map(s => `${s.name} ($${s.price}, ${s.duration})`).join(", ");
+      const parseP = p => parseFloat(String(p || "0").replace(/[^0-9.]/g, "")) || 0;
+      const revenue = confirmedAppts.reduce((s, a) => s + parseP(a.price), 0);
+      const ctx = [
+        `Business: ${biz}${loc ? ` in ${loc}` : ""}`,
+        services ? `Services: ${services}` : "",
+        todayAppts.length ? `Today: ${todayAppts.map(a => `${a.client_name} (${a.service} at ${a.time})`).join("; ")}` : "No appointments today.",
+        `Revenue (all time): $${revenue.toLocaleString()}`,
+        `Total appointments: ${allAppts.length}`,
+        unhandled ? `Unread messages: ${unhandled}` : "",
+        (clientRes.data || []).length ? `Top clients: ${(clientRes.data || []).map(c => c.name).join(", ")}` : "",
+      ].filter(Boolean).join("\n");
+      setBizContext(ctx);
+      setAiName(name);
+      const hour = new Date().getHours();
+      const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Hey" : "Good evening";
+      const todayLine = todayAppts.length ? `You have **${todayAppts.length} appointment${todayAppts.length > 1 ? "s" : ""}** today.` : "No appointments today.";
+      const msgLine = unhandled ? ` **${unhandled} unread message${unhandled > 1 ? "s" : ""}** waiting.` : "";
+      setChatHistory(prev => {
+        if (prev && prev.length > 0) return prev;
+        return [{ role: "assistant", text: `${greeting}! I'm **${name}**. ${todayLine}${msgLine}`, time: new Date() }];
+      });
+    };
+    load();
+    return () => { cancelAnimationFrame(animFrameRef.current); audioCtxRef.current?.close().catch(() => {}); };
+  }, []);
+
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, loading]);
+  useEffect(() => { voiceChatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [voiceSession, voiceLoading]);
+  useEffect(() => {
+    if (!chatHistory || chatHistory.length === 0) return;
+    try { localStorage.setItem("aria_chat_history", JSON.stringify(chatHistory.slice(-60))); } catch {}
+  }, [chatHistory]);
+
+  const getAudioCtx = () => {
+    if (!audioCtxRef.current || audioCtxRef.current.state === "closed") audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtxRef.current.state === "suspended") audioCtxRef.current.resume().catch(() => {});
+    return audioCtxRef.current;
+  };
+  const stopAudio = () => {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current.onended = null; audioRef.current = null; }
+    cancelAnimationFrame(animFrameRef.current); analyserRef.current = null;
+    setSpeaking(false); setOrbScale(1);
+  };
+  const startOrbAnalyser = (audio) => {
+    try {
+      const ctx = getAudioCtx();
+      const src = ctx.createMediaElementSource(audio);
+      const analyser = ctx.createAnalyser(); analyser.fftSize = 64;
+      src.connect(analyser); analyser.connect(ctx.destination);
+      analyserRef.current = analyser;
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        if (!analyserRef.current) return;
+        analyser.getByteFrequencyData(data);
+        setOrbScale(1 + (data.reduce((a,b)=>a+b,0)/data.length/255)*0.6);
+        animFrameRef.current = requestAnimationFrame(tick);
+      };
+      tick();
+      audio.onended = () => { cancelAnimationFrame(animFrameRef.current); setOrbScale(1); setSpeaking(false); analyserRef.current = null; };
+    } catch { audio.onended = () => { setSpeaking(false); setOrbScale(1); }; }
+  };
+  const speakText = async (text, onDone) => {
+    try {
+      const plain = text.replace(/\*\*(.*?)\*\*/g,"$1").replace(/\*(.*?)\*/g,"$1").replace(/\n+/g," ").trim();
+      const sentences = plain.match(/[^.!?]+[.!?]+/g) || [plain];
+      const short = sentences.slice(0,2).join(" ").trim() || plain;
+      const audioRes = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: short }),
+      });
+      if (!audioRes.ok) { onDone?.(); return; }
+      const blob = await audioRes.blob();
+      const url = URL.createObjectURL(blob);
+      const finish = () => { setSpeaking(false); setOrbScale(1); URL.revokeObjectURL(url); onDone?.(); };
+      const audio = new Audio(url);
+      audioRef.current = audio; setSpeaking(true);
+      startOrbAnalyser(audio);
+      audio.onended = finish; audio.onerror = finish;
+      try { await audio.play(); } catch { try { await new Audio(url).play(); } catch { finish(); } }
+    } catch { onDone?.(); }
+  };
+
+  const buildSystemPrompt = (isVoice = false) => {
+    const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+    const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    return `You are ${aiName}, an AI business assistant built into Pocketflow.
+Today: ${today} at ${time}.
+BUSINESS DATA:
+${bizContext || "Loading..."}
+PERSONALITY: Warm, sharp, direct. Like a smart best friend who knows this business inside out.
+${isVoice ? "VOICE MODE: 1-2 natural sentences only. No markdown." : "TEXT MODE: Use **bold** for key figures. Max 4 sentences unless asked for more."}
+NAVIGATION: If user asks to go somewhere, reply with NAV:[screen] on first line. Screens: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings.
+After navigating in voice mode, KEEP the voice conversation open.`;
+  };
+
+  const handleNavIntent = (raw) => {
+    const match = raw.match(/^NAV:(\w+)\n?/i);
+    if (match) {
+      const screen = match[1].toLowerCase();
+      const rest = raw.replace(/^NAV:\w+\n?/i,"").trim();
+      setTimeout(() => navigate(screen), 600);
+      return { navigating: true, screen, text: rest || `Opening ${screen} now!` };
+    }
+    return { navigating: false, text: raw };
+  };
+
+  const unlockAudio = () => {
+    try { const ctx = getAudioCtx(); const buf = ctx.createBuffer(1,1,22050); const src = ctx.createBufferSource(); src.buffer=buf; src.connect(ctx.destination); src.start(0); } catch {}
+  };
+  const openVoiceMode = () => {
+    unlockAudio(); stopAudio();
+    setVoiceSession([]); voiceSessionRef.current = [];
+    setVoiceLabel("Tap to speak"); setVoiceMode(true);
+    setTimeout(() => startVoiceListen(), 400);
+  };
+  const closeVoiceMode = () => {
+    voiceRecogRef.current?.stop(); stopAudio();
+    setVoiceMode(false); setVoiceListening(false); setVoiceLoading(false); setVoiceLabel("Tap to speak");
+    const session = voiceSessionRef.current;
+    if (session.length > 0) setChatHistory(prev => [...(prev || []), ...session.map(m => ({ ...m, time: new Date() }))]);
+    voiceSessionRef.current = []; setVoiceSession([]);
+  };
+  const startVoiceListen = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    const r = new SR(); r.lang = "en-US"; r.continuous = false; r.interimResults = false;
+    r.onresult = e => { const t = e.results[0][0].transcript; setVoiceListening(false); setVoiceLabel("Tap to speak"); handleVoiceMessage(t); };
+    r.onerror = () => { setVoiceListening(false); setVoiceLabel("Tap to speak"); };
+    r.onend = () => setVoiceListening(false);
+    voiceRecogRef.current = r; r.start();
+    setVoiceListening(true); setVoiceLabel("Listening...");
+  };
+  const handleVoiceMessage = async (text) => {
+    const userMsg = { role: "user", text };
+    const updated = [...voiceSessionRef.current, userMsg];
+    voiceSessionRef.current = updated; setVoiceSession([...updated]);
+    setVoiceLoading(true); setVoiceLabel("Thinking...");
+    try {
+      const history = [...(chatHistory || []), ...updated];
+      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "llama-3.3-70b-versatile", max_tokens: 120,
+          messages: [{ role: "system", content: buildSystemPrompt(true) }, ...history.map(m => ({ role: m.role, content: m.text }))] }),
+      });
+      const data = await res.json();
+      const raw = data.choices?.[0]?.message?.content || "Got it.";
+      const { text: reply } = handleNavIntent(raw); // nav happens but voice stays open
+      const assistantMsg = { role: "assistant", text: reply };
+      const withReply = [...voiceSessionRef.current, assistantMsg];
+      voiceSessionRef.current = withReply; setVoiceSession([...withReply]);
+      setVoiceLoading(false); setVoiceLabel("Speaking...");
+      speakText(reply, () => { setVoiceLabel("Tap to speak"); setTimeout(() => { if (voiceRecogRef.current !== null) startVoiceListen(); }, 600); });
+    } catch {
+      const err = { role: "assistant", text: "Connection issue, try again." };
+      voiceSessionRef.current = [...voiceSessionRef.current, err]; setVoiceSession([...voiceSessionRef.current]);
+      setVoiceLoading(false); setVoiceLabel("Tap to speak");
+    }
+  };
+  const sendChat = async (overrideText) => {
+    const text = (typeof overrideText === "string" ? overrideText : chatInput).trim();
+    if (!text || loading) return;
+    stopAudio(); setChatInput("");
+    setChatHistory(p => [...(p || []), { role: "user", text, time: new Date() }]);
+    setLoading(true);
+    try {
+      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "llama-3.3-70b-versatile", max_tokens: 400,
+          messages: [{ role: "system", content: buildSystemPrompt(false) }, ...(chatHistory || []).map(m => ({ role: m.role, content: m.text })), { role: "user", content: text }] }),
+      });
+      const data = await res.json();
+      const raw = data.choices?.[0]?.message?.content || "On it.";
+      const { navigating, screen, text: reply } = handleNavIntent(raw);
+      const displayText = navigating ? `Opening **${screen}**... ${reply}` : reply;
+      setChatHistory(p => [...p, { role: "assistant", text: displayText, time: new Date() }]);
+    } catch {
+      setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again.", time: new Date() }]);
+    }
+    setLoading(false);
+  };
+
+  const renderText = (text) => {
+    if (!text) return null;
+    return text.split(/(\*\*[^*]+\*\*)/g).map((chunk, i) =>
+      chunk.startsWith("**") && chunk.endsWith("**")
+        ? <strong key={i} style={{ fontWeight: 700 }}>{chunk.slice(2,-2)}</strong>
+        : <span key={i}>{chunk.split("\n").map((line,j,arr) => j < arr.length-1 ? <span key={j}>{line}<br/></span> : <span key={j}>{line}</span>)}</span>
+    );
+  };
+
+  const orbState = voiceListening ? "listening" : (loading||voiceLoading) ? "loading" : speaking ? "speaking" : "idle";
+  const orbC1 = orbState==="listening"?"#ef4444":orbState==="loading"?"#6366f1":"#7c3aed";
+  const smoothScale = speaking ? orbScale : 1;
+  const ORB = 72; const BLOB = 50;
+
+  // Voice overlay (full screen)
+  const VoiceOverlay = voiceMode ? (
+    <div style={{ position:"fixed", inset:0, zIndex:300, background:"#07070f", display:"flex", flexDirection:"column", alignItems:"center" }}>
+      <div style={{ width:"100%", maxWidth:680, padding:"52px 28px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+        <div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:800, color:"#fff" }}>{aiName}</div>
+          <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", marginTop:2 }}>Voice conversation</div>
+        </div>
+        <div onClick={closeVoiceMode} style={{ padding:"9px 22px", borderRadius:100, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer" }}>End & Save</div>
+      </div>
+      <div style={{ flex:1, width:"100%", maxWidth:680, overflowY:"auto", padding:"0 28px 12px" }}>
+        {voiceSession.length===0 && <div style={{ textAlign:"center", marginTop:60, color:"rgba(255,255,255,0.2)", fontSize:14, lineHeight:2 }}>Tap the orb to start talking<br/><span style={{fontSize:12}}>Saves to chat when you end</span></div>}
+        {voiceSession.map((m,i) => (
+          <div key={i} style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start", marginBottom:12, alignItems:"flex-end", gap:8 }}>
+            {m.role==="assistant" && <div style={{ width:26, height:26, borderRadius:8, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, flexShrink:0 }}>✦</div>}
+            <div style={{ maxWidth:"76%", padding:"10px 14px", borderRadius:m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px", background:m.role==="user"?`linear-gradient(135deg,${C.accentDark},${C.accent})`:"rgba(255,255,255,0.07)", border:m.role==="user"?"none":"1px solid rgba(255,255,255,0.1)", fontSize:14, lineHeight:1.6, color:"#fff" }}>{m.text}</div>
+          </div>
+        ))}
+        {voiceLoading && <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}><div style={{ width:26, height:26, borderRadius:8, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11 }}>✦</div><div style={{ background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"18px 18px 18px 4px", padding:"12px 16px", display:"flex", gap:5 }}>{[0,1,2].map(d=><div key={d} style={{width:5,height:5,borderRadius:"50%",background:C.accent,animation:"pulse 1.2s infinite",animationDelay:`${d*0.2}s`}}/>)}</div></div>}
+        <div ref={voiceChatEndRef}/>
+      </div>
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", paddingBottom:52, paddingTop:8, flexShrink:0 }}>
+        <div onClick={() => { if(!voiceListening&&!voiceLoading&&!speaking) startVoiceListen(); }} style={{ position:"relative", width:160, height:160, display:"flex", alignItems:"center", justifyContent:"center", cursor:voiceListening||voiceLoading||speaking?"default":"pointer" }}>
+          {[1.7,1.4,1.18].map((scale,i) => <div key={i} style={{ position:"absolute", width:160, height:160, borderRadius:"50%", background:`radial-gradient(circle,${orbC1}${["08","12","18"][i]},transparent 70%)`, transform:`scale(${scale*(speaking?smoothScale:1)})`, animation:(voiceListening||voiceLoading||speaking)?`orbPulse ${1.5+i*0.4}s ease-in-out infinite`:"none", animationDelay:`${i*0.2}s` }}/>)}
+          <div style={{ width:110, height:110, borderRadius:"60% 40% 30% 70%/60% 30% 70% 40%", background:voiceListening?"radial-gradient(circle at 35% 35%,#f97316,#ef4444 50%,#dc2626)":voiceLoading?"radial-gradient(circle at 35% 35%,#a78bfa,#6366f1 50%,#4f46e5)":speaking?"radial-gradient(circle at 35% 35%,#a78bfa,#7c3aed 50%,#4f46e5)":"radial-gradient(circle at 35% 35%,#818cf8,#6366f1 50%,#4338ca)", boxShadow:`0 0 ${speaking?50:25}px ${voiceListening?"#ef444466":"#7c3aed66"},0 0 ${speaking?100:50}px ${voiceListening?"#ef444422":"#7c3aed22"},inset 0 0 30px rgba(255,255,255,0.1)`, animation:`blobMorph ${speaking?1.2:voiceLoading?1.8:4}s ease-in-out infinite`, transform:`scale(${speaking?smoothScale:1})`, transition:speaking?"transform 0.08s linear":"transform 0.3s,box-shadow 0.3s,background 0.4s", position:"relative", zIndex:2 }}>
+            <div style={{ position:"absolute", inset:0, borderRadius:"inherit", background:"radial-gradient(circle at 30% 25%,rgba(255,255,255,0.35),transparent 60%)", animation:`orbSpinRev ${speaking?2:6}s linear infinite` }}/>
+          </div>
+        </div>
+        <div style={{ marginTop:14, fontSize:13, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:voiceListening?"#ef4444":speaking?C.accent:"rgba(255,255,255,0.4)" }}>{voiceLabel}</div>
+        <div style={{ marginTop:5, fontSize:11, color:"rgba(255,255,255,0.18)", textAlign:"center" }}>{voiceSession.length>0?`${Math.ceil(voiceSession.length/2)} exchange${voiceSession.length>2?"s":""} · tap End & Save when done`:"Tap the orb to start speaking"}</div>
+      </div>
+    </div>
+  ) : null;
+
+  return (
+    <>
+    <div style={{ position:"fixed", top:0, right:0, width:320, height:"100vh", background:C.surface, borderLeft:`1px solid ${C.border}`, display:"flex", flexDirection:"column", zIndex:40 }}>
+      {/* Header */}
+      <div style={{ padding:"18px 16px 12px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+        <div>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800 }}>{aiName}</div>
+          <div style={{ fontSize:10, color:C.green, fontWeight:600, marginTop:1 }}>● Online</div>
+        </div>
+        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+          {voiceSupported && (
+            <div onClick={openVoiceMode} title="Voice mode" style={{ width:30, height:30, borderRadius:9, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:13 }}>🎤</div>
+          )}
+          {chatHistory && chatHistory.length > 1 && (
+            <div onClick={() => { setChatHistory(h=>[h[0]]); localStorage.removeItem("aria_chat_history"); }} title="Clear" style={{ width:30, height:30, borderRadius:9, background:C.surfaceHigh, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:12 }}>🗑</div>
+          )}
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div style={{ flex:1, overflowY:"auto", padding:"12px 14px" }}>
+        {!chatHistory && <div style={{ display:"flex", justifyContent:"center", alignItems:"center", height:"100%", color:C.dim, fontSize:13 }}>Loading...</div>}
+        {(chatHistory||[]).map((m,i) => (
+          <div key={i} style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start", marginBottom:10, alignItems:"flex-end", gap:6 }}>
+            {m.role==="assistant" && <div style={{ width:22, height:22, borderRadius:7, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, flexShrink:0 }}>✦</div>}
+            <div style={{ maxWidth:"82%", padding:"9px 12px", borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px", background:m.role==="user"?`linear-gradient(135deg,${C.accentDark},${C.accent})`:C.surfaceHigh, border:m.role==="user"?"none":`1px solid ${C.border}`, fontSize:13, lineHeight:1.55, color:C.text }}>
+              {renderText(m.text)}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+            <div style={{ width:22, height:22, borderRadius:7, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9 }}>✦</div>
+            <div style={{ background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:"16px 16px 16px 4px", padding:"10px 14px", display:"flex", gap:4 }}>
+              {[0,1,2].map(d=><div key={d} style={{width:5,height:5,borderRadius:"50%",background:C.accent,animation:"pulse 1.2s infinite",animationDelay:`${d*0.2}s`}}/>)}
+            </div>
+          </div>
+        )}
+        <div ref={chatEndRef}/>
+      </div>
+
+      {/* Orb — small, above input */}
+      <div style={{ display:"flex", justifyContent:"center", alignItems:"center", paddingTop:10, paddingBottom:4, flexShrink:0 }}>
+        <div onClick={() => { if(voiceSupported&&orbState==="idle") openVoiceMode(); }} style={{ position:"relative", width:ORB, height:ORB, display:"flex", alignItems:"center", justifyContent:"center", cursor:voiceSupported&&orbState==="idle"?"pointer":"default" }}>
+          {[1.6,1.35,1.15].map((scale,i) => <div key={i} style={{ position:"absolute", width:ORB, height:ORB, borderRadius:"50%", background:`radial-gradient(circle,${orbC1}${["08","12","18"][i]},transparent 70%)`, transform:`scale(${scale*smoothScale})`, transition:speaking?"none":"transform 0.3s ease", animation:orbState!=="idle"?`orbPulse ${1.5+i*0.4}s ease-in-out infinite`:"none", animationDelay:`${i*0.2}s` }}/>)}
+          <div style={{ width:BLOB, height:BLOB, borderRadius:"60% 40% 30% 70%/60% 30% 70% 40%", background:orbState==="listening"?"radial-gradient(circle at 35% 35%,#f97316,#ef4444 50%,#dc2626)":orbState==="loading"?"radial-gradient(circle at 35% 35%,#a78bfa,#6366f1 50%,#4f46e5)":orbState==="speaking"?"radial-gradient(circle at 35% 35%,#a78bfa,#7c3aed 50%,#4f46e5)":"radial-gradient(circle at 35% 35%,#818cf8,#6366f1 50%,#4338ca)", boxShadow:`0 0 20px ${orbC1}55,inset 0 0 15px rgba(255,255,255,0.1)`, animation:`blobMorph ${speaking?1.2:orbState==="loading"?1.8:4}s ease-in-out infinite`, transform:`scale(${smoothScale})`, transition:speaking?"transform 0.08s linear":"transform 0.3s,background 0.4s", position:"relative", zIndex:2 }}>
+            <div style={{ position:"absolute", inset:0, borderRadius:"inherit", background:"radial-gradient(circle at 30% 25%,rgba(255,255,255,0.35),transparent 60%)" }}/>
+            {orbState==="idle" && voiceSupported && <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, zIndex:3 }}>🎤</div>}
+          </div>
+        </div>
+      </div>
+
+      {/* Input */}
+      <div style={{ padding:"6px 12px 16px", flexShrink:0, borderTop:`1px solid ${C.border}` }}>
+        <div style={{ display:"flex", gap:8, alignItems:"flex-end", background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:16, padding:"8px 10px 8px 14px" }}>
+          <textarea
+            ref={inputRef}
+            value={chatInput}
+            onChange={e => setChatInput(e.target.value)}
+            onKeyDown={e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();} }}
+            placeholder="Ask Aria anything..."
+            rows={1}
+            style={{ flex:1, background:"transparent", border:"none", outline:"none", resize:"none", fontSize:13, color:C.text, fontFamily:"'Outfit',sans-serif", lineHeight:1.5, maxHeight:80, overflowY:"auto" }}
+          />
+          <div onClick={sendChat} style={{ width:32, height:32, borderRadius:10, background:chatInput.trim()?`linear-gradient(135deg,${C.accentDark},${C.accent})`:C.surface, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:chatInput.trim()?"pointer":"default", flexShrink:0, transition:"background 0.2s", fontSize:14 }}>
+            {loading ? "…" : "↑"}
+          </div>
+        </div>
+      </div>
+    </div>
+    {VoiceOverlay}
+    </>
+  );
+}
+
+// ── AI SIDEBAR PANEL (desktop persistent, lives at App level) ─────────────────
+function AISidebarPanel({ navigate }) {
+  const [chatInput, setChatInput] = useState("");
+  const [aiName, setAiName] = useState("Aria");
+  const [bizContext, setBizContext] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [orbScale, setOrbScale] = useState(1);
+  const [smoothScale, setSmoothScale] = useState(1);
+  const [orbState, setOrbState] = useState("idle");
+  const [voiceMode, setVoiceMode] = useState(false);
+  const [voiceSession, setVoiceSession] = useState([]);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceLabel, setVoiceLabel] = useState("Tap to speak");
+  const [voiceSupported] = useState(() => "webkitSpeechRecognition" in window || "SpeechRecognition" in window);
+  const voiceSessionRef = useRef([]);
+  const voiceRecogRef = useRef(null);
+  const chatEndRef = useRef(null);
+  const audioRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animFrameRef = useRef(null);
+  const smoothRef = useRef(1);
+  const inputRef = useRef(null);
+
+  const [chatHistory, setChatHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem("aria_chat_history");
+      if (saved) { const p = JSON.parse(saved); if (Array.isArray(p) && p.length > 0) return p; }
+    } catch {}
+    return null;
+  });
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const uid = session.user.id;
+      const [profRes, apptRes, clientRes, msgRes, svcRes] = await Promise.all([
+        supabase.from("business_profiles").select("ai_name,biz_name,location").eq("user_id", uid).single(),
+        supabase.from("appointments").select("client_name,service,time,day,status,price").eq("owner_id", uid).order("created_at", { ascending: false }).limit(30),
+        supabase.from("clients").select("name,total_visits,total_spent").eq("owner_id", uid).limit(8),
+        supabase.from("messages").select("name,platform,preview,handled").eq("owner_id", uid).eq("handled", false).limit(10),
+        supabase.from("services").select("name,price,duration").eq("owner_id", uid).eq("active", true).limit(10),
+      ]);
+      const name = profRes.data?.ai_name || "Aria";
+      const biz = profRes.data?.biz_name || "your business";
+      const loc = profRes.data?.location || "";
+      const allAppts = apptRes.data || [];
+      const todayAppts = allAppts.filter(a => a.day === "Today" || a.status === "pending");
+      const confirmedAppts = allAppts.filter(a => a.status === "confirmed");
+      const unhandled = (msgRes.data || []).length;
+      const services = (svcRes.data || []).map(s => `${s.name} ($${s.price}, ${s.duration})`).join(", ");
+      const parseP = p => parseFloat(String(p || "0").replace(/[^0-9.]/g, "")) || 0;
+      const revenue = confirmedAppts.reduce((s, a) => s + parseP(a.price), 0);
+      const ctx = [
+        `Business: ${biz}${loc ? ` in ${loc}` : ""}`,
+        services ? `Services: ${services}` : "",
+        todayAppts.length ? `Today appointments: ${todayAppts.map(a => `${a.client_name} (${a.service} at ${a.time})`).join("; ")}` : "No appointments today.",
+        `Revenue: $${revenue.toLocaleString()}`,
+        `Total appointments: ${allAppts.length}`,
+        unhandled ? `Unread messages: ${unhandled}` : "",
+        (clientRes.data || []).length ? `Top clients: ${clientRes.data.map(c => c.name).join(", ")}` : "",
+      ].filter(Boolean).join("\n");
+      setBizContext(ctx);
+      setAiName(name);
+      const hour = new Date().getHours();
+      const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Hey" : "Good evening";
+      const todayLine = todayAppts.length ? `You have **${todayAppts.length} appointment${todayAppts.length > 1 ? "s" : ""}** today.` : "No appointments today.";
+      const msgLine = unhandled ? ` **${unhandled} unread message${unhandled > 1 ? "s" : ""}** waiting.` : "";
+      setChatHistory(prev => {
+        if (prev && prev.length > 0) return prev;
+        return [{ role: "assistant", text: `${greeting}! I'm **${name}**. ${todayLine}${msgLine} What do you need?`, time: new Date() }];
+      });
+    };
+    load();
+    return () => { cancelAnimationFrame(animFrameRef.current); audioCtxRef.current?.close().catch(() => {}); };
+  }, []);
+
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, loading]);
+  useEffect(() => {
+    if (!chatHistory || chatHistory.length === 0) return;
+    try { localStorage.setItem("aria_chat_history", JSON.stringify(chatHistory.slice(-60))); } catch {}
+  }, [chatHistory]);
+
+  // Smooth orb scale animation
+  useEffect(() => {
+    let af;
+    const tick = () => {
+      smoothRef.current += (orbScale - smoothRef.current) * 0.12;
+      setSmoothScale(smoothRef.current);
+      af = requestAnimationFrame(tick);
+    };
+    af = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(af);
+  }, [orbScale]);
+
+  const getAudioCtx = () => {
+    if (!audioCtxRef.current || audioCtxRef.current.state === "closed") audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtxRef.current.state === "suspended") audioCtxRef.current.resume().catch(() => {});
+    return audioCtxRef.current;
+  };
+
+  const stopAudio = () => {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current.onended = null; audioRef.current = null; }
+    cancelAnimationFrame(animFrameRef.current);
+    analyserRef.current = null;
+    setSpeaking(false); setOrbScale(1); setOrbState("idle");
+  };
+
+  const startOrbAnalyser = (audio) => {
+    try {
+      const ctx = getAudioCtx();
+      const src = ctx.createMediaElementSource(audio);
+      const analyser = ctx.createAnalyser(); analyser.fftSize = 64;
+      src.connect(analyser); analyser.connect(ctx.destination);
+      analyserRef.current = analyser;
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        if (!analyserRef.current) return;
+        analyser.getByteFrequencyData(data);
+        const avg = data.reduce((a, b) => a + b, 0) / data.length;
+        setOrbScale(1 + (avg / 255) * 0.6);
+        animFrameRef.current = requestAnimationFrame(tick);
+      };
+      tick();
+      audio.onended = () => { cancelAnimationFrame(animFrameRef.current); setOrbScale(1); setSpeaking(false); setOrbState("idle"); analyserRef.current = null; };
+    } catch { audio.onended = () => { setSpeaking(false); setOrbScale(1); setOrbState("idle"); }; }
+  };
+
+  const speakText = async (text, onDone) => {
+    try {
+      const plain = text.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1").replace(/\n+/g, " ").trim();
+      setSpeaking(true); setOrbState("speaking");
+      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: plain, voice: "Rachel", model: "eleven_turbo_v2_5", speed: 1.1 }),
+      });
+      if (!res.ok) { setSpeaking(false); setOrbState("idle"); onDone?.(); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => { setSpeaking(false); setOrbScale(1); setOrbState("idle"); URL.revokeObjectURL(url); onDone?.(); };
+      startOrbAnalyser(audio);
+      await audio.play();
+    } catch { setSpeaking(false); setOrbState("idle"); onDone?.(); }
+  };
+
+  const buildSystemPrompt = (voice) => `You are ${aiName}, an AI assistant for a beauty/wellness business owner.
+${voice ? "Keep replies SHORT (1-2 sentences max). Natural spoken language only." : "Keep replies concise and helpful (max 3 short paragraphs)."}
+Use **bold** for key info. No bullet spam.
+If the user wants to go to a screen (schedule, clients, inbox, payments, analytics, promotions, settings, home, loyalty, staff, waitlist, services), respond ONLY with:
+NAV:screenname
+Then one short sentence.
+Current business context:
+${bizContext}
+You have memory of this conversation — refer back to earlier messages when relevant.`;
+
+  const handleNavIntent = (raw) => {
+    const match = raw.match(/^NAV:(\w+)\n?/i);
+    if (match) {
+      const screen = match[1].toLowerCase();
+      const rest = raw.replace(/^NAV:\w+\n?/i, "").trim();
+      setTimeout(() => navigate(screen), 700);
+      return { navigating: true, screen, text: rest || `Opening ${screen} now!` };
+    }
+    return { navigating: false, text: raw };
+  };
+
+  const unlockAudio = () => {
+    try {
+      const ctx = getAudioCtx();
+      const buf = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination); src.start(0);
+    } catch {}
+  };
+
+  const openVoiceMode = () => {
+    unlockAudio(); stopAudio();
+    setVoiceSession([]); voiceSessionRef.current = [];
+    setVoiceLabel("Tap to speak"); setVoiceMode(true);
+    setTimeout(() => startVoiceListen(), 400);
+  };
+
+  const closeVoiceMode = () => {
+    voiceRecogRef.current?.stop(); stopAudio();
+    setVoiceMode(false); setVoiceListening(false); setVoiceLoading(false); setVoiceLabel("Tap to speak");
+    const session = voiceSessionRef.current;
+    if (session.length > 0) setChatHistory(prev => [...(prev || []), ...session.map(m => ({ ...m, time: new Date() }))]);
+    voiceSessionRef.current = []; setVoiceSession([]);
+  };
+
+  const startVoiceListen = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    const r = new SR(); r.lang = "en-US"; r.continuous = false; r.interimResults = false;
+    r.onresult = e => {
+      const t = e.results[0][0].transcript;
+      setVoiceListening(false); setVoiceLabel("Tap to speak");
+      handleVoiceMessage(t);
+    };
+    r.onerror = () => { setVoiceListening(false); setVoiceLabel("Tap to speak"); };
+    r.onend = () => setVoiceListening(false);
+    voiceRecogRef.current = r; r.start();
+    setVoiceListening(true); setVoiceLabel("Listening...");
+  };
+
+  const handleVoiceMessage = async (text) => {
+    const userMsg = { role: "user", text };
+    const updated = [...voiceSessionRef.current, userMsg];
+    voiceSessionRef.current = updated; setVoiceSession([...updated]);
+    setVoiceLoading(true); setVoiceLabel("Thinking...");
+    try {
+      const history = [...(chatHistory || []), ...updated];
+      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile", max_tokens: 120,
+          messages: [
+            { role: "system", content: buildSystemPrompt(true) },
+            ...history.map(m => ({ role: m.role, content: m.text }))
+          ],
+        }),
+      });
+      const data = await res.json();
+      const raw = data.choices?.[0]?.message?.content || "Got it.";
+      const { text: reply } = handleNavIntent(raw);
+      const assistantMsg = { role: "assistant", text: reply };
+      const withReply = [...voiceSessionRef.current, assistantMsg];
+      voiceSessionRef.current = withReply; setVoiceSession([...withReply]);
+      setVoiceLoading(false); setVoiceLabel("Speaking...");
+      speakText(reply, () => {
+        setVoiceLabel("Tap to speak");
+        // Keep voice mode open — restart listening after speaking
+        setTimeout(() => { if (voiceRecogRef.current !== null || voiceMode) startVoiceListen(); }, 600);
+      });
+    } catch {
+      const err = { role: "assistant", text: "Connection issue, try again." };
+      voiceSessionRef.current = [...voiceSessionRef.current, err];
+      setVoiceSession([...voiceSessionRef.current]);
+      setVoiceLoading(false); setVoiceLabel("Tap to speak");
+    }
+  };
+
+  const sendChat = async (overrideText) => {
+    const text = (typeof overrideText === "string" ? overrideText : chatInput).trim();
+    if (!text || loading) return;
+    stopAudio(); setChatInput("");
+    setChatHistory(p => [...(p || []), { role: "user", text, time: new Date() }]);
+    setLoading(true);
+    try {
+      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile", max_tokens: 400,
+          messages: [
+            { role: "system", content: buildSystemPrompt(false) },
+            ...(chatHistory || []).map(m => ({ role: m.role, content: m.text })),
+            { role: "user", content: text },
+          ],
+        }),
+      });
+      const data = await res.json();
+      const raw = data.choices?.[0]?.message?.content || "On it.";
+      const { navigating, screen, text: reply } = handleNavIntent(raw);
+      const displayText = navigating ? `Opening **${screen}**... ${reply}` : reply;
+      setChatHistory(p => [...p, { role: "assistant", text: displayText, time: new Date() }]);
+    } catch {
+      setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again.", time: new Date() }]);
+    }
+    setLoading(false);
+  };
+
+  const renderText = (text) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((p, i) => p.startsWith("**") && p.endsWith("**")
+      ? <strong key={i}>{p.slice(2, -2)}</strong>
+      : p.split("\n").map((line, j, arr) => <span key={`${i}-${j}`}>{line}{j < arr.length - 1 ? <br /> : null}</span>)
+    );
+  };
+
+  // Orb blob (small, compact for sidebar)
+  const orbSize = 72;
+  const blobSize = 50;
+  const OrbBlob = (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "12px 0 8px" }}>
+      <div
+        onClick={() => { if (voiceSupported && orbState === "idle") openVoiceMode(); }}
+        style={{ position: "relative", width: orbSize, height: orbSize, display: "flex", alignItems: "center", justifyContent: "center", cursor: voiceSupported && orbState === "idle" ? "pointer" : "default" }}
+      >
+        {[1.7, 1.4, 1.18].map((scale, i) => (
+          <div key={i} style={{ position: "absolute", width: orbSize, height: orbSize, borderRadius: "50%", background: `radial-gradient(circle,${C.accent}${["08","12","18"][i]},transparent 70%)`, transform: `scale(${scale * (speaking ? smoothScale : 1)})`, transition: speaking ? "none" : "transform 0.3s", animation: speaking ? `orbPulse ${1.5+i*0.4}s ease-in-out infinite` : "none" }} />
+        ))}
+        <div style={{ width: blobSize, height: blobSize, borderRadius: "60% 40% 30% 70%/60% 30% 70% 40%", background: speaking ? `radial-gradient(circle at 35% 35%,#a78bfa,#7c3aed 50%,#4f46e5)` : `radial-gradient(circle at 35% 35%,#818cf8,#6366f1 50%,#4338ca)`, boxShadow: `0 0 ${speaking?30:14}px ${C.accent}66,inset 0 0 16px rgba(255,255,255,0.1)`, animation: `blobMorph ${speaking?1.2:4}s ease-in-out infinite`, transform: `scale(${speaking ? smoothScale : 1})`, transition: speaking ? "transform 0.08s linear" : "transform 0.3s", position: "relative", zIndex: 2 }}>
+          <div style={{ position: "absolute", inset: 0, borderRadius: "inherit", background: "radial-gradient(circle at 30% 25%,rgba(255,255,255,0.3),transparent 60%)", animation: `orbSpinRev ${speaking?2:6}s linear infinite` }} />
+        </div>
+      </div>
+      {voiceSupported && (
+        <div onClick={openVoiceMode} style={{ marginTop: 6, fontSize: 11, color: C.accent, fontWeight: 700, cursor: "pointer", letterSpacing: 0.5 }}>
+          {speaking ? "Speaking..." : "Tap to voice chat"}
+        </div>
+      )}
+    </div>
+  );
+
+  // Voice overlay (fullscreen, covers app — persists across navigations since this lives at App level)
+  const VoiceOverlay = voiceMode ? (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#07070f", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ width: "100%", maxWidth: 680, padding: "52px 28px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: "#fff" }}>{aiName}</div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>Voice conversation</div>
+        </div>
+        <div onClick={closeVoiceMode} style={{ padding: "9px 22px", borderRadius: 100, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>End & Save</div>
+      </div>
+      <div style={{ flex: 1, width: "100%", maxWidth: 680, overflowY: "auto", padding: "0 28px 12px" }}>
+        {voiceSession.length === 0 && (
+          <div style={{ textAlign: "center", marginTop: 60, color: "rgba(255,255,255,0.2)", fontSize: 14, lineHeight: 2 }}>
+            Tap the orb to start talking<br /><span style={{ fontSize: 12 }}>Conversation saves to chat when you end</span>
+          </div>
+        )}
+        {voiceSession.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 12, alignItems: "flex-end", gap: 8 }}>
+            {m.role === "assistant" && <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>✦</div>}
+            <div style={{ maxWidth: "76%", padding: "10px 14px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "rgba(255,255,255,0.07)", border: m.role === "user" ? "none" : "1px solid rgba(255,255,255,0.1)", fontSize: 14, lineHeight: 1.6, color: "#fff" }}>{m.text}</div>
+          </div>
+        ))}
+        {voiceLoading && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+            <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>✦</div>
+            <div style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "18px 18px 18px 4px", padding: "12px 16px", display: "flex", gap: 5 }}>
+              {[0,1,2].map(d => <div key={d} style={{ width: 5, height: 5, borderRadius: "50%", background: C.accent, animation: "pulse 1.2s infinite", animationDelay: `${d*0.2}s` }} />)}
+            </div>
+          </div>
+        )}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: 52, paddingTop: 8, flexShrink: 0 }}>
+        <div onClick={() => { if (!voiceListening && !voiceLoading && !speaking) startVoiceListen(); }}
+          style={{ position: "relative", width: 160, height: 160, display: "flex", alignItems: "center", justifyContent: "center", cursor: voiceListening || voiceLoading || speaking ? "default" : "pointer" }}>
+          {[1.7, 1.4, 1.18].map((scale, i) => {
+            const c1 = voiceListening ? "#ef4444" : voiceLoading ? "#6366f1" : speaking ? "#7c3aed" : "#6366f1";
+            return <div key={i} style={{ position: "absolute", width: 160, height: 160, borderRadius: "50%", background: `radial-gradient(circle,${c1}${["08","12","18"][i]},transparent 70%)`, transform: `scale(${scale*(speaking?smoothScale:1)})`, transition: speaking?"none":"transform 0.3s", animation:(voiceListening||voiceLoading||speaking)?`orbPulse ${1.5+i*0.4}s ease-in-out infinite`:"none", animationDelay:`${i*0.2}s` }} />;
+          })}
+          <div style={{ width: 110, height: 110, borderRadius: "60% 40% 30% 70%/60% 30% 70% 40%",
+            background: voiceListening?"radial-gradient(circle at 35% 35%,#f97316,#ef4444 50%,#dc2626)":voiceLoading?"radial-gradient(circle at 35% 35%,#a78bfa,#6366f1 50%,#4f46e5)":speaking?"radial-gradient(circle at 35% 35%,#a78bfa,#7c3aed 50%,#4f46e5)":"radial-gradient(circle at 35% 35%,#818cf8,#6366f1 50%,#4338ca)",
+            boxShadow:`0 0 ${speaking?50:25}px ${voiceListening?"#ef444466":"#7c3aed66"},0 0 ${speaking?100:50}px ${voiceListening?"#ef444422":"#7c3aed22"},inset 0 0 30px rgba(255,255,255,0.1)`,
+            animation:`blobMorph ${speaking?1.2:voiceLoading?1.8:4}s ease-in-out infinite`,
+            transform:`scale(${speaking?smoothScale:1})`,
+            transition:speaking?"transform 0.08s linear":"transform 0.3s,box-shadow 0.3s,background 0.4s",
+            position:"relative",zIndex:2 }}>
+            <div style={{ position:"absolute",inset:0,borderRadius:"inherit",background:"radial-gradient(circle at 30% 25%,rgba(255,255,255,0.35),transparent 60%)",animation:`orbSpinRev ${speaking?2:6}s linear infinite` }} />
+          </div>
+        </div>
+        <div style={{ marginTop: 14, fontSize: 13, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: voiceListening?"#ef4444":speaking?C.accent:"rgba(255,255,255,0.4)" }}>{voiceLabel}</div>
+        <div style={{ marginTop: 5, fontSize: 11, color: "rgba(255,255,255,0.18)", textAlign: "center" }}>
+          {voiceSession.length > 0 ? `${Math.ceil(voiceSession.length/2)} exchange${voiceSession.length>2?"s":""} · tap End & Save when done` : "Tap the orb to start speaking"}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  return (
+    <>
+      {VoiceOverlay}
+      <div style={{ position: "fixed", top: 0, right: 0, width: 300, height: "100vh", background: C.surface, borderLeft: `1px solid ${C.border}`, display: "flex", flexDirection: "column", zIndex: 100, overflow: "hidden" }}>
+        {/* Header */}
+        <div style={{ padding: "18px 16px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 17, fontWeight: 800 }}>{aiName}</div>
+            <div style={{ fontSize: 10, color: C.green, fontWeight: 600, marginTop: 1 }}>● Online · AI Assistant</div>
+          </div>
+          {chatHistory && chatHistory.length > 1 && (
+            <div onClick={() => { setChatHistory(h => [h[0]]); localStorage.removeItem("aria_chat_history"); }} title="Clear chat" style={{ width: 28, height: 28, borderRadius: 8, background: C.surfaceHigh, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 12 }}>🗑</div>
+          )}
+        </div>
+
+        {/* Chat messages — scrollable, takes all space */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px 8px" }}>
+          {chatHistory === null ? (
+            <div style={{ textAlign: "center", padding: "40px 0", color: C.dim, fontSize: 13 }}>Loading...</div>
+          ) : chatHistory.map((m, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 10, alignItems: "flex-end", gap: 6 }}>
+              {m.role === "assistant" && <div style={{ width: 22, height: 22, borderRadius: 7, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, flexShrink: 0 }}>✦</div>}
+              <div style={{ maxWidth: "82%", padding: "9px 12px", borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surfaceHigh, border: m.role === "user" ? "none" : `1px solid ${C.border}`, fontSize: 13, lineHeight: 1.55, color: C.text }}>
+                {renderText(m.text)}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 7, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10 }}>✦</div>
+              <div style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: "16px 16px 16px 4px", padding: "10px 14px", display: "flex", gap: 4 }}>
+                {[0,1,2].map(d => <div key={d} style={{ width: 4, height: 4, borderRadius: "50%", background: C.accent, animation: "pulse 1.2s infinite", animationDelay: `${d*0.2}s` }} />)}
+              </div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Orb — above input, compact */}
+        {OrbBlob}
+
+        {/* Input */}
+        <div style={{ padding: "8px 12px 14px", borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", background: C.surfaceHigh, borderRadius: 14, padding: "6px 8px 6px 12px", border: `1px solid ${C.border}` }}>
+            <input
+              ref={inputRef}
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && sendChat()}
+              placeholder="Ask Aria anything..."
+              style={{ flex: 1, background: "none", border: "none", outline: "none", fontSize: 13, color: C.text, fontFamily: "'Outfit',sans-serif" }}
+            />
+            <div onClick={() => sendChat()} style={{ width: 30, height: 30, borderRadius: 9, background: chatInput.trim() ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.border, display: "flex", alignItems: "center", justifyContent: "center", cursor: chatInput.trim() ? "pointer" : "default", fontSize: 13, flexShrink: 0, transition: "background 0.2s" }}>➤</div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }
 
 export default function App() {
@@ -4169,6 +4962,8 @@ export default function App() {
   const freeScreens = ["login", "onboarding", "booking", "subscription", "settings", "sharelink"];
   const needsPaywall = !freeScreens.includes(screen) && subscriptionPlan === "free" && !isAuthScreen;
 
+  const showAISidebar = isDesktop && !isAuthScreen && screen !== "settings" && screen !== "assistant";
+
   return (
     <div style={{ fontFamily: "'Outfit',sans-serif", background: C.bg, minHeight: "100vh", color: C.text }}>
       <style>{GLOBAL_STYLES}</style>
@@ -4193,12 +4988,14 @@ export default function App() {
       )}
       <div style={{
         marginLeft: showSidebar ? 240 : 0,
+        marginRight: showAISidebar ? 300 : 0,
         minHeight: "100vh",
       }}>
-        <div style={{ maxWidth: showSidebar ? 1100 : 400, margin: "0 auto", padding: showSidebar ? "0 32px" : "0" }}>
+        <div style={{ maxWidth: showSidebar ? "none" : 400, margin: "0 auto", padding: showSidebar ? "0 24px" : "0" }}>
           <Screen navigate={navigate} />
         </div>
       </div>
+      {showAISidebar && <AISidebarPanel navigate={navigate} />}
     </div>
   );
 }
