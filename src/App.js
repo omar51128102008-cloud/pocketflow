@@ -4230,22 +4230,47 @@ BUSINESS DATA:
 ${bizContext || "Loading..."}
 PERSONALITY: Warm, sharp, confident. Like a brilliant friend who knows this business inside out.
 ${isVoice ? "VOICE MODE: 1-2 short natural sentences only. No markdown. Conversational." : "TEXT MODE: Use **bold** for key numbers/names. Max 3-4 sentences unless asked for more. No bullet spam."}
-NAVIGATION: When user wants to go somewhere, your ENTIRE response must start with NAV:screenname (no space after colon), then a newline, then one short sentence. Example: "NAV:inbox\nHere's your inbox!"
-Screens: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings, home.
-Never write the word NAV in your displayed sentence — it gets stripped automatically.
+NAVIGATION RULE — CRITICAL: When the user asks to go to any screen/page, you MUST start your response with "NAV:screenname" on its own line. No exceptions.
+FORMAT: NAV:screenname\nYour message here.
+SCREENS: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings, home.
+EXAMPLES:
+User: "take me to inbox" → NAV:inbox\nHere are your messages!
+User: "open schedule" → NAV:schedule\nHere's your schedule!
+User: "go to clients" → NAV:clients\nHere are your clients!
+The "NAV:screenname" part is invisible to the user — it triggers navigation automatically.
 You remember this conversation — reference earlier messages when relevant.`;
   };
 
   // Strips NAV: prefix, triggers navigation, returns clean display text
+  const VALID_SCREENS = ["schedule","inbox","clients","payments","analytics","promotions","loyalty","services","staff","waitlist","settings","home","assistant","notifications"];
+
   const handleNavIntent = (raw) => {
+    // Try explicit NAV: prefix first
     const match = raw.match(/^NAV:\s*(\w+)/i);
     if (match) {
       const screen = match[1].toLowerCase();
-      const rest = raw.replace(/^NAV:\w+\n?/i, "").trim();
+      const rest = raw.replace(/^NAV:\s*\w+\s*/i, "").trim();
       setTimeout(() => navigate(screen), 700);
-      // Clean display: "Taking you to inbox — ..." or just the sentence
-      const displayText = rest || `Taking you to **${screen}**!`;
-      return { navigating: true, screen, text: displayText };
+      return { navigating: true, screen, text: rest || `Taking you to **${screen}**!` };
+    }
+    // Fallback: detect "here is your X" / "opening X" / "taking you to X" patterns
+    // and check if X matches a valid screen name
+    const navPhrases = [
+      /here(?:'s| is) your (\w+)/i,
+      /opening (?:your |the )?(\w+)/i,
+      /taking you to (?:the |your )?(\w+)/i,
+      /navigating to (?:the |your )?(\w+)/i,
+      /going to (?:the |your )?(\w+)/i,
+    ];
+    for (const pattern of navPhrases) {
+      const m = raw.match(pattern);
+      if (m) {
+        const candidate = m[1].toLowerCase();
+        if (VALID_SCREENS.includes(candidate)) {
+          setTimeout(() => navigate(candidate), 700);
+          return { navigating: true, screen: candidate, text: raw };
+        }
+      }
     }
     return { navigating: false, text: raw };
   };
@@ -4295,6 +4320,7 @@ You remember this conversation — reference earlier messages when relevant.`;
       });
       const data = await res.json();
       const raw = data.choices?.[0]?.message?.content || "Got it.";
+      console.log("🤖 AI raw (voice):", raw);
       const { text: reply } = handleNavIntent(raw);
       setChatHistory(p => [...(p || []), { role: "assistant", text: reply, time: new Date() }]);
       setVoiceLoading(false);
@@ -4328,6 +4354,7 @@ You remember this conversation — reference earlier messages when relevant.`;
       });
       const data = await res.json();
       const raw = data.choices?.[0]?.message?.content || "On it.";
+      console.log("🤖 AI raw (chat):", raw);
       const { text: reply } = handleNavIntent(raw);
       setChatHistory(p => [...p, { role: "assistant", text: reply, time: new Date() }]);
     } catch {
@@ -4410,7 +4437,7 @@ You remember this conversation — reference earlier messages when relevant.`;
             value={chatInput}
             onChange={e => setChatInput(e.target.value)}
             onKeyDown={e => { if(e.key==="Enter") { e.preventDefault(); sendChat(); } }}
-            placeholder={voiceListening?"Listening...":"Ask Aria anything..."}
+            placeholder={voiceListening?"Listening...":`Ask ${aiName} anything...`}
             style={{ flex:1, background:"transparent", border:"none", outline:"none", fontSize:13, color:C.text, fontFamily:"'Red Hat Display',sans-serif" }}
           />
           {voiceSupported && (
