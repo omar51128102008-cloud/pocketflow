@@ -7,6 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    .StripeElement { background:#16161f; border:1px solid #1e1e2e; border-radius:14px; padding:14px 16px; transition:border 0.2s; }
+    .StripeElement--focus { border-color:#a78bfa; }
+    .StripeElement--invalid { border-color:#f43f5e; }
+  </style>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     ::-webkit-scrollbar { display: none; }
@@ -86,7 +92,9 @@ const C = {
   text:'#f1f0ff', mid:'#8b8ba8', dim:'#3d3d55',
 };
 
-const DEFAULT_SERVICES = [];
+const PROXY = 'https://pocketflow-proxy-production.up.railway.app';
+const STRIPE_PK = 'pk_test_51T8qBCRxHDrhPBhiYgQ6PWQICHiPKEVfvtss5dgPHr8KXAfgyJcqvuA1BkVbqYoT2I1qSm4wbJnffFdOMnEXhFnz00pAOhvMxG';
+let stripe, cardElement, cardComplete = false;
 
 function getAvailableDates() {
   const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -124,12 +132,8 @@ const canNext = () => {
     return name.length>0 && phone.length>0;
   }
   if (S.step===3) {
-    // Read live from DOM so we don't need a full re-render on every keystroke
-    const cn = (document.getElementById('f_cardNumber')?.value || S.cardNumber).replace(/\s/g,'');
-    const ce =  document.getElementById('f_cardExpiry')?.value || S.cardExpiry;
-    const cv =  document.getElementById('f_cardCvc')?.value    || S.cardCvc;
-    const ca = (document.getElementById('f_cardName')?.value   || S.cardName).trim();
-    return cn.length===16 && ce.length>=4 && cv.length>=3 && ca.length>0;
+    const ca = (document.getElementById('f_cardName')?.value || S.cardName).trim();
+    return cardComplete && ca.length > 0;
   }
   return false;
 };
@@ -220,57 +224,96 @@ async function handlePay() {
   if (!biz.userId) { set({error:'Invalid booking link.'}); return; }
   set({ paying:true, error:'' });
 
-  // Step 1: insert appointment
-  const { error: apptErr } = await sb.from('appointments').insert([{
-    client_name: S.name,
-    client_avatar: S.name.trim().split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(),
-    service: S.selectedServices.map(s=>s.name).join(', '),
-    time: S.selectedTime,
-    duration: S.selectedServices.map(s=>s.duration).join('+'),
-    price: '$'+total(),
-    status: 'confirmed',
-    note: S.note,
-    day: S.selectedDate,
-    owner_id: biz.userId,
-  }]);
-  if (apptErr) {
-    set({ paying:false, error:'Booking failed: ' + apptErr.message });
-    return;
-  }
-
-  // Step 2: add client (best-effort, don't fail the booking if this errors)
   try {
-    await sb.from('clients').insert([{
-      name: S.name, phone: S.phone, instagram: S.instagram,
-      total_visits: 1, total_spent: total(),
-      owner_id: biz.userId,
-    }]);
-  } catch(e) {}
-
-  // Step 3: increment promo code usage (best-effort)
-  if (S.promoResult?.success && S.promoResult?.codeId) {
-    try { await sb.rpc('increment_code_usage', { code_id: S.promoResult.codeId }); } catch(e) {}
-  }
-
-  // Silently sync to owner's Google Calendar via proxy
-  try {
-    await fetch('https://pocketflow-proxy-production.up.railway.app/add-to-google-calendar', {
+    // Step 1: Create PaymentIntent on server
+    const piRes = await fetch(`${PROXY}/create-payment-intent`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        owner_id: biz.userId,
-        service: S.selectedServices.map(s=>s.name).join(', '),
-        date: S.selectedDate,
-        time: S.selectedTime,
-        client_name: S.name,
-        biz_name: biz.name,
-        biz_location: biz.location || '',
-        deposit: '$'+deposit(),
-        phone: S.phone,
+        amount: deposit(),
+        currency: 'usd',
+        metadata: { client_name: S.name, service: S.selectedServices.map(s=>s.name).join(', '), owner_id: biz.userId },
       }),
     });
-  } catch(e) {}
+    const piData = await piRes.json();
+    if (!piData.client_secret) throw new Error(piData.error || 'Payment setup failed.');
 
-  set({ paying:false, booked:true });
+    // Step 2: Confirm card payment with Stripe
+    const { error: stripeErr, paymentIntent } = await stripe.confirmCardPayment(piData.client_secret, {
+      payment_method: {
+        card: cardElement,
+        billing_details: { name: S.cardName },
+      },
+    });
+    if (stripeErr) { set({ paying:false, error: stripeErr.message }); return; }
+    if (paymentIntent.status !== 'succeeded') { set({ paying:false, error:'Payment did not complete. Please try again.' }); return; }
+
+    // Step 3: Save appointment to Supabase
+    const { error: apptErr } = await sb.from('appointments').insert([{
+      client_name: S.name,
+      client_avatar: S.name.trim().split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(),
+      service: S.selectedServices.map(s=>s.name).join(', '),
+      time: S.selectedTime,
+      duration: S.selectedServices.map(s=>s.duration).join('+'),
+      price: '$'+total(),
+      status: 'confirmed',
+      note: S.note,
+      day: S.selectedDate,
+      owner_id: biz.userId,
+    }]);
+    if (apptErr) { set({ paying:false, error:'Booking saved payment but failed to save appointment: ' + apptErr.message }); return; }
+
+    // Step 4: Add client record (best-effort)
+    try {
+      await sb.from('clients').insert([{
+        name: S.name, phone: S.phone, instagram: S.instagram,
+        total_visits: 1, total_spent: total(),
+        owner_id: biz.userId,
+      }]);
+    } catch(e) {}
+
+    // Step 5: Increment promo code usage (best-effort)
+    if (S.promoResult?.success && S.promoResult?.codeId) {
+      try { await sb.rpc('increment_code_usage', { code_id: S.promoResult.codeId }); } catch(e) {}
+    }
+
+    // Step 6: Notify owner + SMS client (best-effort)
+    try {
+      await fetch(`${PROXY}/notify-booking`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          owner_id: biz.userId,
+          client_name: S.name,
+          client_phone: S.phone,
+          service: S.selectedServices.map(s=>s.name).join(', '),
+          date: S.selectedDate,
+          time: S.selectedTime,
+          deposit: '$'+deposit(),
+          biz_name: biz.name,
+          note: S.note,
+        }),
+      });
+    } catch(e) {}
+
+    // Step 7: Sync to owner's Google Calendar (best-effort)
+    try {
+      await fetch(`${PROXY}/add-to-google-calendar`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          owner_id: biz.userId,
+          service: S.selectedServices.map(s=>s.name).join(', '),
+          date: S.selectedDate, time: S.selectedTime,
+          client_name: S.name, biz_name: biz.name,
+          biz_location: biz.location || '',
+          deposit: '$'+deposit(), phone: S.phone,
+        }),
+      });
+    } catch(e) {}
+
+    set({ paying:false, booked:true });
+
+  } catch(err) {
+    set({ paying:false, error: err.message || 'Something went wrong. Please try again.' });
+  }
 }
 
 function render() {
@@ -486,12 +529,9 @@ function renderStep() {
     </div>
     <div class="card" style="padding:20px;margin-bottom:16px">
       <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:16px">Card Details</div>
-      <input class="input" id="f_cardNumber" placeholder="Card number" value="${S.cardNumber}" maxlength="19" style="letter-spacing:1.5px" />
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-        <input class="input" id="f_cardExpiry" placeholder="MM / YY" value="${S.cardExpiry}" maxlength="5" style="margin-bottom:0" />
-        <input class="input" id="f_cardCvc"    placeholder="CVC"    type="password" value="${S.cardCvc}" maxlength="4" style="margin-bottom:0" />
-      </div>
-      <input class="input" id="f_cardName" placeholder="Name on card" value="${S.cardName}" style="margin-bottom:0" />
+      <input class="input" id="f_cardName" placeholder="Name on card" value="${S.cardName}" style="margin-bottom:12px" />
+      <div id="card-element" style="margin-bottom:4px"></div>
+      <div id="card-errors" style="color:#f43f5e;font-size:12px;margin-top:8px"></div>
     </div>
     <div style="display:flex;gap:10px;align-items:flex-start;padding-bottom:8px">
       <span style="font-size:18px;flex-shrink:0">🔒</span>
@@ -528,16 +568,8 @@ function bindCTA() {
   document.getElementById('backBtn')?.addEventListener('click', ()=>set({step:S.step-1,error:''}));
   document.getElementById('nextBtn')?.addEventListener('click', ()=>{ if(canNext()) set({step:S.step+1}); });
   document.getElementById('payBtn')?.addEventListener('click', ()=>{
-    // Sync card values from DOM before submitting
-    const cn = document.getElementById('f_cardNumber');
-    const ce = document.getElementById('f_cardExpiry');
-    const cv = document.getElementById('f_cardCvc');
-    const ca = document.getElementById('f_cardName');
-    if(cn) S.cardNumber = cn.value;
-    if(ce) S.cardExpiry = ce.value;
-    if(cv) S.cardCvc    = cv.value;
-    if(ca) S.cardName   = ca.value;
-    if(canNext()&&!S.paying) handlePay();
+    S.cardName = document.getElementById('f_cardName')?.value || S.cardName;
+    if(canNext() && !S.paying) handlePay();
   });
 }
 
@@ -567,32 +599,32 @@ function bindEvents() {
     document.getElementById(id)?.addEventListener('input',e=>{ S[key]=e.target.value; refreshCTA(); });
   });
 
-  // Card fields — update state silently, NO full re-render, preserves focus & cursor
-  document.getElementById('f_cardNumber')?.addEventListener('input',e=>{
-    const raw = e.target.value.replace(/\D/g,'').slice(0,16);
-    const fmt = raw.replace(/(.{4})/g,'$1 ').trim();
-    const pos = e.target.selectionStart;
-    if(e.target.value !== fmt) { e.target.value=fmt; try{ e.target.setSelectionRange(pos,pos); }catch(x){} }
-    S.cardNumber = fmt;
-    refreshCTA();
-  });
-  document.getElementById('f_cardExpiry')?.addEventListener('input',e=>{
-    const raw = e.target.value.replace(/\D/g,'').slice(0,4);
-    const fmt = raw.length>=3 ? raw.slice(0,2)+'/'+raw.slice(2) : raw;
-    if(e.target.value !== fmt) e.target.value = fmt;
-    S.cardExpiry = fmt;
-    refreshCTA();
-  });
-  document.getElementById('f_cardCvc')?.addEventListener('input',e=>{
-    const v = e.target.value.replace(/\D/g,'').slice(0,4);
-    if(e.target.value !== v) e.target.value = v;
-    S.cardCvc = v;
-    refreshCTA();
-  });
   document.getElementById('f_cardName')?.addEventListener('input',e=>{
     S.cardName = e.target.value;
     refreshCTA();
   });
+
+  // Mount Stripe Card Element on step 3
+  if (S.step === 3 && document.getElementById('card-element')) {
+    if (!stripe) stripe = Stripe(STRIPE_PK);
+    const elements = stripe.elements({
+      fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap' }]
+    });
+    cardElement = elements.create('card', {
+      style: {
+        base: { color:'#f1f0ff', fontFamily:"'Outfit', sans-serif", fontSize:'14px', fontWeight:'400', '::placeholder':{ color:'#3d3d55' }, iconColor:'#8b8ba8' },
+        invalid: { color:'#f43f5e', iconColor:'#f43f5e' },
+      },
+      hidePostalCode: true,
+    });
+    cardElement.mount('#card-element');
+    cardElement.on('change', e => {
+      cardComplete = e.complete;
+      const errEl = document.getElementById('card-errors');
+      if (errEl) errEl.textContent = e.error ? e.error.message : '';
+      refreshCTA();
+    });
+  }
 }
 
 loadBiz();
