@@ -2911,9 +2911,9 @@ function Booking({ navigate }) {
         });
       } catch (e) { console.log("Notify failed (non-critical):", e); }
 
-      // Auto-sync to owner's Google Calendar if connected
-      console.log("🗓 Attempting Google Calendar sync, token exists:", !!localStorage.getItem("google_access_token"));
+      // Auto-sync to owner's Google Calendar via proxy
       await addToGoogleCalendar({
+        ownerId: uid,
         service: selectedServices.map(s => s.name).join(", "),
         date: selectedDate,
         time: selectedTime,
@@ -4042,40 +4042,17 @@ function Sidebar({ active, navigate }) {
   );
 }
 
-// ── GOOGLE CALENDAR AUTO-SYNC ─────────────────────────────────────────────────
-async function addToGoogleCalendar({ service, date, time, clientName, bizName, bizLocation, deposit, phone }) {
+// ── GOOGLE CALENDAR AUTO-SYNC (via proxy) ─────────────────────────────────────
+async function addToGoogleCalendar({ ownerId, service, date, time, clientName, bizName, bizLocation, deposit, phone }) {
   try {
-    const token = localStorage.getItem("google_access_token");
-    const expiry = localStorage.getItem("google_token_expiry");
-    if (!token || !expiry || Date.now() > parseInt(expiry)) return false;
-
-    const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-    const parts = date.split(" ");
-    const month = months[parts[1]]; const day = parseInt(parts[2]);
-    const year = new Date().getFullYear();
-    const tp = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
-    if (!tp) return false;
-    let hour = parseInt(tp[1]); const min = parseInt(tp[2]);
-    if (tp[3].toUpperCase() === "PM" && hour !== 12) hour += 12;
-    if (tp[3].toUpperCase() === "AM" && hour === 12) hour = 0;
-    const start = new Date(year, month, day, hour, min);
-    const end = new Date(start.getTime() + 60 * 60 * 1000);
-
-    const event = {
-      summary: `${service} — ${clientName}`,
-      location: bizLocation || bizName,
-      description: `Client: ${clientName}\nPhone: ${phone || ""}\nDeposit: ${deposit}\nBooked via Pocketflow`,
-      start: { dateTime: start.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-      end: { dateTime: end.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-      reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 60 }, { method: "email", minutes: 1440 }] },
-    };
-
-    const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
-      body: JSON.stringify(event),
+    if (!ownerId) return false;
+    const res = await fetch("https://pocketflow-proxy-production.up.railway.app/add-to-google-calendar", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ owner_id: ownerId, service, date, time, client_name: clientName, biz_name: bizName, biz_location: bizLocation, deposit, phone }),
     });
-    return res.ok;
+    const data = await res.json();
+    console.log("🗓 Google Calendar sync:", data.ok ? "✅ success" : "❌ " + data.reason);
+    return data.ok;
   } catch (e) {
     console.log("Google Calendar sync failed:", e);
     return false;
@@ -4109,18 +4086,28 @@ export default function App() {
       const accessToken = hashParams.get("access_token");
       const expiresIn = parseInt(hashParams.get("expires_in") || "3600");
       if (accessToken) {
-        // Save token with expiry
+        // Save token locally
         localStorage.setItem("google_access_token", accessToken);
         localStorage.setItem("google_token_expiry", String(Date.now() + expiresIn * 1000));
-        // Fetch user's Google email
+
+        // Get user info + save token to proxy (so book.html can use it)
         fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
           headers: { Authorization: "Bearer " + accessToken }
-        }).then(r => r.json()).then(info => {
+        }).then(r => r.json()).then(async info => {
           if (info.email) localStorage.setItem("google_email", info.email);
+          // Get owner's Supabase user ID
+          const { data: { session } } = await supabase.auth.getSession();
+          const ownerId = session?.user?.id;
+          if (ownerId) {
+            // Save token to proxy keyed by owner ID
+            fetch("https://pocketflow-proxy-production.up.railway.app/save-google-token", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ owner_id: ownerId, access_token: accessToken, expires_in: expiresIn, email: info.email || "" }),
+            }).catch(() => {});
+          }
         }).catch(() => {});
-        // Clean URL and go to connections screen
+
         window.history.replaceState({}, "", window.location.pathname);
-        // Dispatch storage event so ConnectedAccounts picks up the new token
         window.dispatchEvent(new Event("storage"));
         setTimeout(() => setScreen("connections"), 500);
       }

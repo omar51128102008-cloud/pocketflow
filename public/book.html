@@ -195,6 +195,29 @@ async function applyPromo() {
   });
 }
 
+function buildGCalUrl() {
+  try {
+    const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const parts = S.selectedDate.split(' ');
+    const month = months[parts[1]]; const day = parseInt(parts[2]);
+    const year = new Date().getFullYear();
+    const tp = S.selectedTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!tp) return null;
+    let hour = parseInt(tp[1]); const min = parseInt(tp[2]);
+    if (tp[3].toUpperCase()==='PM' && hour!==12) hour+=12;
+    if (tp[3].toUpperCase()==='AM' && hour===12) hour=0;
+    const start = new Date(year,month,day,hour,min);
+    const end = new Date(start.getTime()+60*60*1000);
+    const fmt = d=>d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+    const title = encodeURIComponent(S.selectedServices.map(s=>s.name).join(' + ')+' at '+biz.name);
+    const details = encodeURIComponent('Booked via Pocketflow
+Deposit paid: $'+deposit()+'
+Phone: '+S.phone);
+    const loc = encodeURIComponent(biz.location||biz.name);
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+title+'&dates='+fmt(start)+'/'+fmt(end)+'&details='+details+'&location='+loc;
+  } catch(e) { return null; }
+}
+
 async function handlePay() {
   if (!biz.userId) { set({error:'Invalid booking link.'}); return; }
   set({ paying:true, error:'' });
@@ -231,6 +254,24 @@ async function handlePay() {
     try { await sb.rpc('increment_code_usage', { code_id: S.promoResult.codeId }); } catch(e) {}
   }
 
+  // Silently sync to owner's Google Calendar via proxy
+  try {
+    await fetch('https://pocketflow-proxy-production.up.railway.app/add-to-google-calendar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        owner_id: biz.userId,
+        service: S.selectedServices.map(s=>s.name).join(', '),
+        date: S.selectedDate,
+        time: S.selectedTime,
+        client_name: S.name,
+        biz_name: biz.name,
+        biz_location: biz.location || '',
+        deposit: '$'+deposit(),
+        phone: S.phone,
+      }),
+    });
+  } catch(e) {}
+
   set({ paying:false, booked:true });
 }
 
@@ -262,26 +303,7 @@ function render() {
           You'll receive a reminder 24 hours before your appointment ✨<br/>
           <span style="font-size:12px;color:${C.dim}">Screenshot this page as your confirmation.</span>
         </div>
-        ${(() => {
-          try {
-            const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-            const parts = S.selectedDate.split(' ');
-            const month = months[parts[1]]; const day = parseInt(parts[2]);
-            const year = new Date().getFullYear();
-            const tp = S.selectedTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
-            let hour = parseInt(tp[1]); const min = tp[2];
-            if (tp[3].toUpperCase()==='PM' && hour!==12) hour+=12;
-            if (tp[3].toUpperCase()==='AM' && hour===12) hour=0;
-            const start = new Date(year,month,day,hour,parseInt(min));
-            const end = new Date(start.getTime()+60*60*1000);
-            const fmt = d=>d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
-            const title = encodeURIComponent(S.selectedServices.map(s=>s.name).join(' + ')+' at '+biz.name);
-            const details = encodeURIComponent('Booked via Pocketflow\nDeposit paid: $'+deposit()+'\nPhone: '+S.phone);
-            const loc = encodeURIComponent(biz.location||biz.name);
-            const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+title+'&dates='+fmt(start)+'/'+fmt(end)+'&details='+details+'&location='+loc;
-            return '<a href="'+url+'" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 0;border-radius:14px;background:'+C.surface+';border:1px solid '+C.border+';font-size:14px;font-weight:700;color:'+C.text+';text-decoration:none;margin-bottom:16px">📅 Add to Google Calendar</a>';
-          } catch(e) { return ''; }
-        })()}
+        ${buildGCalUrl() ? '<a href="'+buildGCalUrl()+'" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 0;border-radius:14px;background:'+C.surface+';border:1px solid '+C.border+';font-size:14px;font-weight:700;color:'+C.text+';text-decoration:none;margin-bottom:16px">📅 Add to Google Calendar</a>' : ''}
         <div style="font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Pocketflow</span></div>
       </div>
     </div>`;
