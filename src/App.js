@@ -2911,6 +2911,18 @@ function Booking({ navigate }) {
         });
       } catch (e) { console.log("Notify failed (non-critical):", e); }
 
+      // Auto-sync to owner's Google Calendar if connected
+      await addToGoogleCalendar({
+        service: selectedServices.map(s => s.name).join(", "),
+        date: selectedDate,
+        time: selectedTime,
+        clientName: name,
+        bizName,
+        bizLocation,
+        deposit: depositStr,
+        phone,
+      });
+
       setBooked(true);
     } catch (err) {
       console.error("Booking error:", err);
@@ -3514,16 +3526,59 @@ function BusinessProfile({ navigate }) {
 
 // ── CONNECTED ACCOUNTS ─────────────────────────────────────────────────────────
 function ConnectedAccounts({ navigate }) {
-  const [connections, setConnections] = useState({ whatsapp: false, instagram: false, google: true, facebook: false });
-  const toggle = key => setConnections(p => ({ ...p, [key]: !p[key] }));
-  const accounts = [
-    { key: "whatsapp", icon: "💬", label: "WhatsApp Business", sub: "Auto-reply to client messages", color: "#25D366" },
-    { key: "instagram", icon: "📸", label: "Instagram DMs", sub: "Reply to DMs automatically", color: "#E1306C" },
-    { key: "google", icon: "📅", label: "Google Calendar", sub: "Sync appointments automatically", color: "#4285F4" },
-    { key: "facebook", icon: "👥", label: "Facebook Messenger", sub: "Handle Facebook inquiries", color: "#1877F2" },
-  ];
+  const GOOGLE_CLIENT_ID = "51949875643-qeid5cs66tbr6gu8f3tac6vhfof94raq.apps.googleusercontent.com";
+  const GOOGLE_SCOPES = "https://www.googleapis.com/auth/calendar.events";
+
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [googleEmail, setGoogleEmail] = useState(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  // Check if already connected on mount
+  useEffect(() => {
+    const token = localStorage.getItem("google_access_token");
+    const email = localStorage.getItem("google_email");
+    const expiry = localStorage.getItem("google_token_expiry");
+    if (token && expiry && Date.now() < parseInt(expiry)) {
+      setGoogleConnected(true);
+      setGoogleEmail(email);
+    } else {
+      localStorage.removeItem("google_access_token");
+      localStorage.removeItem("google_email");
+      localStorage.removeItem("google_token_expiry");
+    }
+  }, []);
+
+  const connectGoogle = () => {
+    setGoogleLoading(true);
+    const params = new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      redirect_uri: "https://omar51128102008-cloud.github.io/pocketflow",
+      response_type: "token",
+      scope: GOOGLE_SCOPES,
+      include_granted_scopes: "true",
+      state: "google_calendar_auth",
+    });
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+  };
+
+  const disconnectGoogle = () => {
+    localStorage.removeItem("google_access_token");
+    localStorage.removeItem("google_email");
+    localStorage.removeItem("google_token_expiry");
+    setGoogleConnected(false);
+    setGoogleEmail(null);
+    setToast("Google Calendar disconnected");
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+
   return (
     <div style={{ paddingBottom: 80 }}>
+      {toast && (
+        <div style={{ position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 20px", fontSize: 13, fontWeight: 600, zIndex: 9999, whiteSpace: "nowrap", boxShadow: "0 4px 20px #0008" }}>{toast}</div>
+      )}
       <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BackBtn onBack={() => navigate("settings")} />
@@ -3532,17 +3587,48 @@ function ConnectedAccounts({ navigate }) {
       </div>
       <div style={{ padding: "0 20px" }}>
         <div style={{ background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 16, padding: 14, marginBottom: 20, fontSize: 13, color: C.mid, lineHeight: 1.6 }}>✦ Connect your accounts so AI can reply to clients, confirm bookings, and send reminders automatically.</div>
-        <SectionLabel>Messaging & Booking</SectionLabel>
+
+        <SectionLabel>Calendar</SectionLabel>
+        <Card style={{ padding: 16, marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: "#4285F418", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>📅</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>Google Calendar</div>
+              <div style={{ fontSize: 12, color: googleConnected ? C.green : C.mid, marginTop: 2, fontWeight: googleConnected ? 600 : 400 }}>
+                {googleConnected ? `✓ Connected${googleEmail ? " · " + googleEmail : ""}` : "Sync appointments automatically"}
+              </div>
+            </div>
+            {googleConnected ? (
+              <button onClick={disconnectGoogle} style={{ padding: "7px 14px", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>
+                Disconnect
+              </button>
+            ) : (
+              <button onClick={connectGoogle} disabled={googleLoading} style={{ padding: "7px 14px", background: "linear-gradient(135deg,#4285F4,#34A853)", border: "none", borderRadius: 10, fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "'Outfit',sans-serif", opacity: googleLoading ? 0.7 : 1 }}>
+                {googleLoading ? "..." : "Connect"}
+              </button>
+            )}
+          </div>
+          {googleConnected && (
+            <div style={{ marginTop: 12, padding: "10px 12px", background: C.accentSoft, borderRadius: 10, fontSize: 12, color: C.mid, lineHeight: 1.6 }}>
+              ✦ New appointments will automatically be added to your Google Calendar when booked.
+            </div>
+          )}
+        </Card>
+
+        <SectionLabel>Coming Soon</SectionLabel>
         <Card>
-          {accounts.map((a, i) => (
-            <div key={a.key} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px", borderBottom: i < accounts.length - 1 ? `1px solid ${C.border}` : "none" }}>
+          {[
+            { icon: "💬", label: "WhatsApp Business", sub: "Auto-reply to client messages", color: "#25D366" },
+            { icon: "📸", label: "Instagram DMs", sub: "Reply to DMs automatically", color: "#E1306C" },
+            { icon: "👥", label: "Facebook Messenger", sub: "Handle Facebook inquiries", color: "#1877F2" },
+          ].map((a, i, arr) => (
+            <div key={a.label} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px", borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : "none", opacity: 0.5 }}>
               <div style={{ width: 44, height: 44, borderRadius: 14, background: a.color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{a.icon}</div>
               <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{a.label}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{a.sub}</div></div>
-              <Toggle on={connections[a.key]} onToggle={() => toggle(a.key)} />
+              <div style={{ fontSize: 11, color: C.dim, fontWeight: 600 }}>Soon</div>
             </div>
           ))}
         </Card>
-        <div style={{ fontSize: 12, color: C.dim, textAlign: "center", padding: "16px 0" }}>Full API integration available on Pro plan</div>
       </div>
       <BottomNav active="settings" navigate={navigate} />
     </div>
@@ -3947,6 +4033,46 @@ function Sidebar({ active, navigate }) {
   );
 }
 
+// ── GOOGLE CALENDAR AUTO-SYNC ─────────────────────────────────────────────────
+async function addToGoogleCalendar({ service, date, time, clientName, bizName, bizLocation, deposit, phone }) {
+  try {
+    const token = localStorage.getItem("google_access_token");
+    const expiry = localStorage.getItem("google_token_expiry");
+    if (!token || !expiry || Date.now() > parseInt(expiry)) return false;
+
+    const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const parts = date.split(" ");
+    const month = months[parts[1]]; const day = parseInt(parts[2]);
+    const year = new Date().getFullYear();
+    const tp = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!tp) return false;
+    let hour = parseInt(tp[1]); const min = parseInt(tp[2]);
+    if (tp[3].toUpperCase() === "PM" && hour !== 12) hour += 12;
+    if (tp[3].toUpperCase() === "AM" && hour === 12) hour = 0;
+    const start = new Date(year, month, day, hour, min);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+    const event = {
+      summary: `${service} — ${clientName}`,
+      location: bizLocation || bizName,
+      description: `Client: ${clientName}\nPhone: ${phone || ""}\nDeposit: ${deposit}\nBooked via Pocketflow`,
+      start: { dateTime: start.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      end: { dateTime: end.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 60 }, { method: "email", minutes: 1440 }] },
+    };
+
+    const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify(event),
+    });
+    return res.ok;
+  } catch (e) {
+    console.log("Google Calendar sync failed:", e);
+    return false;
+  }
+}
+
 export default function App() {
   const [screen, setScreen] = useState("login");
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
@@ -3965,6 +4091,28 @@ export default function App() {
       setTimeout(() => setScreen("subscription"), 300);
     } else if (params.get("checkout") === "cancel") {
       window.history.replaceState({}, "", window.location.pathname);
+    }
+
+    // Handle Google OAuth callback (token in URL hash)
+    const hash = window.location.hash;
+    if (hash && hash.includes("access_token") && hash.includes("state=google_calendar_auth")) {
+      const hashParams = new URLSearchParams(hash.replace("#", ""));
+      const accessToken = hashParams.get("access_token");
+      const expiresIn = parseInt(hashParams.get("expires_in") || "3600");
+      if (accessToken) {
+        // Save token with expiry
+        localStorage.setItem("google_access_token", accessToken);
+        localStorage.setItem("google_token_expiry", String(Date.now() + expiresIn * 1000));
+        // Fetch user's Google email
+        fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { Authorization: "Bearer " + accessToken }
+        }).then(r => r.json()).then(info => {
+          if (info.email) localStorage.setItem("google_email", info.email);
+        }).catch(() => {});
+        // Clean URL and go to connections screen
+        window.history.replaceState({}, "", window.location.pathname);
+        setTimeout(() => setScreen("connections"), 300);
+      }
     }
   }, []);
 
