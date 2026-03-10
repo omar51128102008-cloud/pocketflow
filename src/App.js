@@ -16,7 +16,7 @@ const C = {
 };
 
 const GLOBAL_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   ::-webkit-scrollbar{display:none;}
   body{background:#050508;}
@@ -74,7 +74,7 @@ function useDesktop() {
 }
 
 const BtnPrimary = ({ children, onClick, disabled, style }) => (
-  <button onClick={onClick} disabled={disabled} style={{ background: disabled ? "#1e1e2e" : `linear-gradient(135deg,${C.accentDark},${C.accent})`, border: "none", borderRadius: 14, color: disabled ? C.dim : "#fff", fontFamily: "'Outfit',sans-serif", fontWeight: 600, fontSize: 15, cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.2s", ...style }}>{children}</button>
+  <button onClick={onClick} disabled={disabled} style={{ background: disabled ? "#1e1e2e" : `linear-gradient(135deg,${C.accentDark},${C.accent})`, border: "none", borderRadius: 14, color: disabled ? C.dim : "#fff", fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600, fontSize: 15, cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.2s", ...style }}>{children}</button>
 );
 
 const BackBtn = ({ onBack }) => (
@@ -193,7 +193,7 @@ function Login({ navigate }) {
           <>
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Reset password</div>
             <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>Enter your email and we'll send a reset link.</div>
-            <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
+            <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
             {error && <div style={{ background: "#f43f5e18", border: "1px solid #f43f5e33", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
             <BtnPrimary onClick={handleReset} disabled={loading || !email} style={{ width: "100%", padding: 16, marginBottom: 12 }}>{loading ? "Sending..." : "Send Reset Link"}</BtnPrimary>
             <div style={{ textAlign: "center" }}><span onClick={() => { setResetMode(false); setError(""); }} style={{ fontSize: 13, color: C.accent, cursor: "pointer" }}>← Back to login</span></div>
@@ -205,9 +205,9 @@ function Login({ navigate }) {
                 <div key={m} onClick={() => { setMode(m); setError(""); }} style={{ flex: 1, padding: "11px", borderRadius: 11, background: mode === m ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "transparent", textAlign: "center", fontSize: 14, fontWeight: 600, color: mode === m ? "#fff" : C.mid, cursor: "pointer", transition: "all 0.2s" }}>{m === "login" ? "Log In" : "Sign Up"}</div>
               ))}
             </div>
-            {mode === "signup" && <input placeholder="Business name" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />}
-            <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
-            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 20 }} />
+            {mode === "signup" && <input placeholder="Business name" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />}
+            <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
+            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 20 }} />
             {error && <div style={{ background: "#f43f5e18", border: "1px solid #f43f5e33", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
             {mode === "login" && <div style={{ textAlign: "right", marginBottom: 16, marginTop: -8 }}><span onClick={() => { setResetMode(true); setError(""); }} style={{ fontSize: 13, color: C.accent, cursor: "pointer" }}>Forgot password?</span></div>}
             <BtnPrimary onClick={handleAuth} disabled={loading || !email || !password} style={{ width: "100%", padding: 16 }}>
@@ -307,13 +307,13 @@ function Onboarding({ navigate }) {
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Tell us about<br />your business</div>
             <div style={{ fontSize: 14, color: C.mid, marginBottom: 28 }}>We'll set everything up around you.</div>
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>BUSINESS NAME</div>
-            <input placeholder="e.g. Luxe Hair Studio" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 16 }} />
+            <input placeholder="e.g. Luxe Hair Studio" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 16 }} />
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>TYPE</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
               {BUSINESS_TYPES.map(t => <div key={t} onClick={() => setBizType(t)} style={{ padding: "9px 16px", borderRadius: 100, background: bizType === t ? C.accentSoft : C.surface, border: `1px solid ${bizType === t ? C.accent : C.border}`, fontSize: 13, color: bizType === t ? C.accent : C.mid, cursor: "pointer", fontWeight: bizType === t ? 600 : 400, transition: "all 0.2s" }}>{t}</div>)}
             </div>
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>LOCATION</div>
-            <input placeholder="e.g. Atlanta, GA" value={bizLocation} onChange={e => setBizLocation(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+            <input placeholder="e.g. Atlanta, GA" value={bizLocation} onChange={e => setBizLocation(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
           </div>
         )}
         {step === 1 && (
@@ -329,12 +329,12 @@ function Onboarding({ navigate }) {
             ))}
             <div style={{ background: C.surface, border: `1px dashed ${C.borderHigh}`, borderRadius: 14, padding: 14 }}>
               <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 10 }}>ADD SERVICE</div>
-              <input placeholder="Service name" value={newService.name} onChange={e => setNewService(p => ({ ...p, name: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 8 }} />
+              <input placeholder="Service name" value={newService.name} onChange={e => setNewService(p => ({ ...p, name: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 8 }} />
               <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                <input placeholder="Price $" value={newService.price} onChange={e => setNewService(p => ({ ...p, price: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
-                <input placeholder="Duration" value={newService.duration} onChange={e => setNewService(p => ({ ...p, duration: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+                <input placeholder="Price $" value={newService.price} onChange={e => setNewService(p => ({ ...p, price: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
+                <input placeholder="Duration" value={newService.duration} onChange={e => setNewService(p => ({ ...p, duration: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
               </div>
-              <button onClick={() => { if (!newService.name) return; setServices(p => [...p, { ...newService, id: Date.now() }]); setNewService({ name: "", price: "", duration: "" }); }} style={{ width: "100%", padding: 11, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif", fontWeight: 600 }}>+ Add Service</button>
+              <button onClick={() => { if (!newService.name) return; setServices(p => [...p, { ...newService, id: Date.now() }]); setNewService({ name: "", price: "", duration: "" }); }} style={{ width: "100%", padding: 11, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600 }}>+ Add Service</button>
             </div>
           </div>
         )}
@@ -351,14 +351,14 @@ function Onboarding({ navigate }) {
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>Opens at</div>
-                <select value={startTime} onChange={e => setStartTime(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }}>
+                <select value={startTime} onChange={e => setStartTime(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }}>
                   {["7:00 AM","8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM"].map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div style={{ color: C.dim, marginTop: 16 }}>→</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>Closes at</div>
-                <select value={endTime} onChange={e => setEndTime(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }}>
+                <select value={endTime} onChange={e => setEndTime(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }}>
                   {["4:00 PM","5:00 PM","6:00 PM","7:00 PM","8:00 PM","9:00 PM","10:00 PM"].map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
@@ -594,7 +594,7 @@ function Home({ navigate }) {
               ))}
             </Card>
             <div style={{ display: "flex", gap: 10 }}>
-              <button style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Reschedule</button>
+              <button style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif" }}>Reschedule</button>
               <BtnPrimary style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
             </div>
           </div>
@@ -716,7 +716,7 @@ Price: ${a.price || ""}`);
             {reminderSent
               ? <div style={{ padding: 13, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Reminder sent!</div>
               : <div style={{ display: "flex", gap: 10 }}>
-                  <button onClick={() => setSelectedAppt(null)} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Reschedule</button>
+                  <button onClick={() => setSelectedAppt(null)} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif" }}>Reschedule</button>
                   <BtnPrimary onClick={async () => {
                     setReminderSent(true);
                     try {
@@ -805,7 +805,7 @@ function Inbox({ navigate }) {
                 ) : (
                   <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                     <BtnPrimary onClick={() => handleAI(m)} style={{ flex: 1, padding: 10, fontSize: 12 }}>Let AI handle it</BtnPrimary>
-                    <button style={{ flex: 1, padding: 10, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>Reply myself</button>
+                    <button style={{ flex: 1, padding: 10, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif" }}>Reply myself</button>
                   </div>
                 )}
               </Card>
@@ -1310,7 +1310,7 @@ Examples:
           <input
             value={chatInput} onChange={handleChatInput} onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendChat()}
             placeholder={speaking ? `${aiName} is speaking — type to interrupt...` : `Ask ${aiName} anything...`}
-            style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", outline: "none" }}
+            style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", outline: "none" }}
           />
           {voiceSupported && !isDesktop && (
             <div onClick={openVoiceMode} style={{ width: 36, height: 36, borderRadius: 10, background: C.surfaceHigh, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
@@ -1476,7 +1476,7 @@ function NoteTab({ client, onNoteUpdate }) {
         rows={4}
         value={note}
         onChange={e => { setNote(e.target.value); setSaved(false); }}
-        style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", resize: "none" }}
+        style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", resize: "none" }}
       />
       {saved
         ? <div style={{ width: "100%", padding: 13, marginTop: 10, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Note saved!</div>
@@ -1618,7 +1618,7 @@ function Clients({ navigate }) {
         <div>
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "10px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." style={{ background: "none", border: "none", fontSize: 13, color: C.text, fontFamily: "'Outfit',sans-serif", width: "100%" }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." style={{ background: "none", border: "none", fontSize: 13, color: C.text, fontFamily: "'Red Hat Display',sans-serif", width: "100%" }} />
         </div>
         {loading ? (
           <div style={{ textAlign: "center", padding: 40, color: C.mid }}>Loading clients...</div>
@@ -1693,9 +1693,9 @@ function Clients({ navigate }) {
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add New Client</div>
-            <input placeholder="Full name *" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Instagram handle" value={newInstagram} onChange={e => setNewInstagram(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 20 }} />
+            <input placeholder="Full name *" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Instagram handle" value={newInstagram} onChange={e => setNewInstagram(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 20 }} />
             <BtnPrimary disabled={!newName || adding} onClick={addClient} style={{ width: "100%", padding: 14 }}>{adding ? "Adding..." : "Add Client"}</BtnPrimary>
           </div>
         </div>
@@ -1832,16 +1832,16 @@ function Services({ navigate }) {
             </div>
 
             <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Service Name *</div>
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Knotless Braids" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 14 }} />
+            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Knotless Braids" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 14 }} />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Price ($) *</div>
-                <input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="120" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+                <input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="120" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
               </div>
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Duration *</div>
-                <select value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: form.duration ? C.text : C.dim, fontFamily: "'Outfit',sans-serif" }}>
+                <select value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: form.duration ? C.text : C.dim, fontFamily: "'Red Hat Display',sans-serif" }}>
                   <option value="">Select</option>
                   {DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -1849,7 +1849,7 @@ function Services({ navigate }) {
             </div>
 
             <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Description (optional)</div>
-            <input value={form.desc} onChange={e => setForm(p => ({ ...p, desc: e.target.value }))} placeholder="Short description clients will see" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 14 }} />
+            <input value={form.desc} onChange={e => setForm(p => ({ ...p, desc: e.target.value }))} placeholder="Short description clients will see" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 14 }} />
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", marginBottom: 16, borderTop: `1px solid ${C.border}` }}>
               <div><div style={{ fontSize: 14, fontWeight: 600 }}>Show on booking page</div><div style={{ fontSize: 12, color: C.dim }}>Clients can book this service</div></div>
@@ -1922,7 +1922,7 @@ function Payments({ navigate }) {
               </div>
               <div style={{ display: "flex", alignItems: "center", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 14px", gap: 8 }}>
                 <span style={{ fontSize: 18, color: C.mid }}>{depositType === "percent" ? "%" : "$"}</span>
-                <input value={depositAmount} onChange={e => setDepositAmount(e.target.value)} style={{ flex: 1, background: "none", border: "none", fontSize: 20, fontWeight: 700, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+                <input value={depositAmount} onChange={e => setDepositAmount(e.target.value)} style={{ flex: 1, background: "none", border: "none", fontSize: 20, fontWeight: 700, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
                 <span style={{ fontSize: 12, color: C.dim }}>{depositType === "percent" ? "of total" : "flat fee"}</span>
               </div>
             </div>
@@ -1939,7 +1939,7 @@ function Payments({ navigate }) {
           <div><div style={{ fontSize: 14, fontWeight: 600 }}>No-show fee</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Charge ${noShowFee ? noShowAmount : "–"} if client doesn't show</div></div>
           <Toggle on={noShowFee} onToggle={() => setNoShowFee(p => !p)} />
         </div>
-        {noShowFee && <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}` }}><div style={{ display: "flex", alignItems: "center", background: C.surfaceHigh, border: `1px solid ${C.borderHigh}`, borderRadius: 12, padding: "10px 14px", gap: 8 }}><span style={{ fontSize: 16, color: C.mid }}>$</span><input value={noShowAmount} onChange={e => setNoShowAmount(e.target.value)} style={{ flex: 1, background: "none", border: "none", fontSize: 18, fontWeight: 700, color: C.text, fontFamily: "'Outfit',sans-serif" }} /></div></div>}
+        {noShowFee && <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}` }}><div style={{ display: "flex", alignItems: "center", background: C.surfaceHigh, border: `1px solid ${C.borderHigh}`, borderRadius: 12, padding: "10px 14px", gap: 8 }}><span style={{ fontSize: 16, color: C.mid }}>$</span><input value={noShowAmount} onChange={e => setNoShowAmount(e.target.value)} style={{ flex: 1, background: "none", border: "none", fontSize: 18, fontWeight: 700, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} /></div></div>}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: lateCancel ? `1px solid ${C.border}` : "none" }}>
           <div><div style={{ fontSize: 14, fontWeight: 600 }}>Late cancellation fee</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Within {lateCancelHours}h of appointment</div></div>
           <Toggle on={lateCancel} onToggle={() => setLateCancel(p => !p)} />
@@ -2084,7 +2084,7 @@ function Settings({ navigate }) {
             onChange={e => { setAiName(e.target.value); setAiNameSaved(false); }}
             placeholder="e.g. Aria, Nova, Sage..."
             maxLength={20}
-            style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 10 }}
+            style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 10 }}
           />
           {aiNameSaved
             ? <div style={{ width: "100%", padding: 11, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Saved!</div>
@@ -2152,7 +2152,7 @@ function Settings({ navigate }) {
                     placeholder={p.placeholder}
                     value={paymentDetails[p.label] || ""}
                     onChange={e => setPaymentDetails(prev => ({ ...prev, [p.label]: e.target.value }))}
-                    style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 10 }}
+                    style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 10 }}
                   />
                   <BtnPrimary onClick={() => setPaymentInputOpen(prev => ({ ...prev, [p.label]: false }))} style={{ width: "100%", padding: 11, fontSize: 13 }}>Save</BtnPrimary>
                 </div>
@@ -2288,7 +2288,7 @@ function Loyalty({ navigate }) {
               onChange={e => setNewCode(p => ({ ...p, code: e.target.value.toUpperCase().replace(/\s/g, "") }))}
               placeholder="Code (e.g. WELCOME10)"
               maxLength={20}
-              style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 10, letterSpacing: 1 }}
+              style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 10, letterSpacing: 1 }}
             />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
               {["percent", "fixed"].map(t => (
@@ -2302,13 +2302,13 @@ function Loyalty({ navigate }) {
                 value={newCode.value}
                 onChange={e => setNewCode(p => ({ ...p, value: e.target.value.replace(/\D/g, "") }))}
                 placeholder={newCode.type === "percent" ? "e.g. 10 (10%)" : "e.g. 20 ($20)"}
-                style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }}
+                style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }}
               />
               <input
                 value={newCode.limit}
                 onChange={e => setNewCode(p => ({ ...p, limit: e.target.value.replace(/\D/g, "") }))}
                 placeholder="Usage limit (optional)"
-                style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }}
+                style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }}
               />
             </div>
             <div onClick={() => setNewCode(p => ({ ...p, firstOnly: !p.firstOnly }))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", cursor: "pointer", marginBottom: 14 }}>
@@ -2732,7 +2732,7 @@ function Promotions({ navigate }) {
               <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.6, marginBottom: 12 }}>You have 3 open slots this Friday. Want me to send a flash promo to your last 30 clients?</div>
               <div style={{ display: "flex", gap: 8 }}>
                 <BtnPrimary onClick={() => setCreating(true)} style={{ flex: 1, padding: 11, fontSize: 13 }}>Yes, create it</BtnPrimary>
-                <button onClick={() => {}} style={{ flex: 1, padding: 11, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif", fontWeight: 600 }}>Not now</button>
+                <button onClick={() => {}} style={{ flex: 1, padding: 11, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600 }}>Not now</button>
               </div>
             </div>
             <SectionLabel>Past Promotions</SectionLabel>
@@ -2753,11 +2753,11 @@ function Promotions({ navigate }) {
           </>
         ) : (
           <>
-            <input placeholder="Promo title (e.g. Friday Flash Deal 🔥)" value={promoTitle} onChange={e => setPromoTitle(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Promo title (e.g. Friday Flash Deal 🔥)" value={promoTitle} onChange={e => setPromoTitle(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
             <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 14, marginBottom: 12 }}>
-              <textarea placeholder="Write your message..." value={promoMsg} onChange={e => setPromoMsg(e.target.value)} rows={4} style={{ width: "100%", background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", resize: "none" }} />
+              <textarea placeholder="Write your message..." value={promoMsg} onChange={e => setPromoMsg(e.target.value)} rows={4} style={{ width: "100%", background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", resize: "none" }} />
             </div>
-            <button onClick={() => setPromoMsg("Hey gorgeous! 💕 I have a few slots open this Friday and I'm running a special — book any service and get 15% off. Limited spots, first come first served! Book here 👉 [your link]")} style={{ width: "100%", padding: 12, background: C.accentSoft, border: `1px solid ${C.accent}44`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.accent, cursor: "pointer", fontFamily: "'Outfit',sans-serif", marginBottom: 20 }}>✦ Write with AI</button>
+            <button onClick={() => setPromoMsg("Hey gorgeous! 💕 I have a few slots open this Friday and I'm running a special — book any service and get 15% off. Limited spots, first come first served! Book here 👉 [your link]")} style={{ width: "100%", padding: 12, background: C.accentSoft, border: `1px solid ${C.accent}44`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.accent, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif", marginBottom: 20 }}>✦ Write with AI</button>
             <SectionLabel>Send to</SectionLabel>
             <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
               {[{ id: "all", label: "All (47)" }, { id: "regulars", label: "Regulars (18)" }, { id: "inactive", label: "Inactive (12)" }].map(a => (
@@ -3099,10 +3099,10 @@ function Booking({ navigate }) {
                 </div>
               ))}
             </Card>
-            <input placeholder="Your full name *" value={name} onChange={e => setName(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Phone number *" type="tel" value={phone} onChange={e => setPhone(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Instagram handle (optional)" value={instagram} onChange={e => setInstagram(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
-            <textarea placeholder="Notes — hair length, allergies, special requests..." value={note} onChange={e => setNote(e.target.value)} rows={3} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", resize: "none" }} />
+            <input placeholder="Your full name *" value={name} onChange={e => setName(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Phone number *" type="tel" value={phone} onChange={e => setPhone(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Instagram handle (optional)" value={instagram} onChange={e => setInstagram(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
+            <textarea placeholder="Notes — hair length, allergies, special requests..." value={note} onChange={e => setNote(e.target.value)} rows={3} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", resize: "none" }} />
           </div>
         )}
 
@@ -3122,24 +3122,24 @@ function Booking({ navigate }) {
             <div style={{ background: C.surface, border: "1px solid " + C.border, borderRadius: 18, padding: "4px 0", marginBottom: 16 }}>
               <div style={{ padding: "12px 16px", borderBottom: "1px solid " + C.border }}>
                 <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>CARDHOLDER NAME</div>
-                <input placeholder="Name on card" value={cardName} onChange={e => setCardName(e.target.value)} style={{ width: "100%", background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Outfit',sans-serif", fontWeight: 600 }} />
+                <input placeholder="Name on card" value={cardName} onChange={e => setCardName(e.target.value)} style={{ width: "100%", background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600 }} />
               </div>
               <div style={{ padding: "12px 16px", borderBottom: "1px solid " + C.border }}>
                 <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>CARD NUMBER</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <input placeholder="1234 5678 9012 3456" value={cardNumber} onChange={e => setCardNumber(formatCard(e.target.value))} style={{ flex: 1, background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Outfit',sans-serif", fontWeight: 600, letterSpacing: 2 }} />
+                  <input placeholder="1234 5678 9012 3456" value={cardNumber} onChange={e => setCardNumber(formatCard(e.target.value))} style={{ flex: 1, background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600, letterSpacing: 2 }} />
                   <span style={{ fontSize: 20 }}>💳</span>
                 </div>
               </div>
               <div style={{ display: "flex", padding: "12px 16px", gap: 20 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>EXPIRY</div>
-                  <input placeholder="MM/YY" value={cardExpiry} onChange={e => setCardExpiry(formatExpiry(e.target.value))} style={{ width: "100%", background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Outfit',sans-serif", fontWeight: 600 }} />
+                  <input placeholder="MM/YY" value={cardExpiry} onChange={e => setCardExpiry(formatExpiry(e.target.value))} style={{ width: "100%", background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600 }} />
                 </div>
                 <div style={{ width: 1, background: C.border }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>CVC</div>
-                  <input placeholder="123" value={cardCvc} onChange={e => setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 3))} style={{ width: "100%", background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Outfit',sans-serif", fontWeight: 600 }} />
+                  <input placeholder="123" value={cardCvc} onChange={e => setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 3))} style={{ width: "100%", background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600 }} />
                 </div>
               </div>
             </div>
@@ -3230,7 +3230,7 @@ function Staff({ navigate }) {
         </div>
         <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, padding: "12px 20px 32px", background: C.bg, borderTop: `1px solid ${C.border}` }}>
           <div style={{ display: "flex", gap: 10, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "6px 6px 6px 16px", alignItems: "center" }}>
-            <input value={chatMsg} onChange={e => setChatMsg(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} placeholder={`Message ${selectedStaff.name}...`} style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+            <input value={chatMsg} onChange={e => setChatMsg(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} placeholder={`Message ${selectedStaff.name}...`} style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
             <BtnPrimary onClick={sendMsg} disabled={!chatMsg.trim()} style={{ width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, flexShrink: 0, padding: 0 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </BtnPrimary>
@@ -3272,7 +3272,7 @@ function Staff({ navigate }) {
           ))}
         </Card>
         <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={() => { setStaff(p => p.map(s => s.id === selectedStaff.id ? { ...s, status: s.status === "active" ? "day-off" : "active" } : s)); setSelectedStaff(p => ({ ...p, status: p.status === "active" ? "day-off" : "active" })); }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>
+          <button onClick={() => { setStaff(p => p.map(s => s.id === selectedStaff.id ? { ...s, status: s.status === "active" ? "day-off" : "active" } : s)); setSelectedStaff(p => ({ ...p, status: p.status === "active" ? "day-off" : "active" })); }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif" }}>
             {selectedStaff.status === "active" ? "Mark Day Off" : "Mark Active"}
           </button>
           <BtnPrimary onClick={() => setChatOpen(true)} style={{ flex: 1, padding: 13 }}>💬 Message</BtnPrimary>
@@ -3342,7 +3342,7 @@ function Staff({ navigate }) {
                   </div>
                   <div style={{ padding: 16 }}>
                     <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-                      <button onClick={() => { setStaff(p => p.map(s => s.id === selectedStaff.id ? { ...s, status: s.status === "active" ? "day-off" : "active" } : s)); setSelectedStaff(p => ({ ...p, status: p.status === "active" ? "day-off" : "active" })); }} style={{ flex: 1, padding: 11, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>
+                      <button onClick={() => { setStaff(p => p.map(s => s.id === selectedStaff.id ? { ...s, status: s.status === "active" ? "day-off" : "active" } : s)); setSelectedStaff(p => ({ ...p, status: p.status === "active" ? "day-off" : "active" })); }} style={{ flex: 1, padding: 11, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif" }}>
                         {selectedStaff.status === "active" ? "Mark Day Off" : "Mark Active"}
                       </button>
                       <BtnPrimary onClick={() => setChatOpen(true)} style={{ flex: 1, padding: 11, fontSize: 13 }}>💬 Message</BtnPrimary>
@@ -3366,9 +3366,9 @@ function Staff({ navigate }) {
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 430, padding: "24px 20px 40px" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add Staff Member</div>
-            <input placeholder="Full name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Role (e.g. Braider, Stylist)" value={newRole} onChange={e => setNewRole(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 20 }} />
+            <input placeholder="Full name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Role (e.g. Braider, Stylist)" value={newRole} onChange={e => setNewRole(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 20 }} />
             <BtnPrimary disabled={!newName || !newRole} onClick={() => { setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar: newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: newPhone, status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); setNewName(""); setNewRole(""); setNewPhone(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add Staff Member</BtnPrimary>
           </div>
         </div>
@@ -3435,7 +3435,7 @@ function Waitlist({ navigate }) {
                     ? <BtnPrimary onClick={() => notify(w.id)} style={{ flex: 1, padding: 10, fontSize: 13 }}>Offer Slot</BtnPrimary>
                     : <div style={{ flex: 1, padding: 10, background: "#fbbf2411", border: "1px solid #fbbf2433", borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.yellow, textAlign: "center" }}>Waiting for reply...</div>
                   }
-                  <button onClick={() => remove(w.id)} style={{ width: 40, height: 40, background: "#f43f5e11", border: "1px solid #f43f5e22", borderRadius: 12, fontSize: 16, color: C.red, cursor: "pointer", flexShrink: 0, fontFamily: "'Outfit',sans-serif" }}>×</button>
+                  <button onClick={() => remove(w.id)} style={{ width: 40, height: 40, background: "#f43f5e11", border: "1px solid #f43f5e22", borderRadius: 12, fontSize: 16, color: C.red, cursor: "pointer", flexShrink: 0, fontFamily: "'Red Hat Display',sans-serif" }}>×</button>
                 </div>
               </Card>
             ))}
@@ -3448,9 +3448,9 @@ function Waitlist({ navigate }) {
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add to Waitlist</div>
-            <input placeholder="Client name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Service requested" value={newService} onChange={e => setNewService(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Preferred date (e.g. This weekend)" value={newDate} onChange={e => setNewDate(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", marginBottom: 20 }} />
+            <input placeholder="Client name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Service requested" value={newService} onChange={e => setNewService(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Preferred date (e.g. This weekend)" value={newDate} onChange={e => setNewDate(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 20 }} />
             <BtnPrimary disabled={!newName || !newService} onClick={() => { setWaitlist(p => [...p, { id: Date.now(), name: newName, service: newService, requestedDate: newDate || "Flexible", addedTime: "Just now", avatar: newName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(), phone: "", notified: false }]); setNewName(""); setNewService(""); setNewDate(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add to Waitlist</BtnPrimary>
           </div>
         </div>
@@ -3516,12 +3516,12 @@ function BusinessProfile({ navigate }) {
             {[["Business name", bizName, setBizName], ["Location", location, setLocation], ["Phone number", phone, setPhone]].map(([label, val, set], i) => (
               <div key={i} style={{ marginBottom: i < 2 ? 16 : 0 }}>
                 <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
-                <input value={val} onChange={e => { set(e.target.value); setSaved(false); }} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif" }} />
+                <input value={val} onChange={e => { set(e.target.value); setSaved(false); }} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
               </div>
             ))}
           </Card>
           <SectionLabel>Bio</SectionLabel>
-          <textarea value={bio} onChange={e => { setBio(e.target.value); setSaved(false); }} rows={3} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, fontSize: 14, color: C.text, fontFamily: "'Outfit',sans-serif", resize: "none", marginBottom: 20 }} />
+          <textarea value={bio} onChange={e => { setBio(e.target.value); setSaved(false); }} rows={3} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", resize: "none", marginBottom: 20 }} />
           <SectionLabel>Booking Link</SectionLabel>
           <Card style={{ padding: 16, marginBottom: 20 }}>
             <div style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>Share this link so clients can book directly</div>
@@ -3624,11 +3624,11 @@ function ConnectedAccounts({ navigate }) {
               </div>
             </div>
             {googleConnected ? (
-              <button onClick={disconnectGoogle} style={{ padding: "7px 14px", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Outfit',sans-serif" }}>
+              <button onClick={disconnectGoogle} style={{ padding: "7px 14px", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif" }}>
                 Disconnect
               </button>
             ) : (
-              <button onClick={connectGoogle} disabled={googleLoading} style={{ padding: "7px 14px", background: "linear-gradient(135deg,#4285F4,#34A853)", border: "none", borderRadius: 10, fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "'Outfit',sans-serif", opacity: googleLoading ? 0.7 : 1 }}>
+              <button onClick={connectGoogle} disabled={googleLoading} style={{ padding: "7px 14px", background: "linear-gradient(135deg,#4285F4,#34A853)", border: "none", borderRadius: 10, fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif", opacity: googleLoading ? 0.7 : 1 }}>
                 {googleLoading ? "..." : "Connect"}
               </button>
             )}
@@ -4081,29 +4081,28 @@ function AISidebarPanel({ navigate }) {
   const [bizContext, setBizContext] = useState("");
   const [loading, setLoading] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [orbScale, setOrbScale] = useState(1);
+  const [smoothScale, setSmoothScale] = useState(1);
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [voiceActive, setVoiceActive] = useState(false); // inline voice in sidebar, no overlay
+  const [voiceSupported] = useState(() => "webkitSpeechRecognition" in window || "SpeechRecognition" in window);
+  const voiceRecogRef = useRef(null);
+  const chatEndRef = useRef(null);
+  const audioRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animFrameRef = useRef(null);
+  const smoothRef = useRef(1);
+  const inputRef = useRef(null);
+
   const [chatHistory, setChatHistory] = useState(() => {
     try {
       const saved = localStorage.getItem("aria_chat_history");
-      if (saved) { const parsed = JSON.parse(saved); if (Array.isArray(parsed) && parsed.length > 0) return parsed; }
+      if (saved) { const p = JSON.parse(saved); if (Array.isArray(p) && p.length > 0) return p; }
     } catch {}
     return null;
   });
-  const [voiceSupported] = useState(() => "webkitSpeechRecognition" in window || "SpeechRecognition" in window);
-  const [voiceMode, setVoiceMode] = useState(false);
-  const [voiceSession, setVoiceSession] = useState([]);
-  const voiceSessionRef = useRef([]);
-  const [voiceLoading, setVoiceLoading] = useState(false);
-  const [voiceListening, setVoiceListening] = useState(false);
-  const [voiceLabel, setVoiceLabel] = useState("Tap to speak");
-  const voiceRecogRef = useRef(null);
-  const chatEndRef = useRef(null);
-  const voiceChatEndRef = useRef(null);
-  const audioRef = useRef(null);
-  const analyserRef = useRef(null);
-  const animFrameRef = useRef(null);
-  const audioCtxRef = useRef(null);
-  const [orbScale, setOrbScale] = useState(1);
-  const inputRef = useRef(null);
 
   useEffect(() => {
     const load = async () => {
@@ -4130,11 +4129,11 @@ function AISidebarPanel({ navigate }) {
       const ctx = [
         `Business: ${biz}${loc ? ` in ${loc}` : ""}`,
         services ? `Services: ${services}` : "",
-        todayAppts.length ? `Today: ${todayAppts.map(a => `${a.client_name} (${a.service} at ${a.time})`).join("; ")}` : "No appointments today.",
-        `Revenue (all time): $${revenue.toLocaleString()}`,
+        todayAppts.length ? `Today appointments: ${todayAppts.map(a => `${a.client_name} (${a.service} at ${a.time})`).join("; ")}` : "No appointments today.",
+        `Revenue: $${revenue.toLocaleString()}`,
         `Total appointments: ${allAppts.length}`,
         unhandled ? `Unread messages: ${unhandled}` : "",
-        (clientRes.data || []).length ? `Top clients: ${(clientRes.data || []).map(c => c.name).join(", ")}` : "",
+        (clientRes.data || []).length ? `Top clients: ${clientRes.data.map(c => c.name).join(", ")}` : "",
       ].filter(Boolean).join("\n");
       setBizContext(ctx);
       setAiName(name);
@@ -4144,7 +4143,7 @@ function AISidebarPanel({ navigate }) {
       const msgLine = unhandled ? ` **${unhandled} unread message${unhandled > 1 ? "s" : ""}** waiting.` : "";
       setChatHistory(prev => {
         if (prev && prev.length > 0) return prev;
-        return [{ role: "assistant", text: `${greeting}! I'm **${name}**. ${todayLine}${msgLine}`, time: new Date() }];
+        return [{ role: "assistant", text: `${greeting}! I'm **${name}**. ${todayLine}${msgLine} What do you need?`, time: new Date() }];
       });
     };
     load();
@@ -4152,22 +4151,36 @@ function AISidebarPanel({ navigate }) {
   }, []);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, loading]);
-  useEffect(() => { voiceChatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [voiceSession, voiceLoading]);
   useEffect(() => {
     if (!chatHistory || chatHistory.length === 0) return;
     try { localStorage.setItem("aria_chat_history", JSON.stringify(chatHistory.slice(-60))); } catch {}
   }, [chatHistory]);
+
+  // Smooth orb animation
+  useEffect(() => {
+    let af;
+    const tick = () => {
+      smoothRef.current += (orbScale - smoothRef.current) * 0.12;
+      setSmoothScale(smoothRef.current);
+      af = requestAnimationFrame(tick);
+    };
+    af = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(af);
+  }, [orbScale]);
 
   const getAudioCtx = () => {
     if (!audioCtxRef.current || audioCtxRef.current.state === "closed") audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtxRef.current.state === "suspended") audioCtxRef.current.resume().catch(() => {});
     return audioCtxRef.current;
   };
+
   const stopAudio = () => {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.onended = null; audioRef.current = null; }
-    cancelAnimationFrame(animFrameRef.current); analyserRef.current = null;
+    cancelAnimationFrame(animFrameRef.current);
+    analyserRef.current = null;
     setSpeaking(false); setOrbScale(1);
   };
+
   const startOrbAnalyser = (audio) => {
     try {
       const ctx = getAudioCtx();
@@ -4179,54 +4192,62 @@ function AISidebarPanel({ navigate }) {
       const tick = () => {
         if (!analyserRef.current) return;
         analyser.getByteFrequencyData(data);
-        setOrbScale(1 + (data.reduce((a,b)=>a+b,0)/data.length/255)*0.6);
+        const avg = data.reduce((a, b) => a + b, 0) / data.length;
+        setOrbScale(1 + (avg / 255) * 0.65);
         animFrameRef.current = requestAnimationFrame(tick);
       };
       tick();
       audio.onended = () => { cancelAnimationFrame(animFrameRef.current); setOrbScale(1); setSpeaking(false); analyserRef.current = null; };
     } catch { audio.onended = () => { setSpeaking(false); setOrbScale(1); }; }
   };
+
   const speakText = async (text, onDone) => {
     try {
-      const plain = text.replace(/\*\*(.*?)\*\*/g,"$1").replace(/\*(.*?)\*/g,"$1").replace(/\n+/g," ").trim();
-      const sentences = plain.match(/[^.!?]+[.!?]+/g) || [plain];
-      const short = sentences.slice(0,2).join(" ").trim() || plain;
-      const audioRes = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
+      const plain = text.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1").replace(/\n+/g, " ").trim();
+      setSpeaking(true);
+      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: short }),
+        body: JSON.stringify({ text: plain, voice: "Rachel", model: "eleven_turbo_v2_5", speed: 1.1 }),
       });
-      if (!audioRes.ok) { onDone?.(); return; }
-      const blob = await audioRes.blob();
+      if (!res.ok) { setSpeaking(false); onDone?.(); return; }
+      const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const finish = () => { setSpeaking(false); setOrbScale(1); URL.revokeObjectURL(url); onDone?.(); };
       const audio = new Audio(url);
-      audioRef.current = audio; setSpeaking(true);
+      audioRef.current = audio;
+      audio.onended = () => { setSpeaking(false); setOrbScale(1); URL.revokeObjectURL(url); onDone?.(); };
+      audio.onerror = () => { setSpeaking(false); setOrbScale(1); onDone?.(); };
       startOrbAnalyser(audio);
-      audio.onended = finish; audio.onerror = finish;
-      try { await audio.play(); } catch { try { await new Audio(url).play(); } catch { finish(); } }
-    } catch { onDone?.(); }
+      await audio.play();
+    } catch { setSpeaking(false); onDone?.(); }
   };
 
   const buildSystemPrompt = (isVoice = false) => {
     const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
     const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-    return `You are ${aiName}, an AI business assistant built into Pocketflow.
+    return `You are ${aiName}, an AI business assistant inside Pocketflow.
 Today: ${today} at ${time}.
 BUSINESS DATA:
 ${bizContext || "Loading..."}
-PERSONALITY: Warm, sharp, direct. Like a smart best friend who knows this business inside out.
-${isVoice ? "VOICE MODE: 1-2 natural sentences only. No markdown." : "TEXT MODE: Use **bold** for key figures. Max 4 sentences unless asked for more."}
-NAVIGATION: If user asks to go somewhere, reply with NAV:[screen] on first line. Screens: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings.
-After navigating in voice mode, KEEP the voice conversation open.`;
+PERSONALITY: Warm, sharp, confident. Like a brilliant friend who knows this business inside out.
+${isVoice ? "VOICE MODE: 1-2 short natural sentences only. No markdown. Conversational." : "TEXT MODE: Use **bold** for key numbers/names. Max 3-4 sentences unless asked for more. No bullet spam."}
+NAVIGATION: If the user wants to go to a page/section, respond EXACTLY like this (replace [screen] with the real screen name):
+NAV:[screen]
+Taking you to the [screen] page — [one short relevant sentence about what they'll find there].
+Available screens: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings, home.
+IMPORTANT: Do NOT say the word "NAV" in your response text. The NAV:[screen] prefix is stripped automatically. Just write the sentence after it naturally.
+You remember this conversation — reference earlier messages when relevant.`;
   };
 
+  // Strips NAV: prefix, triggers navigation, returns clean display text
   const handleNavIntent = (raw) => {
     const match = raw.match(/^NAV:(\w+)\n?/i);
     if (match) {
       const screen = match[1].toLowerCase();
-      const rest = raw.replace(/^NAV:\w+\n?/i,"").trim();
-      setTimeout(() => navigate(screen), 600);
-      return { navigating: true, screen, text: rest || `Opening ${screen} now!` };
+      const rest = raw.replace(/^NAV:\w+\n?/i, "").trim();
+      setTimeout(() => navigate(screen), 700);
+      // Clean display: "Taking you to inbox — ..." or just the sentence
+      const displayText = rest || `Taking you to **${screen}**!`;
+      return { navigating: true, screen, text: displayText };
     }
     return { navigating: false, text: raw };
   };
@@ -4234,55 +4255,61 @@ After navigating in voice mode, KEEP the voice conversation open.`;
   const unlockAudio = () => {
     try { const ctx = getAudioCtx(); const buf = ctx.createBuffer(1,1,22050); const src = ctx.createBufferSource(); src.buffer=buf; src.connect(ctx.destination); src.start(0); } catch {}
   };
-  const openVoiceMode = () => {
-    unlockAudio(); stopAudio();
-    setVoiceSession([]); voiceSessionRef.current = [];
-    setVoiceLabel("Tap to speak"); setVoiceMode(true);
-    setTimeout(() => startVoiceListen(), 400);
-  };
-  const closeVoiceMode = () => {
-    voiceRecogRef.current?.stop(); stopAudio();
-    setVoiceMode(false); setVoiceListening(false); setVoiceLoading(false); setVoiceLabel("Tap to speak");
-    const session = voiceSessionRef.current;
-    if (session.length > 0) setChatHistory(prev => [...(prev || []), ...session.map(m => ({ ...m, time: new Date() }))]);
-    voiceSessionRef.current = []; setVoiceSession([]);
-  };
+
+  // Inline voice — no overlay, stays in sidebar
   const startVoiceListen = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return;
     const r = new SR(); r.lang = "en-US"; r.continuous = false; r.interimResults = false;
-    r.onresult = e => { const t = e.results[0][0].transcript; setVoiceListening(false); setVoiceLabel("Tap to speak"); handleVoiceMessage(t); };
-    r.onerror = () => { setVoiceListening(false); setVoiceLabel("Tap to speak"); };
+    r.onresult = e => {
+      const t = e.results[0][0].transcript;
+      setVoiceListening(false);
+      handleVoiceChat(t);
+    };
+    r.onerror = () => { setVoiceListening(false); setVoiceActive(false); };
     r.onend = () => setVoiceListening(false);
     voiceRecogRef.current = r; r.start();
-    setVoiceListening(true); setVoiceLabel("Listening...");
+    setVoiceListening(true);
   };
-  const handleVoiceMessage = async (text) => {
-    const userMsg = { role: "user", text };
-    const updated = [...voiceSessionRef.current, userMsg];
-    voiceSessionRef.current = updated; setVoiceSession([...updated]);
-    setVoiceLoading(true); setVoiceLabel("Thinking...");
+
+  const activateVoice = () => {
+    unlockAudio(); stopAudio();
+    setVoiceActive(true);
+    setTimeout(() => startVoiceListen(), 300);
+  };
+
+  const handleVoiceChat = async (text) => {
+    // Add user message to main chat history
+    setChatHistory(p => [...(p || []), { role: "user", text, time: new Date() }]);
+    setVoiceLoading(true);
     try {
-      const history = [...(chatHistory || []), ...updated];
+      const history = chatHistory || [];
       const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "llama-3.3-70b-versatile", max_tokens: 120,
-          messages: [{ role: "system", content: buildSystemPrompt(true) }, ...history.map(m => ({ role: m.role, content: m.text }))] }),
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile", max_tokens: 100,
+          messages: [
+            { role: "system", content: buildSystemPrompt(true) },
+            ...history.map(m => ({ role: m.role, content: m.text })),
+            { role: "user", content: text }
+          ],
+        }),
       });
       const data = await res.json();
       const raw = data.choices?.[0]?.message?.content || "Got it.";
-      const { text: reply } = handleNavIntent(raw); // nav happens but voice stays open
-      const assistantMsg = { role: "assistant", text: reply };
-      const withReply = [...voiceSessionRef.current, assistantMsg];
-      voiceSessionRef.current = withReply; setVoiceSession([...withReply]);
-      setVoiceLoading(false); setVoiceLabel("Speaking...");
-      speakText(reply, () => { setVoiceLabel("Tap to speak"); setTimeout(() => { if (voiceRecogRef.current !== null) startVoiceListen(); }, 600); });
+      const { text: reply } = handleNavIntent(raw);
+      setChatHistory(p => [...(p || []), { role: "assistant", text: reply, time: new Date() }]);
+      setVoiceLoading(false);
+      speakText(reply, () => {
+        // After speaking, auto-listen again
+        setTimeout(() => { if (voiceActive) startVoiceListen(); }, 500);
+      });
     } catch {
-      const err = { role: "assistant", text: "Connection issue, try again." };
-      voiceSessionRef.current = [...voiceSessionRef.current, err]; setVoiceSession([...voiceSessionRef.current]);
-      setVoiceLoading(false); setVoiceLabel("Tap to speak");
+      setChatHistory(p => [...(p || []), { role: "assistant", text: "Connection issue, try again.", time: new Date() }]);
+      setVoiceLoading(false); setVoiceActive(false);
     }
   };
+
   const sendChat = async (overrideText) => {
     const text = (typeof overrideText === "string" ? overrideText : chatInput).trim();
     if (!text || loading) return;
@@ -4292,14 +4319,19 @@ After navigating in voice mode, KEEP the voice conversation open.`;
     try {
       const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "llama-3.3-70b-versatile", max_tokens: 400,
-          messages: [{ role: "system", content: buildSystemPrompt(false) }, ...(chatHistory || []).map(m => ({ role: m.role, content: m.text })), { role: "user", content: text }] }),
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile", max_tokens: 400,
+          messages: [
+            { role: "system", content: buildSystemPrompt(false) },
+            ...(chatHistory || []).map(m => ({ role: m.role, content: m.text })),
+            { role: "user", content: text },
+          ],
+        }),
       });
       const data = await res.json();
       const raw = data.choices?.[0]?.message?.content || "On it.";
-      const { navigating, screen, text: reply } = handleNavIntent(raw);
-      const displayText = navigating ? `Opening **${screen}**... ${reply}` : reply;
-      setChatHistory(p => [...p, { role: "assistant", text: displayText, time: new Date() }]);
+      const { text: reply } = handleNavIntent(raw);
+      setChatHistory(p => [...p, { role: "assistant", text: reply, time: new Date() }]);
     } catch {
       setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again.", time: new Date() }]);
     }
@@ -4315,76 +4347,35 @@ After navigating in voice mode, KEEP the voice conversation open.`;
     );
   };
 
-  const orbState = voiceListening ? "listening" : (loading||voiceLoading) ? "loading" : speaking ? "speaking" : "idle";
-  const orbC1 = orbState==="listening"?"#ef4444":orbState==="loading"?"#6366f1":"#7c3aed";
-  const smoothScale = speaking ? orbScale : 1;
-  const ORB = 72; const BLOB = 50;
-
-  // Voice overlay (full screen)
-  const VoiceOverlay = voiceMode ? (
-    <div style={{ position:"fixed", inset:0, zIndex:300, background:"#07070f", display:"flex", flexDirection:"column", alignItems:"center" }}>
-      <div style={{ width:"100%", maxWidth:680, padding:"52px 28px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
-        <div>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:22, fontWeight:800, color:"#fff" }}>{aiName}</div>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", marginTop:2 }}>Voice conversation</div>
-        </div>
-        <div onClick={closeVoiceMode} style={{ padding:"9px 22px", borderRadius:100, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer" }}>End & Save</div>
-      </div>
-      <div style={{ flex:1, width:"100%", maxWidth:680, overflowY:"auto", padding:"0 28px 12px" }}>
-        {voiceSession.length===0 && <div style={{ textAlign:"center", marginTop:60, color:"rgba(255,255,255,0.2)", fontSize:14, lineHeight:2 }}>Tap the orb to start talking<br/><span style={{fontSize:12}}>Saves to chat when you end</span></div>}
-        {voiceSession.map((m,i) => (
-          <div key={i} style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start", marginBottom:12, alignItems:"flex-end", gap:8 }}>
-            {m.role==="assistant" && <div style={{ width:26, height:26, borderRadius:8, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, flexShrink:0 }}>✦</div>}
-            <div style={{ maxWidth:"76%", padding:"10px 14px", borderRadius:m.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px", background:m.role==="user"?`linear-gradient(135deg,${C.accentDark},${C.accent})`:"rgba(255,255,255,0.07)", border:m.role==="user"?"none":"1px solid rgba(255,255,255,0.1)", fontSize:14, lineHeight:1.6, color:"#fff" }}>{m.text}</div>
-          </div>
-        ))}
-        {voiceLoading && <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}><div style={{ width:26, height:26, borderRadius:8, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11 }}>✦</div><div style={{ background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"18px 18px 18px 4px", padding:"12px 16px", display:"flex", gap:5 }}>{[0,1,2].map(d=><div key={d} style={{width:5,height:5,borderRadius:"50%",background:C.accent,animation:"pulse 1.2s infinite",animationDelay:`${d*0.2}s`}}/>)}</div></div>}
-        <div ref={voiceChatEndRef}/>
-      </div>
-      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", paddingBottom:52, paddingTop:8, flexShrink:0 }}>
-        <div onClick={() => { if(!voiceListening&&!voiceLoading&&!speaking) startVoiceListen(); }} style={{ position:"relative", width:160, height:160, display:"flex", alignItems:"center", justifyContent:"center", cursor:voiceListening||voiceLoading||speaking?"default":"pointer" }}>
-          {[1.7,1.4,1.18].map((scale,i) => <div key={i} style={{ position:"absolute", width:160, height:160, borderRadius:"50%", background:`radial-gradient(circle,${orbC1}${["08","12","18"][i]},transparent 70%)`, transform:`scale(${scale*(speaking?smoothScale:1)})`, animation:(voiceListening||voiceLoading||speaking)?`orbPulse ${1.5+i*0.4}s ease-in-out infinite`:"none", animationDelay:`${i*0.2}s` }}/>)}
-          <div style={{ width:110, height:110, borderRadius:"60% 40% 30% 70%/60% 30% 70% 40%", background:voiceListening?"radial-gradient(circle at 35% 35%,#f97316,#ef4444 50%,#dc2626)":voiceLoading?"radial-gradient(circle at 35% 35%,#a78bfa,#6366f1 50%,#4f46e5)":speaking?"radial-gradient(circle at 35% 35%,#a78bfa,#7c3aed 50%,#4f46e5)":"radial-gradient(circle at 35% 35%,#818cf8,#6366f1 50%,#4338ca)", boxShadow:`0 0 ${speaking?50:25}px ${voiceListening?"#ef444466":"#7c3aed66"},0 0 ${speaking?100:50}px ${voiceListening?"#ef444422":"#7c3aed22"},inset 0 0 30px rgba(255,255,255,0.1)`, animation:`blobMorph ${speaking?1.2:voiceLoading?1.8:4}s ease-in-out infinite`, transform:`scale(${speaking?smoothScale:1})`, transition:speaking?"transform 0.08s linear":"transform 0.3s,box-shadow 0.3s,background 0.4s", position:"relative", zIndex:2 }}>
-            <div style={{ position:"absolute", inset:0, borderRadius:"inherit", background:"radial-gradient(circle at 30% 25%,rgba(255,255,255,0.35),transparent 60%)", animation:`orbSpinRev ${speaking?2:6}s linear infinite` }}/>
-          </div>
-        </div>
-        <div style={{ marginTop:14, fontSize:13, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:voiceListening?"#ef4444":speaking?C.accent:"rgba(255,255,255,0.4)" }}>{voiceLabel}</div>
-        <div style={{ marginTop:5, fontSize:11, color:"rgba(255,255,255,0.18)", textAlign:"center" }}>{voiceSession.length>0?`${Math.ceil(voiceSession.length/2)} exchange${voiceSession.length>2?"s":""} · tap End & Save when done`:"Tap the orb to start speaking"}</div>
-      </div>
-    </div>
-  ) : null;
+  const orbState = voiceListening ? "listening" : (loading || voiceLoading) ? "loading" : speaking ? "speaking" : "idle";
+  const orbC1 = orbState === "listening" ? "#ef4444" : orbState === "loading" ? "#6366f1" : "#7c3aed";
+  const ORB = 68; const BLOB = 46;
 
   return (
-    <>
-    <div style={{ position:"fixed", top:0, right:0, width:320, height:"100vh", background:C.surface, borderLeft:`1px solid ${C.border}`, display:"flex", flexDirection:"column", zIndex:40 }}>
+    <div style={{ position:"fixed", top:0, right:0, width:300, height:"100vh", background:C.surface, borderLeft:`1px solid ${C.border}`, display:"flex", flexDirection:"column", zIndex:40 }}>
       {/* Header */}
-      <div style={{ padding:"18px 16px 12px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+      <div style={{ padding:"16px 14px 12px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
         <div>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, fontWeight:800 }}>{aiName}</div>
-          <div style={{ fontSize:10, color:C.green, fontWeight:600, marginTop:1 }}>● Online</div>
+          <div style={{ fontFamily:"'Red Hat Display',sans-serif", fontSize:16, fontWeight:800, letterSpacing:-0.3 }}>{aiName}</div>
+          <div style={{ fontSize:10, color:C.green, fontWeight:600, marginTop:1 }}>● Online · AI Assistant</div>
         </div>
-        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-          {voiceSupported && (
-            <div onClick={openVoiceMode} title="Voice mode" style={{ width:30, height:30, borderRadius:9, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:13 }}>🎤</div>
-          )}
-          {chatHistory && chatHistory.length > 1 && (
-            <div onClick={() => { setChatHistory(h=>[h[0]]); localStorage.removeItem("aria_chat_history"); }} title="Clear" style={{ width:30, height:30, borderRadius:9, background:C.surfaceHigh, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:12 }}>🗑</div>
-          )}
-        </div>
+        {chatHistory && chatHistory.length > 1 && (
+          <div onClick={() => { setChatHistory(h=>[h[0]]); localStorage.removeItem("aria_chat_history"); }} title="Clear chat" style={{ width:28, height:28, borderRadius:8, background:C.surfaceHigh, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:12 }}>🗑</div>
+        )}
       </div>
 
       {/* Messages */}
-      <div style={{ flex:1, overflowY:"auto", padding:"12px 14px" }}>
+      <div style={{ flex:1, overflowY:"auto", padding:"12px 12px 8px" }}>
         {!chatHistory && <div style={{ display:"flex", justifyContent:"center", alignItems:"center", height:"100%", color:C.dim, fontSize:13 }}>Loading...</div>}
         {(chatHistory||[]).map((m,i) => (
           <div key={i} style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start", marginBottom:10, alignItems:"flex-end", gap:6 }}>
             {m.role==="assistant" && <div style={{ width:22, height:22, borderRadius:7, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, flexShrink:0 }}>✦</div>}
-            <div style={{ maxWidth:"82%", padding:"9px 12px", borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px", background:m.role==="user"?`linear-gradient(135deg,${C.accentDark},${C.accent})`:C.surfaceHigh, border:m.role==="user"?"none":`1px solid ${C.border}`, fontSize:13, lineHeight:1.55, color:C.text }}>
+            <div style={{ maxWidth:"84%", padding:"9px 12px", borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px", background:m.role==="user"?`linear-gradient(135deg,${C.accentDark},${C.accent})`:C.surfaceHigh, border:m.role==="user"?"none":`1px solid ${C.border}`, fontSize:13, lineHeight:1.55, color:C.text }}>
               {renderText(m.text)}
             </div>
           </div>
         ))}
-        {loading && (
+        {(loading || voiceLoading) && (
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
             <div style={{ width:22, height:22, borderRadius:7, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9 }}>✦</div>
             <div style={{ background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:"16px 16px 16px 4px", padding:"10px 14px", display:"flex", gap:4 }}>
@@ -4395,40 +4386,54 @@ After navigating in voice mode, KEEP the voice conversation open.`;
         <div ref={chatEndRef}/>
       </div>
 
-      {/* Orb — small, above input */}
-      <div style={{ display:"flex", justifyContent:"center", alignItems:"center", paddingTop:10, paddingBottom:4, flexShrink:0 }}>
-        <div onClick={() => { if(voiceSupported&&orbState==="idle") openVoiceMode(); }} style={{ position:"relative", width:ORB, height:ORB, display:"flex", alignItems:"center", justifyContent:"center", cursor:voiceSupported&&orbState==="idle"?"pointer":"default" }}>
-          {[1.6,1.35,1.15].map((scale,i) => <div key={i} style={{ position:"absolute", width:ORB, height:ORB, borderRadius:"50%", background:`radial-gradient(circle,${orbC1}${["08","12","18"][i]},transparent 70%)`, transform:`scale(${scale*smoothScale})`, transition:speaking?"none":"transform 0.3s ease", animation:orbState!=="idle"?`orbPulse ${1.5+i*0.4}s ease-in-out infinite`:"none", animationDelay:`${i*0.2}s` }}/>)}
-          <div style={{ width:BLOB, height:BLOB, borderRadius:"60% 40% 30% 70%/60% 30% 70% 40%", background:orbState==="listening"?"radial-gradient(circle at 35% 35%,#f97316,#ef4444 50%,#dc2626)":orbState==="loading"?"radial-gradient(circle at 35% 35%,#a78bfa,#6366f1 50%,#4f46e5)":orbState==="speaking"?"radial-gradient(circle at 35% 35%,#a78bfa,#7c3aed 50%,#4f46e5)":"radial-gradient(circle at 35% 35%,#818cf8,#6366f1 50%,#4338ca)", boxShadow:`0 0 20px ${orbC1}55,inset 0 0 15px rgba(255,255,255,0.1)`, animation:`blobMorph ${speaking?1.2:orbState==="loading"?1.8:4}s ease-in-out infinite`, transform:`scale(${smoothScale})`, transition:speaking?"transform 0.08s linear":"transform 0.3s,background 0.4s", position:"relative", zIndex:2 }}>
-            <div style={{ position:"absolute", inset:0, borderRadius:"inherit", background:"radial-gradient(circle at 30% 25%,rgba(255,255,255,0.35),transparent 60%)" }}/>
-            {orbState==="idle" && voiceSupported && <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, zIndex:3 }}>🎤</div>}
+      {/* Orb — compact, centered, above input */}
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", paddingTop:8, paddingBottom:2, flexShrink:0 }}>
+        <div
+          onClick={() => { if(voiceSupported) { if(voiceActive && (voiceListening||speaking)) { stopAudio(); setVoiceActive(false); setVoiceListening(false); } else activateVoice(); } }}
+          style={{ position:"relative", width:ORB, height:ORB, display:"flex", alignItems:"center", justifyContent:"center", cursor:voiceSupported?"pointer":"default" }}
+        >
+          {[1.6,1.35,1.15].map((scale,i) => (
+            <div key={i} style={{ position:"absolute", width:ORB, height:ORB, borderRadius:"50%", background:`radial-gradient(circle,${orbC1}${["08","12","18"][i]},transparent 70%)`, transform:`scale(${scale*smoothScale})`, transition:speaking?"none":"transform 0.3s ease", animation:orbState!=="idle"?`orbPulse ${1.5+i*0.4}s ease-in-out infinite`:"none", animationDelay:`${i*0.2}s` }}/>
+          ))}
+          <div style={{ width:BLOB, height:BLOB, borderRadius:"60% 40% 30% 70%/60% 30% 70% 40%", background:orbState==="listening"?"radial-gradient(circle at 35% 35%,#f97316,#ef4444 50%,#dc2626)":orbState==="loading"?"radial-gradient(circle at 35% 35%,#a78bfa,#6366f1 50%,#4f46e5)":orbState==="speaking"?"radial-gradient(circle at 35% 35%,#a78bfa,#7c3aed 50%,#4f46e5)":"radial-gradient(circle at 35% 35%,#818cf8,#6366f1 50%,#4338ca)", boxShadow:`0 0 ${speaking?28:14}px ${orbC1}55,inset 0 0 14px rgba(255,255,255,0.1)`, animation:`blobMorph ${speaking?1.2:orbState==="loading"?1.8:4}s ease-in-out infinite`, transform:`scale(${smoothScale})`, transition:speaking?"transform 0.08s linear":"transform 0.3s,background 0.4s", position:"relative", zIndex:2 }}>
+            <div style={{ position:"absolute", inset:0, borderRadius:"inherit", background:"radial-gradient(circle at 30% 25%,rgba(255,255,255,0.32),transparent 60%)" }}/>
           </div>
+        </div>
+        <div style={{ fontSize:10, color:orbState==="listening"?"#ef4444":orbState==="speaking"?C.accent:C.dim, fontWeight:600, marginTop:3, letterSpacing:0.3, transition:"color 0.3s" }}>
+          {orbState==="listening"?"Listening...":orbState==="speaking"?"Speaking...":orbState==="loading"?"Thinking...":voiceSupported?"Tap orb to speak":""}
         </div>
       </div>
 
-      {/* Input */}
-      <div style={{ padding:"6px 12px 16px", flexShrink:0, borderTop:`1px solid ${C.border}` }}>
-        <div style={{ display:"flex", gap:8, alignItems:"flex-end", background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:16, padding:"8px 10px 8px 14px" }}>
-          <textarea
+      {/* Input row */}
+      <div style={{ padding:"6px 12px 16px", flexShrink:0 }}>
+        <div style={{ display:"flex", gap:7, alignItems:"center", background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:14, padding:"7px 8px 7px 13px" }}>
+          <input
             ref={inputRef}
             value={chatInput}
             onChange={e => setChatInput(e.target.value)}
-            onKeyDown={e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();} }}
-            placeholder="Ask Aria anything..."
-            rows={1}
-            style={{ flex:1, background:"transparent", border:"none", outline:"none", resize:"none", fontSize:13, color:C.text, fontFamily:"'Outfit',sans-serif", lineHeight:1.5, maxHeight:80, overflowY:"auto" }}
+            onKeyDown={e => { if(e.key==="Enter") { e.preventDefault(); sendChat(); } }}
+            placeholder={voiceListening?"Listening...":"Ask Aria anything..."}
+            style={{ flex:1, background:"transparent", border:"none", outline:"none", fontSize:13, color:C.text, fontFamily:"'Red Hat Display',sans-serif" }}
           />
-          <div onClick={sendChat} style={{ width:32, height:32, borderRadius:10, background:chatInput.trim()?`linear-gradient(135deg,${C.accentDark},${C.accent})`:C.surface, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:chatInput.trim()?"pointer":"default", flexShrink:0, transition:"background 0.2s", fontSize:14 }}>
+          {voiceSupported && (
+            <div
+              onClick={() => { if(voiceActive&&(voiceListening||speaking)){stopAudio();setVoiceActive(false);setVoiceListening(false);}else activateVoice(); }}
+              style={{ width:30, height:30, borderRadius:9, background:voiceListening||voiceActive?`linear-gradient(135deg,#ef4444,#dc2626)`:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"background 0.2s", fontSize:13 }}
+            >
+              {voiceListening ? "⏹" : "🎙"}
+            </div>
+          )}
+          <div
+            onClick={sendChat}
+            style={{ width:30, height:30, borderRadius:9, background:chatInput.trim()?`linear-gradient(135deg,${C.accentDark},${C.accent})`:C.border, display:"flex", alignItems:"center", justifyContent:"center", cursor:chatInput.trim()?"pointer":"default", flexShrink:0, transition:"background 0.2s", fontSize:14, color:"#fff" }}
+          >
             {loading ? "…" : "↑"}
           </div>
         </div>
       </div>
     </div>
-    {VoiceOverlay}
-    </>
   );
 }
-
 
 export default function App() {
   const [screen, setScreen] = useState("login");
@@ -4543,7 +4548,7 @@ export default function App() {
   const showAISidebar = isDesktop && !isAuthScreen && screen !== "settings" && screen !== "assistant";
 
   return (
-    <div style={{ fontFamily: "'Outfit',sans-serif", background: C.bg, minHeight: "100vh", color: C.text }}>
+    <div style={{ fontFamily: "'Red Hat Display',sans-serif", background: C.bg, minHeight: "100vh", color: C.text }}>
       <style>{GLOBAL_STYLES}</style>
       {showSidebar && <Sidebar active={screen} navigate={navigate} />}
       {needsPaywall && (
