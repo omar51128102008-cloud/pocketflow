@@ -2912,6 +2912,7 @@ function Booking({ navigate }) {
       } catch (e) { console.log("Notify failed (non-critical):", e); }
 
       // Auto-sync to owner's Google Calendar if connected
+      console.log("🗓 Attempting Google Calendar sync, token exists:", !!localStorage.getItem("google_access_token"));
       await addToGoogleCalendar({
         service: selectedServices.map(s => s.name).join(", "),
         date: selectedDate,
@@ -3534,8 +3535,8 @@ function ConnectedAccounts({ navigate }) {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // Check if already connected on mount
-  useEffect(() => {
+  // Check if already connected on mount + listen for token changes
+  const checkGoogleToken = () => {
     const token = localStorage.getItem("google_access_token");
     const email = localStorage.getItem("google_email");
     const expiry = localStorage.getItem("google_token_expiry");
@@ -3546,7 +3547,15 @@ function ConnectedAccounts({ navigate }) {
       localStorage.removeItem("google_access_token");
       localStorage.removeItem("google_email");
       localStorage.removeItem("google_token_expiry");
+      setGoogleConnected(false);
+      setGoogleEmail(null);
     }
+  };
+
+  useEffect(() => {
+    checkGoogleToken();
+    window.addEventListener("storage", checkGoogleToken);
+    return () => window.removeEventListener("storage", checkGoogleToken);
   }, []);
 
   const connectGoogle = () => {
@@ -4111,7 +4120,9 @@ export default function App() {
         }).catch(() => {});
         // Clean URL and go to connections screen
         window.history.replaceState({}, "", window.location.pathname);
-        setTimeout(() => setScreen("connections"), 300);
+        // Dispatch storage event so ConnectedAccounts picks up the new token
+        window.dispatchEvent(new Event("storage"));
+        setTimeout(() => setScreen("connections"), 500);
       }
     }
   }, []);
