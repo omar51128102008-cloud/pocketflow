@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState, useRef, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
@@ -413,6 +414,7 @@ function Onboarding({ navigate }) {
 // ── HOME ───────────────────────────────────────────────────────────────────────
 function Home({ navigate }) {
   const [selectedAppt, setSelectedAppt] = useState(null);
+  const [showAllAppts, setShowAllAppts] = useState(false);
   const [bizName, setBizName] = useState("");
   const [appts, setAppts] = useState([]);
   const [msgs, setMsgs] = useState([]);
@@ -502,13 +504,18 @@ function Home({ navigate }) {
               <span style={{ fontSize: 11, color: C.accent, fontWeight: 600, cursor: "pointer" }} onClick={() => navigate("schedule")}>See all →</span>
             </div>
             <Card style={{ padding: "4px 16px", marginBottom: 16 }}>
-              {todayAppts.map((a, i) => (
-                <div key={a.id} onClick={() => setSelectedAppt(a)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: i < todayAppts.length - 1 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
+              {todayAppts.slice(0, showAllAppts ? todayAppts.length : 3).map((a, i, arr) => (
+                <div key={a.id} onClick={() => setSelectedAppt(a)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
                   <div style={{ width: 40, height: 40, borderRadius: 12, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.accent, flexShrink: 0 }}>{a.avatar}</div>
                   <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{a.name}</div><div style={{ fontSize: 12, color: C.mid }}>{a.service}</div></div>
                   <div style={{ textAlign: "right" }}><div style={{ fontSize: 13, fontWeight: 600 }}>{a.time}</div><div style={{ fontSize: 11, color: a.status === "confirmed" ? C.green : C.yellow, marginTop: 3 }}>{a.status}</div></div>
                 </div>
               ))}
+              {todayAppts.length > 3 && (
+                <div onClick={() => setShowAllAppts(p => !p)} style={{ textAlign: "center", padding: "10px 0", fontSize: 12, color: C.accent, fontWeight: 600, cursor: "pointer", borderTop: `1px solid ${C.border}` }}>
+                  {showAllAppts ? "Show less ↑" : `See ${todayAppts.length - 3} more ↓`}
+                </div>
+              )}
             </Card>
 
             {unread.length > 0 && (
@@ -1468,7 +1475,15 @@ function NoteTab({ client, onNoteUpdate }) {
   return (
     <div>
       <Card style={{ padding: 16, marginBottom: 14 }}>
-        <div style={{ fontSize: 12, color: C.accent, fontWeight: 700, marginBottom: 8 }}>✦ AI MEMORY</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <div style={{ fontSize: 12, color: C.accent, fontWeight: 700 }}>✦ AI MEMORY</div>
+          {client.note && (
+            <div onClick={async () => {
+              const { error } = await supabase.from("clients").update({ note: "" }).eq("id", client.id);
+              if (!error && onNoteUpdate) onNoteUpdate("__CLEAR__");
+            }} style={{ fontSize: 11, color: C.red || "#ef4444", cursor: "pointer", fontWeight: 600 }}>Clear ✕</div>
+          )}
+        </div>
         <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7 }}>{client.note || "No notes yet."}</div>
       </Card>
       <textarea
@@ -1585,7 +1600,7 @@ function Clients({ navigate }) {
             ))}
           </Card>
         )}
-        {activeTab === "notes" && <NoteTab client={selectedClient} onNoteUpdate={(note) => setSelectedClient(p => ({ ...p, note: (p.note ? p.note + "\n\n" : "") + note }))} />}
+        {activeTab === "notes" && <NoteTab client={selectedClient} onNoteUpdate={(note) => setSelectedClient(p => ({ ...p, note: note === "__CLEAR__" ? "" : (p.note ? p.note + "\n\n" : "") + note }))} />}
         {activeTab === "contact" && (
           <Card>
             {[["📱", "Phone", selectedClient.phone], ["📸", "Instagram", selectedClient.instagram], ["📅", "Last visit", selectedClient.lastVisit]].map(([icon, label, val], i) => (
@@ -1671,7 +1686,7 @@ function Clients({ navigate }) {
                       ))}
                     </div>
                   )}
-                  {activeTab === "notes" && <NoteTab client={selectedClient} onNoteUpdate={(note) => setSelectedClient(p => ({ ...p, note: (p.note ? p.note + "\n\n" : "") + note }))} />}
+                  {activeTab === "notes" && <NoteTab client={selectedClient} onNoteUpdate={(note) => setSelectedClient(p => ({ ...p, note: note === "__CLEAR__" ? "" : (p.note ? p.note + "\n\n" : "") + note }))} />}
                   {activeTab === "history" && selectedClient.appointmentHistory && selectedClient.appointmentHistory.length === 0 && (
                     <div style={{ textAlign: "center", padding: "20px 0", color: C.dim, fontSize: 13 }}>No appointment history yet</div>
                   )}
@@ -3174,64 +3189,155 @@ function Booking({ navigate }) {
 // ── STAFF ──────────────────────────────────────────────────────────────────────
 function Staff({ navigate }) {
   const isDesktop = useDesktop();
+  const [view, setView] = useState("list"); // "list" | "member" | "groupchat"
   const [selectedStaff, setSelectedStaff] = useState(null);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatMsg, setChatMsg] = useState("");
-  const [chatLog, setChatLog] = useState({});
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [staff, setStaff] = useState([]);
+  const [aiName, setAiName] = useState("Aria");
+  const [bizContext, setBizContext] = useState("");
+
+  // Group chat state
+  const [groupMessages, setGroupMessages] = useState(() => {
+    try { const s = localStorage.getItem("staff_group_chat"); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
+  const [groupInput, setGroupInput] = useState("");
+  const [aiTyping, setAiTyping] = useState(false);
+  const chatEndRef = useRef(null);
+  const [ownerName, setOwnerName] = useState("You");
 
   const statusColor = s => s === "active" ? C.green : C.yellow;
 
-  const sendMsg = () => {
-    if (!chatMsg.trim() || !selectedStaff) return;
-    const key = selectedStaff.id;
-    const msg = { from: "you", text: chatMsg.trim(), time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
-    setChatLog(p => ({ ...p, [key]: [...(p[key] || []), msg] }));
-    setChatMsg("");
-    // Simulate reply after 1.5s
-    setTimeout(() => {
-      const replies = ["Got it! 👍", "On it!", "Sure, no problem", "Will do ✓", "Okay, thanks for the heads up!"];
-      const reply = { from: selectedStaff.name, text: replies[Math.floor(Math.random() * replies.length)], time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
-      setChatLog(p => ({ ...p, [key]: [...(p[key] || []), reply] }));
-    }, 1500);
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const uid = session.user.id;
+      const [profRes, apptRes, svcRes] = await Promise.all([
+        supabase.from("business_profiles").select("ai_name,biz_name,location").eq("user_id", uid).single(),
+        supabase.from("appointments").select("client_name,service,time,day,status,price").eq("owner_id", uid).order("created_at",{ascending:false}).limit(20),
+        supabase.from("services").select("name,price,duration").eq("owner_id", uid).eq("active",true).limit(10),
+      ]);
+      const name = profRes.data?.ai_name || "Aria";
+      const biz = profRes.data?.biz_name || "your business";
+      setAiName(name);
+      setOwnerName(profRes.data?.biz_name ? biz.split(" ")[0] : "You");
+      const allAppts = apptRes.data || [];
+      const todayAppts = allAppts.filter(a => a.day === "Today");
+      const services = (svcRes.data || []).map(s => `${s.name} ($${s.price})`).join(", ");
+      setBizContext(`Business: ${biz}\nServices: ${services}\nToday's appointments: ${todayAppts.map(a=>`${a.client_name} (${a.service} at ${a.time})`).join("; ") || "none"}\nTotal appointments on record: ${allAppts.length}`);
+    };
+    load();
+  }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [groupMessages, aiTyping]);
+
+  useEffect(() => {
+    try { localStorage.setItem("staff_group_chat", JSON.stringify(groupMessages.slice(-100))); } catch {}
+  }, [groupMessages]);
+
+  const sendGroupMessage = async () => {
+    const text = groupInput.trim();
+    if (!text) return;
+    setGroupInput("");
+    const msg = { id: Date.now(), from: "owner", sender: ownerName, text, time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) };
+    setGroupMessages(p => [...p, msg]);
+
+    // Check if @AI is mentioned
+    const aiMention = new RegExp(`@${aiName}`, "i");
+    const genericMention = /@(emi|aria|ai|assistant)/i;
+    if (aiMention.test(text) || genericMention.test(text)) {
+      setAiTyping(true);
+      const question = text.replace(/@\w+/g, "").trim();
+      try {
+        const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "llama-3.1-8b-instant", max_tokens: 200,
+            messages: [
+              { role: "system", content: `You are ${aiName}, an AI assistant in a beauty business staff group chat. Be concise, helpful, and friendly. Business context:\n${bizContext}\nAnswer questions from the staff about the business, schedule, clients, or anything they need. Keep replies short (2-3 sentences max). No navigation commands here.` },
+              ...groupMessages.slice(-10).map(m => ({ role: m.from === "ai" ? "assistant" : "user", content: m.text })),
+              { role: "user", content: question || text }
+            ],
+          }),
+        });
+        const data = await res.json();
+        const reply = data.choices?.[0]?.message?.content || "Got it!";
+        setAiTyping(false);
+        setGroupMessages(p => [...p, { id: Date.now()+1, from: "ai", sender: aiName, text: reply, time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) }]);
+      } catch {
+        setAiTyping(false);
+        setGroupMessages(p => [...p, { id: Date.now()+1, from: "ai", sender: aiName, text: "Connection issue, try again.", time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) }]);
+      }
+    }
   };
 
-  // Staff chat overlay
-  if (chatOpen && selectedStaff) {
-    const msgs = chatLog[selectedStaff.id] || [];
+  // ── GROUP CHAT VIEW ──
+  if (view === "groupchat") {
+    const staffNames = staff.map(s => s.name);
     return (
-      <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: C.bg }}>
-        <div style={{ padding: "52px 20px 16px", background: C.bg, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 12 }}>
-          <BackBtn onBack={() => setChatOpen(false)} />
-          <div style={{ width: 36, height: 36, borderRadius: 11, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: C.accent }}>{selectedStaff.avatar}</div>
+      <div style={{ height:"100vh", display:"flex", flexDirection:"column", background:C.bg }}>
+        <div style={{ padding:"52px 20px 14px", background:C.bg, borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:12, flexShrink:0 }}>
+          <div onClick={() => setView("list")} style={{ width:36, height:36, borderRadius:11, background:C.surface, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          </div>
+          <div style={{ width:38, height:38, borderRadius:12, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0 }}>👥</div>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700 }}>{selectedStaff.name}</div>
-            <div style={{ fontSize: 11, color: statusColor(selectedStaff.status), fontWeight: 600, textTransform: "capitalize" }}>● {selectedStaff.status}</div>
+            <div style={{ fontSize:15, fontWeight:700 }}>Staff Group Chat</div>
+            <div style={{ fontSize:11, color:C.green, fontWeight:600 }}>✦ {aiName} · {staffNames.join(", ") || "No staff yet"}</div>
           </div>
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 100px" }}>
-          {msgs.length === 0 && (
-            <div style={{ textAlign: "center", padding: "60px 0", color: C.dim, fontSize: 13 }}>
-              Start a conversation with {selectedStaff.name}
+
+        <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 8px" }}>
+          {groupMessages.length === 0 && (
+            <div style={{ textAlign:"center", padding:"60px 20px", color:C.dim }}>
+              <div style={{ fontSize:36, marginBottom:12 }}>👥</div>
+              <div style={{ fontSize:14, fontWeight:600, marginBottom:6 }}>Staff group chat</div>
+              <div style={{ fontSize:13, lineHeight:1.7 }}>Share updates with your team.<br/>Type <span style={{color:C.accent, fontWeight:700}}>@{aiName}</span> to ask the AI anything.</div>
             </div>
           )}
-          {msgs.map((m, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: m.from === "you" ? "flex-end" : "flex-start", marginBottom: 10 }}>
-              <div>
-                <div style={{ maxWidth: 260, padding: "10px 14px", borderRadius: m.from === "you" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.from === "you" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surface, border: m.from === "you" ? "none" : `1px solid ${C.border}`, fontSize: 14, color: m.from === "you" ? "#fff" : C.text, lineHeight: 1.5 }}>{m.text}</div>
-                <div style={{ fontSize: 10, color: C.dim, marginTop: 4, textAlign: m.from === "you" ? "right" : "left" }}>{m.time}</div>
+          {groupMessages.map((m, i) => {
+            const isOwner = m.from === "owner";
+            const isAI = m.from === "ai";
+            return (
+              <div key={m.id || i} style={{ marginBottom:14 }}>
+                {!isOwner && <div style={{ fontSize:11, color:isAI?C.accent:C.mid, fontWeight:700, marginBottom:4, marginLeft:2 }}>{m.sender}</div>}
+                <div style={{ display:"flex", justifyContent:isOwner?"flex-end":"flex-start" }}>
+                  {isAI && <div style={{ width:28, height:28, borderRadius:9, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, flexShrink:0, marginRight:8, alignSelf:"flex-end" }}>✦</div>}
+                  <div style={{ maxWidth:"78%", padding:"10px 14px", borderRadius:isOwner?"18px 18px 4px 18px":"18px 18px 18px 4px", background:isOwner?`linear-gradient(135deg,${C.accentDark},${C.accent})`:isAI?C.surfaceHigh:C.surface, border:isOwner?"none":`1px solid ${isAI?C.accent+"33":C.border}`, fontSize:14, lineHeight:1.55, color:isOwner?"#fff":C.text }}>
+                    {m.text}
+                  </div>
+                </div>
+                <div style={{ fontSize:10, color:C.dim, marginTop:4, textAlign:isOwner?"right":"left" }}>{m.time}</div>
+              </div>
+            );
+          })}
+          {aiTyping && (
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
+              <div style={{ width:28, height:28, borderRadius:9, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11 }}>✦</div>
+              <div style={{ background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:"18px 18px 18px 4px", padding:"10px 14px", display:"flex", gap:5 }}>
+                {[0,1,2].map(d=><div key={d} style={{width:5,height:5,borderRadius:"50%",background:C.accent,animation:"pulse 1.2s infinite",animationDelay:`${d*0.2}s`}}/>)}
               </div>
             </div>
-          ))}
+          )}
+          <div ref={chatEndRef}/>
         </div>
-        <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, padding: "12px 20px 32px", background: C.bg, borderTop: `1px solid ${C.border}` }}>
-          <div style={{ display: "flex", gap: 10, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "6px 6px 6px 16px", alignItems: "center" }}>
-            <input value={chatMsg} onChange={e => setChatMsg(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMsg()} placeholder={`Message ${selectedStaff.name}...`} style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
-            <BtnPrimary onClick={sendMsg} disabled={!chatMsg.trim()} style={{ width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, flexShrink: 0, padding: 0 }}>
+
+        <div style={{ padding:"10px 14px 32px", borderTop:`1px solid ${C.border}`, flexShrink:0 }}>
+          <div style={{ fontSize:11, color:C.dim, marginBottom:6, marginLeft:2 }}>Type <span style={{color:C.accent,fontWeight:700}}>@{aiName}</span> to ask the AI</div>
+          <div style={{ display:"flex", gap:8, background:C.surface, border:`1px solid ${C.border}`, borderRadius:16, padding:"8px 8px 8px 14px", alignItems:"center" }}>
+            <input
+              value={groupInput}
+              onChange={e => setGroupInput(e.target.value)}
+              onKeyDown={e => { if(e.key==="Enter") sendGroupMessage(); }}
+              placeholder={`Message the team or @${aiName}...`}
+              style={{ flex:1, background:"transparent", border:"none", outline:"none", fontSize:14, color:C.text, fontFamily:"'Red Hat Display',sans-serif" }}
+            />
+            <BtnPrimary onClick={sendGroupMessage} disabled={!groupInput.trim()} style={{ width:38, height:38, borderRadius:11, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, padding:0 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </BtnPrimary>
           </div>
@@ -3239,47 +3345,6 @@ function Staff({ navigate }) {
       </div>
     );
   }
-
-  if (selectedStaff) return (
-    <div style={{ paddingBottom: 80 }}>
-      <div style={{ background: `linear-gradient(180deg,#16103a,${C.bg})`, padding: "48px 24px 24px", textAlign: "center", position: "relative" }}>
-        <div onClick={() => setSelectedStaff(null)} style={{ position: "absolute", top: 52, left: 20, width: 38, height: 38, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        </div>
-        <div style={{ width: 80, height: 80, borderRadius: 24, background: C.accentSoft, border: `1px solid ${C.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, color: C.accent, margin: "0 auto 12px" }}>{selectedStaff.avatar}</div>
-        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800 }}>{selectedStaff.name}</div>
-        <div style={{ fontSize: 13, color: C.mid, marginTop: 4 }}>{selectedStaff.role}</div>
-        <div style={{ display: "flex", justifyContent: "center", marginTop: 10 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(selectedStaff.status), background: `${statusColor(selectedStaff.status)}18`, border: `1px solid ${statusColor(selectedStaff.status)}33`, borderRadius: 100, padding: "3px 10px", textTransform: "capitalize" }}>{selectedStaff.status}</span>
-        </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, padding: "16px 20px" }}>
-        {[{ label: "Today", value: selectedStaff.appts, sub: "appts" }, { label: "Revenue", value: selectedStaff.revenue, sub: "today" }, { label: "Rating", value: `${selectedStaff.rating}⭐`, sub: "avg" }].map((s, i) => (
-          <Card key={i} style={{ padding: "14px 10px", textAlign: "center" }}>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 800, color: i === 1 ? C.gold : C.accent }}>{s.value}</div>
-            <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>{s.sub}</div>
-          </Card>
-        ))}
-      </div>
-      <div style={{ padding: "0 20px" }}>
-        <SectionLabel>Services</SectionLabel>
-        <Card style={{ padding: "4px 16px", marginBottom: 16 }}>
-          {selectedStaff.services.map((s, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: i < selectedStaff.services.length - 1 ? `1px solid ${C.border}` : "none" }}>
-              <span style={{ fontSize: 14 }}>{s}</span>
-              <span style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>✓ Active</span>
-            </div>
-          ))}
-        </Card>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={() => { setStaff(p => p.map(s => s.id === selectedStaff.id ? { ...s, status: s.status === "active" ? "day-off" : "active" } : s)); setSelectedStaff(p => ({ ...p, status: p.status === "active" ? "day-off" : "active" })); }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif" }}>
-            {selectedStaff.status === "active" ? "Mark Day Off" : "Mark Active"}
-          </button>
-          <BtnPrimary onClick={() => setChatOpen(true)} style={{ flex: 1, padding: 13 }}>💬 Message</BtnPrimary>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -3289,7 +3354,13 @@ function Staff({ navigate }) {
             <BackBtn onBack={() => navigate("home")} />
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Staff</div>
           </div>
-          <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "9px 16px", fontSize: 13 }}>+ Add</BtnPrimary>
+          <div style={{ display:"flex", gap:8 }}>
+            <div onClick={() => setView("groupchat")} style={{ padding:"9px 14px", background:C.surface, border:`1px solid ${C.border}`, borderRadius:12, fontSize:13, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+              👥 <span>Group Chat</span>
+              {groupMessages.length > 0 && <div style={{ width:7, height:7, borderRadius:"50%", background:C.accent }} />}
+            </div>
+            <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "9px 16px", fontSize: 13 }}>+ Add</BtnPrimary>
+          </div>
         </div>
         <div style={{ fontSize: 13, color: C.mid, marginTop: 4 }}>{staff.filter(s => s.status === "active").length} active · {staff.length} total</div>
       </div>
@@ -3302,63 +3373,32 @@ function Staff({ navigate }) {
             <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "12px 28px" }}>+ Add First Staff Member</BtnPrimary>
           </div>
         ) : (
-          <div style={{ display: isDesktop ? "grid" : "block", gridTemplateColumns: isDesktop ? "1fr 1fr" : undefined, gap: isDesktop ? 24 : undefined, alignItems: "start" }}>
-            <div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
-                {[{ label: "On shift", value: staff.filter(s => s.status === "active").length, color: C.green }, { label: "Total appts", value: staff.reduce((a, s) => a + s.appts, 0), color: C.accent }, { label: "Staff", value: staff.length, color: C.gold }].map((s, i) => (
-                  <Card key={i} style={{ padding: "14px 10px", textAlign: "center" }}>
-                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800, color: s.color }}>{s.value}</div>
-                    <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>{s.label}</div>
-                  </Card>
-                ))}
-              </div>
-              {staff.map(s => (
-                <Card key={s.id} onClick={() => setSelectedStaff(s)} style={{ padding: 16, marginBottom: 12, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", border: `1px solid ${selectedStaff?.id === s.id ? C.accent : C.border}` }}>
-                  <div style={{ position: "relative" }}>
-                    <div style={{ width: 52, height: 52, borderRadius: 16, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: C.accent }}>{s.avatar}</div>
-                    <div style={{ position: "absolute", bottom: -2, right: -2, width: 14, height: 14, borderRadius: "50%", background: statusColor(s.status), border: `2px solid ${C.bg}` }} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700 }}>{s.name}</div>
-                    <div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{s.role} · {s.appts} appts today</div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{s.revenue}</div>
-                    <div style={{ fontSize: 11, color: C.dim, marginTop: 3 }}>{s.rating} ⭐</div>
-                  </div>
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+              {[{ label: "On shift", value: staff.filter(s => s.status === "active").length, color: C.green }, { label: "Total appts", value: staff.reduce((a, s) => a + s.appts, 0), color: C.accent }, { label: "Staff", value: staff.length, color: C.gold }].map((s, i) => (
+                <Card key={i} style={{ padding: "14px 10px", textAlign: "center" }}>
+                  <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>{s.label}</div>
                 </Card>
               ))}
             </div>
-            <div style={{ position: isDesktop ? "sticky" : undefined, top: isDesktop ? 80 : undefined }}>
-              {selectedStaff ? (
-                <Card style={{ padding: 0, overflow: "hidden" }}>
-                  <div style={{ background: "linear-gradient(180deg,#16103a,#0d0d1a)", padding: "24px 20px", display: "flex", alignItems: "center", gap: 14 }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 18, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: C.accent, flexShrink: 0 }}>{selectedStaff.avatar}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 18, fontWeight: 800 }}>{selectedStaff.name}</div>
-                      <div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{selectedStaff.role}</div>
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(selectedStaff.status), background: `${statusColor(selectedStaff.status)}18`, border: `1px solid ${statusColor(selectedStaff.status)}33`, borderRadius: 100, padding: "3px 10px", textTransform: "capitalize" }}>{selectedStaff.status}</span>
-                  </div>
-                  <div style={{ padding: 16 }}>
-                    <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-                      <button onClick={() => { setStaff(p => p.map(s => s.id === selectedStaff.id ? { ...s, status: s.status === "active" ? "day-off" : "active" } : s)); setSelectedStaff(p => ({ ...p, status: p.status === "active" ? "day-off" : "active" })); }} style={{ flex: 1, padding: 11, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif" }}>
-                        {selectedStaff.status === "active" ? "Mark Day Off" : "Mark Active"}
-                      </button>
-                      <BtnPrimary onClick={() => setChatOpen(true)} style={{ flex: 1, padding: 11, fontSize: 13 }}>💬 Message</BtnPrimary>
-                    </div>
-                    <div style={{ fontSize: 12, color: C.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Contact</div>
-                    <div style={{ fontSize: 14, color: C.mid }}>{selectedStaff.phone || "No phone number"}</div>
-                  </div>
-                </Card>
-              ) : (
-                <div style={{ textAlign: "center", padding: "40px 20px", color: C.dim }}>
-                  <div style={{ fontSize: 32, marginBottom: 10 }}>👤</div>
-                  <div style={{ fontSize: 13 }}>Select a staff member</div>
+            {staff.map(s => (
+              <Card key={s.id} onClick={() => { setSelectedStaff(s); setView("member"); }} style={{ padding: 16, marginBottom: 12, display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}>
+                <div style={{ position: "relative" }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 16, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: C.accent }}>{s.avatar}</div>
+                  <div style={{ position: "absolute", bottom: -2, right: -2, width: 14, height: 14, borderRadius: "50%", background: statusColor(s.status), border: `2px solid ${C.bg}` }} />
                 </div>
-              )}
-            </div>
-          </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700 }}>{s.name}</div>
+                  <div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{s.role} · {s.appts} appts today</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{s.revenue}</div>
+                  <div style={{ fontSize: 11, color: C.dim, marginTop: 3 }}>{s.rating} ⭐</div>
+                </div>
+              </Card>
+            ))}
+          </>
         )}
       </div>
       {showAdd && (
@@ -4141,9 +4181,16 @@ function AISidebarPanel({ navigate }) {
       const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Hey" : "Good evening";
       const todayLine = todayAppts.length ? `You have **${todayAppts.length} appointment${todayAppts.length > 1 ? "s" : ""}** today.` : "No appointments today.";
       const msgLine = unhandled ? ` **${unhandled} unread message${unhandled > 1 ? "s" : ""}** waiting.` : "";
+      // Always refresh the first greeting message with the current name
+      const freshGreeting = { role: "assistant", text: `${greeting}! I'm **${name}**. ${todayLine}${msgLine} What do you need?`, time: new Date() };
       setChatHistory(prev => {
-        if (prev && prev.length > 0) return prev;
-        return [{ role: "assistant", text: `${greeting}! I'm **${name}**. ${todayLine}${msgLine} What do you need?`, time: new Date() }];
+        if (!prev || prev.length === 0) return [freshGreeting];
+        // If name changed, update the first message
+        const first = prev[0];
+        if (first.role === "assistant" && !first.text.includes(`**${name}**`)) {
+          return [freshGreeting, ...prev.slice(1)];
+        }
+        return prev;
       });
     };
     load();
@@ -4354,109 +4401,67 @@ You remember this conversation — reference earlier messages when relevant.`;
       });
       const data = await res.json();
       const raw = data.choices?.[0]?.message?.content || "On it.";
-      console.log("🤖 AI raw (chat):", raw);
-      const { text: reply } = handleNavIntent(raw);
-      setChatHistory(p => [...p, { role: "assistant", text: reply, time: new Date() }]);
+      setChatHistory(p => [...p, { role: "assistant", text: raw, time: new Date() }]);
     } catch {
       setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again.", time: new Date() }]);
     }
     setLoading(false);
   };
 
-  const renderText = (text) => {
-    if (!text) return null;
-    return text.split(/(\*\*[^*]+\*\*)/g).map((chunk, i) =>
-      chunk.startsWith("**") && chunk.endsWith("**")
-        ? <strong key={i} style={{ fontWeight: 700 }}>{chunk.slice(2,-2)}</strong>
-        : <span key={i}>{chunk.split("\n").map((line,j,arr) => j < arr.length-1 ? <span key={j}>{line}<br/></span> : <span key={j}>{line}</span>)}</span>
-    );
-  };
+  return (
+    <div style={{ paddingBottom: 80 }}>
+      <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <BackBtn onBack={() => navigate("home")} />
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Assistant</div>
+        </div>
+      </div>
+      <div style={{ padding: "0 20px" }}>
+        <Card style={{ padding: 24, textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>✦</div>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>AI Assistant</div>
+          <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>Chat with your business AI on desktop</div>
+          <BtnPrimary onClick={() => window.location.href = "/"} style={{ padding: "12px 28px" }}>Open on Desktop</BtnPrimary>
+        </Card>
+      </div>
+      <BottomNav active="assistant" navigate={navigate} />
+    </div>
+  );
+}
 
-  const orbState = voiceListening ? "listening" : (loading || voiceLoading) ? "loading" : speaking ? "speaking" : "idle";
-  const orbC1 = orbState === "listening" ? "#ef4444" : orbState === "loading" ? "#6366f1" : "#7c3aed";
-  const ORB = 68; const BLOB = 46;
+// ── MAIN APP ───────────────────────────────────────────────────────────────────
+export default function App() {
+  const [screen, setScreen] = useState("login");
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const navigate = (screenName) => setScreen(screenName);
 
   return (
-    <div style={{ position:"fixed", top:0, right:0, width:300, height:"100vh", background:C.surface, borderLeft:`1px solid ${C.border}`, display:"flex", flexDirection:"column", zIndex:40 }}>
-      {/* Header */}
-      <div style={{ padding:"16px 14px 12px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
-        <div>
-          <div style={{ fontFamily:"'Red Hat Display',sans-serif", fontSize:16, fontWeight:800, letterSpacing:-0.3 }}>{aiName}</div>
-          <div style={{ fontSize:10, color:C.green, fontWeight:600, marginTop:1 }}>● Online · AI Assistant</div>
+    <>
+      <style>{GLOBAL_STYLES}</style>
+      {screen === "login" && <Login navigate={navigate} />}
+      {screen === "onboarding" && <Onboarding navigate={navigate} />}
+      {screen === "home" && (
+        <div style={{ display: "flex", height: "100vh" }}>
+          {isDesktop && <div style={{ width: 300, flexShrink: 0, borderRight: `1px solid ${C.border}`, background: C.surface }}><AISidebarPanel navigate={navigate} /></div>}
+          <div style={{ flex: 1, overflowY: "auto" }}><Home navigate={navigate} /></div>
         </div>
-        {chatHistory && chatHistory.length > 1 && (
-          <div onClick={() => { setChatHistory(h=>[h[0]]); localStorage.removeItem("aria_chat_history"); }} title="Clear chat" style={{ width:28, height:28, borderRadius:8, background:C.surfaceHigh, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:12 }}>🗑</div>
-        )}
-      </div>
-
-      {/* Messages */}
-      <div style={{ flex:1, overflowY:"auto", padding:"12px 12px 8px" }}>
-        {!chatHistory && <div style={{ display:"flex", justifyContent:"center", alignItems:"center", height:"100%", color:C.dim, fontSize:13 }}>Loading...</div>}
-        {(chatHistory||[]).map((m,i) => (
-          <div key={i} style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start", marginBottom:10, alignItems:"flex-end", gap:6 }}>
-            {m.role==="assistant" && <div style={{ width:22, height:22, borderRadius:7, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, flexShrink:0 }}>✦</div>}
-            <div style={{ maxWidth:"84%", padding:"9px 12px", borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px", background:m.role==="user"?`linear-gradient(135deg,${C.accentDark},${C.accent})`:C.surfaceHigh, border:m.role==="user"?"none":`1px solid ${C.border}`, fontSize:13, lineHeight:1.55, color:C.text }}>
-              {renderText(m.text)}
-            </div>
-          </div>
-        ))}
-        {(loading || voiceLoading) && (
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
-            <div style={{ width:22, height:22, borderRadius:7, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9 }}>✦</div>
-            <div style={{ background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:"16px 16px 16px 4px", padding:"10px 14px", display:"flex", gap:4 }}>
-              {[0,1,2].map(d=><div key={d} style={{width:5,height:5,borderRadius:"50%",background:C.accent,animation:"pulse 1.2s infinite",animationDelay:`${d*0.2}s`}}/>)}
-            </div>
-          </div>
-        )}
-        <div ref={chatEndRef}/>
-      </div>
-
-      {/* Orb — compact, centered, above input */}
-      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", paddingTop:8, paddingBottom:2, flexShrink:0 }}>
-        <div
-          onClick={() => { if(voiceSupported) { if(voiceActive && (voiceListening||speaking)) { stopAudio(); setVoiceActive(false); setVoiceListening(false); } else activateVoice(); } }}
-          style={{ position:"relative", width:ORB, height:ORB, display:"flex", alignItems:"center", justifyContent:"center", cursor:voiceSupported?"pointer":"default" }}
-        >
-          {[1.6,1.35,1.15].map((scale,i) => (
-            <div key={i} style={{ position:"absolute", width:ORB, height:ORB, borderRadius:"50%", background:`radial-gradient(circle,${orbC1}${["08","12","18"][i]},transparent 70%)`, transform:`scale(${scale*smoothScale})`, transition:speaking?"none":"transform 0.3s ease", animation:orbState!=="idle"?`orbPulse ${1.5+i*0.4}s ease-in-out infinite`:"none", animationDelay:`${i*0.2}s` }}/>
-          ))}
-          <div style={{ width:BLOB, height:BLOB, borderRadius:"60% 40% 30% 70%/60% 30% 70% 40%", background:orbState==="listening"?"radial-gradient(circle at 35% 35%,#f97316,#ef4444 50%,#dc2626)":orbState==="loading"?"radial-gradient(circle at 35% 35%,#a78bfa,#6366f1 50%,#4f46e5)":orbState==="speaking"?"radial-gradient(circle at 35% 35%,#a78bfa,#7c3aed 50%,#4f46e5)":"radial-gradient(circle at 35% 35%,#818cf8,#6366f1 50%,#4338ca)", boxShadow:`0 0 ${speaking?28:14}px ${orbC1}55,inset 0 0 14px rgba(255,255,255,0.1)`, animation:`blobMorph ${speaking?1.2:orbState==="loading"?1.8:4}s ease-in-out infinite`, transform:`scale(${smoothScale})`, transition:speaking?"transform 0.08s linear":"transform 0.3s,background 0.4s", position:"relative", zIndex:2 }}>
-            <div style={{ position:"absolute", inset:0, borderRadius:"inherit", background:"radial-gradient(circle at 30% 25%,rgba(255,255,255,0.32),transparent 60%)" }}/>
-          </div>
-        </div>
-        <div style={{ fontSize:10, color:orbState==="listening"?"#ef4444":orbState==="speaking"?C.accent:C.dim, fontWeight:600, marginTop:3, letterSpacing:0.3, transition:"color 0.3s" }}>
-          {orbState==="listening"?"Listening...":orbState==="speaking"?"Speaking...":orbState==="loading"?"Thinking...":voiceSupported?"Tap orb to speak":""}
-        </div>
-      </div>
-
-      {/* Input row */}
-      <div style={{ padding:"6px 12px 16px", flexShrink:0 }}>
-        <div style={{ display:"flex", gap:7, alignItems:"center", background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:14, padding:"7px 8px 7px 13px" }}>
-          <input
-            ref={inputRef}
-            value={chatInput}
-            onChange={e => setChatInput(e.target.value)}
-            onKeyDown={e => { if(e.key==="Enter") { e.preventDefault(); sendChat(); } }}
-            placeholder={voiceListening?"Listening...":`Ask ${aiName} anything...`}
-            style={{ flex:1, background:"transparent", border:"none", outline:"none", fontSize:13, color:C.text, fontFamily:"'Red Hat Display',sans-serif" }}
-          />
-          {voiceSupported && (
-            <div
-              onClick={() => { if(voiceActive&&(voiceListening||speaking)){stopAudio();setVoiceActive(false);setVoiceListening(false);}else activateVoice(); }}
-              style={{ width:30, height:30, borderRadius:9, background:voiceListening||voiceActive?`linear-gradient(135deg,#ef4444,#dc2626)`:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"background 0.2s", fontSize:13 }}
-            >
-              {voiceListening ? "⏹" : "🎙"}
-            </div>
-          )}
-          <div
-            onClick={sendChat}
-            style={{ width:30, height:30, borderRadius:9, background:chatInput.trim()?`linear-gradient(135deg,${C.accentDark},${C.accent})`:C.border, display:"flex", alignItems:"center", justifyContent:"center", cursor:chatInput.trim()?"pointer":"default", flexShrink:0, transition:"background 0.2s", fontSize:14, color:"#fff" }}
-          >
-            {loading ? "…" : "↑"}
-          </div>
-        </div>
-      </div>
-    </div>
+      )}
+      {screen === "schedule" && <Schedule navigate={navigate} />}
+      {screen === "inbox" && <Inbox navigate={navigate} />}
+      {screen === "clients" && <Clients navigate={navigate} />}
+      {screen === "payments" && <Payments navigate={navigate} />}
+      {screen === "services" && <Services navigate={navigate} />}
+      {screen === "assistant" && <Assistant navigate={navigate} />}
+      {screen === "loyalty" && <Loyalty navigate={navigate} />}
+      {screen === "settings" && <Settings navigate={navigate} />}
+    </>
   );
 }
 
@@ -4571,6 +4576,14 @@ export default function App() {
   const needsPaywall = !freeScreens.includes(screen) && subscriptionPlan === "free" && !isAuthScreen;
 
   const showAISidebar = isDesktop && !isAuthScreen && screen !== "settings" && screen !== "assistant";
+  const [aiSidebarCollapsed, setAiSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem("aria_sidebar_collapsed") === "true"; } catch { return false; }
+  });
+  useEffect(() => {
+    const handler = (e) => setAiSidebarCollapsed(e.detail.collapsed);
+    window.addEventListener("aria_sidebar_toggle", handler);
+    return () => window.removeEventListener("aria_sidebar_toggle", handler);
+  }, []);
 
   return (
     <div style={{ fontFamily: "'Red Hat Display',sans-serif", background: C.bg, minHeight: "100vh", color: C.text }}>
@@ -4596,7 +4609,7 @@ export default function App() {
       )}
       <div style={{
         marginLeft: showSidebar ? 240 : 0,
-        marginRight: showAISidebar ? 300 : 0,
+        marginRight: showAISidebar && !aiSidebarCollapsed ? 300 : 0,
         minHeight: "100vh",
       }}>
         <div style={{ maxWidth: showSidebar ? "none" : 400, margin: "0 auto", padding: showSidebar ? "0 24px" : "0" }}>
