@@ -9,21 +9,23 @@ const supabase = createClient(
 );
 
 const C = {
-  bg: "#050508", surface: "#0e0e14", surfaceHigh: "#16161f",
-  border: "#1e1e2e", borderHigh: "#2a2a3e",
-  accent: "#a78bfa", accentDark: "#7c3aed", accentSoft: "#a78bfa18",
-  gold: "#f59e0b", green: "#10b981", red: "#f43f5e", yellow: "#fbbf24", blue: "#38bdf8",
-  text: "#f1f0ff", mid: "#8b8ba8", dim: "#3d3d55",
+  bg: "#06060a", surface: "rgba(14,14,22,0.7)", surfaceHigh: "rgba(22,22,34,0.8)",
+  surfaceSolid: "#0e0e16", border: "rgba(255,255,255,0.06)", borderHigh: "rgba(255,255,255,0.1)",
+  accent: "#b49cff", accentDark: "#8b5cf6", accentSoft: "rgba(180,156,255,0.1)",
+  gold: "#f0b866", green: "#34d399", red: "#fb6f84", yellow: "#fcd34d", blue: "#67d4ff",
+  text: "#f0eeff", mid: "#8b8ba8", dim: "#4a4a66",
 };
 
 const GLOBAL_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800;900&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-  ::-webkit-scrollbar{display:none;}
-  body{background:#050508;}
-  .fade-in{animation:fadeUp 0.35s ease forwards;}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  ::-webkit-scrollbar{width:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:4px;}
+  body{background:#06060a;font-family:'Plus Jakarta Sans',sans-serif;color:#f0eeff;}
+  .fade-in{animation:fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideUp{from{transform:translateY(100%);opacity:0.5}to{transform:translateY(0);opacity:1}}
   @keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
   @keyframes orbFloat{0%,100%{transform:translateY(0px) scale(1)}50%{transform:translateY(-6px) scale(1.03)}}
@@ -32,10 +34,12 @@ const GLOBAL_STYLES = `
   @keyframes orbPulse{0%,100%{transform:scale(1);opacity:0.7}50%{transform:scale(1.15);opacity:1}}
   @keyframes wave1{0%,100%{d:path("M0,50 Q25,20 50,50 Q75,80 100,50")}50%{d:path("M0,50 Q25,80 50,50 Q75,20 100,50")}}
   @keyframes blobMorph{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%}25%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%}50%{border-radius:50% 60% 30% 60%/30% 40% 70% 50%}75%{border-radius:40% 60% 50% 40%/70% 30% 50% 60%}}
-  input:focus,textarea:focus,select:focus{outline:none;}
-  input::placeholder,textarea::placeholder{color:#3d3d55;}
-  input[type=range]{-webkit-appearance:none;height:4px;border-radius:2px;background:#1e1e2e;}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);cursor:pointer;}
+  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(139,92,246,0.15)}50%{box-shadow:0 0 40px rgba(139,92,246,0.3)}}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:rgba(180,156,255,0.4) !important;}
+  input::placeholder,textarea::placeholder{color:#4a4a66;}
+  input[type=range]{-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,0.06);}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#b49cff);cursor:pointer;box-shadow:0 0 12px rgba(139,92,246,0.4);}
   select{appearance:none;}
   @media (min-width: 768px) {
     .mobile-only { display: none !important; }
@@ -51,17 +55,20 @@ const GLOBAL_STYLES = `
 
 // ── Shared Components ──────────────────────────────────────────────────────────
 const Toggle = ({ on, onToggle }) => (
-  <div onClick={onToggle} style={{ width: 46, height: 26, borderRadius: 100, background: on ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.border, position: "relative", cursor: "pointer", transition: "background 0.25s", flexShrink: 0 }}>
-    <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: on ? 23 : 3, transition: "left 0.25s" }} />
+  <div onClick={onToggle} style={{ width: 46, height: 26, borderRadius: 100, background: on ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "rgba(255,255,255,0.08)", position: "relative", cursor: "pointer", transition: "background 0.3s", flexShrink: 0, boxShadow: on ? "0 0 16px rgba(139,92,246,0.3)" : "none" }}>
+    <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: on ? 23 : 3, transition: "left 0.3s cubic-bezier(0.34,1.56,0.64,1)", boxShadow: "0 1px 4px rgba(0,0,0,0.3)" }} />
   </div>
 );
 
 const Card = ({ children, style, onClick }) => (
-  <div onClick={onClick} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, ...style }}>{children}</div>
+  <div onClick={onClick} style={{ background: "rgba(14,14,22,0.6)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18, transition: "border-color 0.3s, box-shadow 0.3s", ...style }}>{children}</div>
 );
 
 const SectionLabel = ({ children }) => (
-  <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12, marginTop: 24 }}>{children}</div>
+  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, marginTop: 24 }}>
+    <div style={{ width: 3, height: 14, borderRadius: 2, background: `linear-gradient(180deg,${C.accentDark},${C.accent})` }} />
+    <div style={{ fontSize: 11, fontWeight: 700, color: C.mid, letterSpacing: 2, textTransform: "uppercase" }}>{children}</div>
+  </div>
 );
 
 function useDesktop() {
@@ -75,32 +82,34 @@ function useDesktop() {
 }
 
 const BtnPrimary = ({ children, onClick, disabled, style }) => (
-  <button onClick={onClick} disabled={disabled} style={{ background: disabled ? "#1e1e2e" : `linear-gradient(135deg,${C.accentDark},${C.accent})`, border: "none", borderRadius: 14, color: disabled ? C.dim : "#fff", fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600, fontSize: 15, cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.2s", ...style }}>{children}</button>
+  <button onClick={onClick} disabled={disabled} style={{ background: disabled ? "rgba(255,255,255,0.05)" : `linear-gradient(135deg,${C.accentDark},${C.accent})`, border: "none", borderRadius: 14, color: disabled ? C.dim : "#fff", fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 600, fontSize: 15, cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.3s", boxShadow: disabled ? "none" : "0 4px 24px rgba(139,92,246,0.3)", ...style }}>{children}</button>
 );
 
 const BackBtn = ({ onBack }) => (
-  <div onClick={onBack} style={{ width: 38, height: 38, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+  <div onClick={onBack} style={{ width: 38, height: 38, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "background 0.2s" }}>
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
   </div>
 );
 
-const BottomNav = ({ active, navigate }) => (
-  <div className="mobile-only" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 400, background: C.surface, borderTop: `1px solid ${C.border}`, display: "flex", padding: "10px 0 20px", zIndex: 50 }}>
-    {[
-      { id: "home", icon: "⌂", label: "Home" },
-      { id: "schedule", icon: "◫", label: "Schedule" },
-      { id: "inbox", icon: "◻", label: "Inbox" },
-      { id: "assistant", icon: "✦", label: "AI" },
-      { id: "clients", icon: "◯", label: "Clients" },
-    ].map(t => (
-      <div key={t.id} onClick={() => navigate(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer", position: "relative" }}>
-        <div style={{ fontSize: t.id === "assistant" ? 16 : 18, color: active === t.id ? C.accent : C.dim, transition: "color 0.2s" }}>{t.icon}</div>
-        <div style={{ fontSize: 9, fontWeight: 600, color: active === t.id ? C.accent : C.dim, letterSpacing: 0.5, transition: "color 0.2s" }}>{t.label}</div>
-        {active === t.id && <div style={{ position: "absolute", bottom: -10, width: 20, height: 2, background: C.accent, borderRadius: 2 }} />}
-      </div>
-    ))}
-  </div>
-);
+const BottomNav = ({ active, navigate }) => {
+  const items = [
+    { id: "home", label: "Home", d: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" },
+    { id: "schedule", label: "Schedule", d: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+    { id: "inbox", label: "Inbox", d: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" },
+    { id: "clients", label: "Clients", d: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
+  ];
+  return (
+    <div className="mobile-only" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 400, background: "rgba(10,10,16,0.85)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", padding: "8px 0 22px", zIndex: 50 }}>
+      {items.map(t => (
+        <div key={t.id} onClick={() => navigate(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer", position: "relative" }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active === t.id ? C.accent : C.dim} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={t.d}/></svg>
+          <div style={{ fontSize: 9, fontWeight: 600, color: active === t.id ? C.accent : C.dim, letterSpacing: 0.5, transition: "color 0.2s" }}>{t.label}</div>
+          {active === t.id && <div style={{ position: "absolute", top: -8, width: 24, height: 2, background: `linear-gradient(90deg,${C.accentDark},${C.accent})`, borderRadius: 2 }} />}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const WA = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -183,18 +192,19 @@ function Login({ navigate }) {
   );
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: "60px 24px 40px" }}>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 400, margin: "0 auto", width: "100%" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: "60px 24px 40px", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: "-20%", left: "50%", transform: "translateX(-50%)", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 400, margin: "0 auto", width: "100%", position: "relative" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ width: 70, height: 70, borderRadius: 22, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 16px", boxShadow: `0 0 40px ${C.accentDark}44` }}>✦</div>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 32, fontWeight: 800 }}>Pocketflow</div>
-          <div style={{ fontSize: 14, color: C.mid, marginTop: 6 }}>Your AI business assistant</div>
+          <div style={{ width: 72, height: 72, borderRadius: 22, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, margin: "0 auto 16px", boxShadow: "0 0 60px rgba(139,92,246,0.35)", animation: "glowPulse 3s ease-in-out infinite" }}>✦</div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em" }}>Pocketflow</div>
+          <div style={{ fontSize: 14, color: C.mid, marginTop: 8, fontWeight: 400 }}>Your AI business assistant</div>
         </div>
         {resetMode ? (
           <>
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Reset password</div>
             <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>Enter your email and we'll send a reset link.</div>
-            <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
+            <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
             {error && <div style={{ background: "#f43f5e18", border: "1px solid #f43f5e33", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
             <BtnPrimary onClick={handleReset} disabled={loading || !email} style={{ width: "100%", padding: 16, marginBottom: 12 }}>{loading ? "Sending..." : "Send Reset Link"}</BtnPrimary>
             <div style={{ textAlign: "center" }}><span onClick={() => { setResetMode(false); setError(""); }} style={{ fontSize: 13, color: C.accent, cursor: "pointer" }}>← Back to login</span></div>
@@ -206,9 +216,9 @@ function Login({ navigate }) {
                 <div key={m} onClick={() => { setMode(m); setError(""); }} style={{ flex: 1, padding: "11px", borderRadius: 11, background: mode === m ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "transparent", textAlign: "center", fontSize: 14, fontWeight: 600, color: mode === m ? "#fff" : C.mid, cursor: "pointer", transition: "all 0.2s" }}>{m === "login" ? "Log In" : "Sign Up"}</div>
               ))}
             </div>
-            {mode === "signup" && <input placeholder="Business name" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />}
-            <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
-            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 20 }} />
+            {mode === "signup" && <input placeholder="Business name" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />}
+            <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
+            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 20 }} />
             {error && <div style={{ background: "#f43f5e18", border: "1px solid #f43f5e33", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
             {mode === "login" && <div style={{ textAlign: "right", marginBottom: 16, marginTop: -8 }}><span onClick={() => { setResetMode(true); setError(""); }} style={{ fontSize: 13, color: C.accent, cursor: "pointer" }}>Forgot password?</span></div>}
             <BtnPrimary onClick={handleAuth} disabled={loading || !email || !password} style={{ width: "100%", padding: 16 }}>
@@ -308,13 +318,13 @@ function Onboarding({ navigate }) {
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Tell us about<br />your business</div>
             <div style={{ fontSize: 14, color: C.mid, marginBottom: 28 }}>We'll set everything up around you.</div>
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>BUSINESS NAME</div>
-            <input placeholder="e.g. Luxe Hair Studio" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 16 }} />
+            <input placeholder="e.g. Luxe Hair Studio" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 16 }} />
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>TYPE</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
               {BUSINESS_TYPES.map(t => <div key={t} onClick={() => setBizType(t)} style={{ padding: "9px 16px", borderRadius: 100, background: bizType === t ? C.accentSoft : C.surface, border: `1px solid ${bizType === t ? C.accent : C.border}`, fontSize: 13, color: bizType === t ? C.accent : C.mid, cursor: "pointer", fontWeight: bizType === t ? 600 : 400, transition: "all 0.2s" }}>{t}</div>)}
             </div>
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>LOCATION</div>
-            <input placeholder="e.g. Atlanta, GA" value={bizLocation} onChange={e => setBizLocation(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
+            <input placeholder="e.g. Atlanta, GA" value={bizLocation} onChange={e => setBizLocation(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }} />
           </div>
         )}
         {step === 1 && (
@@ -330,12 +340,12 @@ function Onboarding({ navigate }) {
             ))}
             <div style={{ background: C.surface, border: `1px dashed ${C.borderHigh}`, borderRadius: 14, padding: 14 }}>
               <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 10 }}>ADD SERVICE</div>
-              <input placeholder="Service name" value={newService.name} onChange={e => setNewService(p => ({ ...p, name: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 8 }} />
+              <input placeholder="Service name" value={newService.name} onChange={e => setNewService(p => ({ ...p, name: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 8 }} />
               <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                <input placeholder="Price $" value={newService.price} onChange={e => setNewService(p => ({ ...p, price: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
-                <input placeholder="Duration" value={newService.duration} onChange={e => setNewService(p => ({ ...p, duration: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
+                <input placeholder="Price $" value={newService.price} onChange={e => setNewService(p => ({ ...p, price: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }} />
+                <input placeholder="Duration" value={newService.duration} onChange={e => setNewService(p => ({ ...p, duration: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }} />
               </div>
-              <button onClick={() => { if (!newService.name) return; setServices(p => [...p, { ...newService, id: Date.now() }]); setNewService({ name: "", price: "", duration: "" }); }} style={{ width: "100%", padding: 11, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600 }}>+ Add Service</button>
+              <button onClick={() => { if (!newService.name) return; setServices(p => [...p, { ...newService, id: Date.now() }]); setNewService({ name: "", price: "", duration: "" }); }} style={{ width: "100%", padding: 11, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 600 }}>+ Add Service</button>
             </div>
           </div>
         )}
@@ -352,14 +362,14 @@ function Onboarding({ navigate }) {
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>Opens at</div>
-                <select value={startTime} onChange={e => setStartTime(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }}>
+                <select value={startTime} onChange={e => setStartTime(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
                   {["7:00 AM","8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM"].map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div style={{ color: C.dim, marginTop: 16 }}>→</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>Closes at</div>
-                <select value={endTime} onChange={e => setEndTime(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }}>
+                <select value={endTime} onChange={e => setEndTime(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
                   {["4:00 PM","5:00 PM","6:00 PM","7:00 PM","8:00 PM","9:00 PM","10:00 PM"].map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
@@ -463,15 +473,16 @@ function Home({ navigate }) {
   return (
     <div style={{ paddingBottom: 80 }}>
       {/* Header */}
-      <div style={{ padding: "40px 20px 20px", background: `linear-gradient(180deg,#111 0%,${C.bg} 100%)` }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={{ padding: "40px 20px 20px", background: "linear-gradient(180deg,rgba(139,92,246,0.08) 0%,transparent 100%)", position: "relative" }}>
+        <div style={{ position: "absolute", top: 0, right: 0, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
           <div>
-            <div style={{ fontSize: 12, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 800, lineHeight: 1.2 }}>Good morning,<br /><span style={{ background: `linear-gradient(135deg,${C.accent},${C.accentDark})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{bizName || "your business"}</span> ✦</div>
+            <div style={{ fontSize: 12, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, fontWeight: 500 }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 800, lineHeight: 1.2 }}>Good morning,<br /><span style={{ background: `linear-gradient(135deg,${C.accent},#e0b3ff)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{bizName || "your business"}</span> ✦</div>
           </div>
           <div style={{ position: "relative", cursor: "pointer" }} onClick={() => navigate("notifications")}>
-            <div style={{ width: 44, height: 44, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🔔</div>
-            {unread.length > 0 && <div style={{ position: "absolute", top: -4, right: -4, width: 20, height: 20, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", border: `2px solid ${C.bg}` }}>{unread.length}</div>}
+            <div style={{ width: 44, height: 44, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🔔</div>
+            {unread.length > 0 && <div style={{ position: "absolute", top: -4, right: -4, width: 20, height: 20, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", border: `2px solid ${C.bg}`, boxShadow: "0 0 12px rgba(139,92,246,0.4)" }}>{unread.length}</div>}
           </div>
         </div>
 
@@ -561,7 +572,6 @@ function Home({ navigate }) {
                   { icon: "➕", label: "New Appointment", screen: "schedule" },
                   { icon: "💬", label: "View Inbox", screen: "inbox" },
                   { icon: "🔗", label: "Booking Link", screen: "sharelink" },
-                  { icon: "✦", label: "Ask AI", screen: "assistant" },
                 ].map(item => (
                   <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                     <span style={{ fontSize: 20 }}>{item.icon}</span>
@@ -575,7 +585,7 @@ function Home({ navigate }) {
 
         {/* Mobile-only grid */}
         <div className="mobile-only" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
-          {[{ icon: "✂️", label: "Services", screen: "services" }, { icon: "💳", label: "Payments", screen: "payments" }, { icon: "⚙️", label: "Settings", screen: "settings" }, { icon: "🎁", label: "Loyalty", screen: "loyalty" }, { icon: "📊", label: "Analytics", screen: "analytics" }, { icon: "📣", label: "Promotions", screen: "promotions" }, { icon: "👥", label: "Staff", screen: "staff" }, { icon: "⏳", label: "Waitlist", screen: "waitlist" }, { icon: "🔗", label: "Share Booking Link", screen: "sharelink" }].map(item => (
+          {[{ icon: "✂️", label: "Services", screen: "services" }, { icon: "💳", label: "Payments", screen: "payments" }, { icon: "⚙️", label: "Settings", screen: "settings" }, { icon: "🎁", label: "Loyalty", screen: "loyalty" }, { icon: "📊", label: "Analytics", screen: "analytics" }, { icon: "📣", label: "Promotions", screen: "promotions" }, { icon: "📦", label: "Packages", screen: "packages" }, { icon: "👥", label: "Staff", screen: "staff" }, { icon: "⏳", label: "Waitlist", screen: "waitlist" }, { icon: "🔗", label: "Share Booking Link", screen: "sharelink" }].map(item => (
             <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
               <span style={{ fontSize: 22 }}>{item.icon}</span>
               <span style={{ fontSize: 14, fontWeight: 600 }}>{item.label}</span>
@@ -601,7 +611,7 @@ function Home({ navigate }) {
               ))}
             </Card>
             <div style={{ display: "flex", gap: 10 }}>
-              <button style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif" }}>Reschedule</button>
+              <button style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Reschedule</button>
               <BtnPrimary style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
             </div>
           </div>
@@ -723,7 +733,7 @@ Price: ${a.price || ""}`);
             {reminderSent
               ? <div style={{ padding: 13, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Reminder sent!</div>
               : <div style={{ display: "flex", gap: 10 }}>
-                  <button onClick={() => setSelectedAppt(null)} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif" }}>Reschedule</button>
+                  <button onClick={() => setSelectedAppt(null)} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Reschedule</button>
                   <BtnPrimary onClick={async () => {
                     setReminderSent(true);
                     try {
@@ -812,7 +822,7 @@ function Inbox({ navigate }) {
                 ) : (
                   <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                     <BtnPrimary onClick={() => handleAI(m)} style={{ flex: 1, padding: 10, fontSize: 12 }}>Let AI handle it</BtnPrimary>
-                    <button style={{ flex: 1, padding: 10, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif" }}>Reply myself</button>
+                    <button style={{ flex: 1, padding: 10, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Reply myself</button>
                   </div>
                 )}
               </Card>
@@ -824,631 +834,6 @@ function Inbox({ navigate }) {
     </div>
   );
 }
-
-// ── ASSISTANT ──────────────────────────────────────────────────────────────────
-function Assistant({ navigate }) {
-  const [chatInput, setChatInput] = useState("");
-  const [aiName, setAiName] = useState("Aria");
-  const [bizContext, setBizContext] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [loadingLabel, setLoadingLabel] = useState("Thinking...");
-  const [speaking, setSpeaking] = useState(false);
-  const [chatHistory, setChatHistory] = useState(() => {
-    try {
-      const saved = localStorage.getItem("aria_chat_history");
-      if (saved) { const parsed = JSON.parse(saved); if (Array.isArray(parsed) && parsed.length > 0) return parsed; }
-    } catch {}
-    return null;
-  });
-  const [voiceSupported] = useState(() => "webkitSpeechRecognition" in window || "SpeechRecognition" in window);
-  const [voiceMode, setVoiceMode] = useState(false);
-  const [voiceSession, setVoiceSession] = useState([]);
-  const voiceSessionRef = useRef([]);
-  const [voiceLoading, setVoiceLoading] = useState(false);
-  const [voiceListening, setVoiceListening] = useState(false);
-  const [voiceLabel, setVoiceLabel] = useState("Tap to speak");
-  const voiceRecogRef = useRef(null);
-  const chatEndRef = useRef(null);
-  const voiceChatEndRef = useRef(null);
-  const audioRef = useRef(null);
-  const analyserRef = useRef(null);
-  const animFrameRef = useRef(null);
-  const audioCtxRef = useRef(null);
-  const [orbScale, setOrbScale] = useState(1);
-  const isDesktop = useDesktop();
-  const [suggestions, setSuggestions] = useState([
-    "What's on my schedule today?",
-    "Any unread messages?",
-    "How's my revenue this week?",
-    "Draft a promo for slow days",
-    "Which service makes me the most?",
-  ]);
-
-  // Single load effect — no duplicates
-  useEffect(() => {
-    const load = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const uid = session.user.id;
-      const [profRes, apptRes, clientRes, msgRes, svcRes] = await Promise.all([
-        supabase.from("business_profiles").select("ai_name,biz_name,location").eq("user_id", uid).single(),
-        supabase.from("appointments").select("client_name,service,time,day,status,price").eq("owner_id", uid).order("created_at", { ascending: false }).limit(30),
-        supabase.from("clients").select("name,total_visits,total_spent").eq("owner_id", uid).limit(8),
-        supabase.from("messages").select("name,platform,preview,handled").eq("owner_id", uid).eq("handled", false).limit(10),
-        supabase.from("services").select("name,price,duration").eq("owner_id", uid).eq("active", true).limit(10),
-      ]);
-      const name = profRes.data?.ai_name || "Aria";
-      const biz = profRes.data?.biz_name || "your business";
-      const loc = profRes.data?.location || "";
-      const allAppts = apptRes.data || [];
-      const todayAppts = allAppts.filter(a => a.day === "Today" || a.status === "pending");
-      const confirmedAppts = allAppts.filter(a => a.status === "confirmed");
-      const unhandled = (msgRes.data || []).length;
-      const services = (svcRes.data || []).map(s => `${s.name} ($${s.price}, ${s.duration})`).join(", ");
-      const parseP = p => parseFloat(String(p || "0").replace(/[^0-9.]/g, "")) || 0;
-      const revenue = confirmedAppts.reduce((s, a) => s + parseP(a.price), 0);
-      const ctx = [
-        `Business: ${biz}${loc ? ` in ${loc}` : ""}`,
-        services ? `Services: ${services}` : "",
-        todayAppts.length
-          ? `Today's appointments: ${todayAppts.map(a => `${a.client_name} (${a.service} at ${a.time})`).join("; ")}`
-          : "No appointments today yet.",
-        `Confirmed revenue (all time): $${revenue.toLocaleString()}`,
-        `Total appointments on record: ${allAppts.length}`,
-        unhandled ? `Unread messages needing attention: ${unhandled}` : "No unread messages.",
-        (clientRes.data || []).length ? `Top clients: ${(clientRes.data || []).map(c => c.name).join(", ")}` : "",
-      ].filter(Boolean).join("\n");
-      setBizContext(ctx);
-      setAiName(name);
-      const hour = new Date().getHours();
-      const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Hey" : "Good evening";
-      const todayLine = todayAppts.length
-        ? `You have **${todayAppts.length} appointment${todayAppts.length > 1 ? "s" : ""}** today.`
-        : "No appointments booked yet today.";
-      const msgLine = unhandled
-        ? ` There ${unhandled === 1 ? "is" : "are"} **${unhandled} unread message${unhandled > 1 ? "s" : ""}** waiting.`
-        : "";
-      // Only set greeting if no existing memory
-      setChatHistory(prev => {
-        if (prev && prev.length > 0) return prev; // keep memory
-        return [{
-          role: "assistant",
-          text: `${greeting}! I'm **${name}**, your AI assistant for **${biz}**. ${todayLine}${msgLine} What do you need?`,
-          time: new Date(),
-        }];
-      });
-      // Smart contextual suggestions
-      const s = [];
-      if (todayAppts.length) s.push("Who's my next client today?");
-      if (unhandled) s.push(`Handle my ${unhandled} unread message${unhandled > 1 ? "s" : ""}`);
-      if (!s.length) s.push("What's on my schedule today?");
-      s.push("How's my revenue this week?");
-      s.push("Draft a promo message");
-      s.push("Which service makes me the most?");
-      if (revenue === 0) s.push("How do I get my first booking?");
-      setSuggestions(s.slice(0, 5));
-    };
-    load();
-    return () => {
-      cancelAnimationFrame(animFrameRef.current);
-      audioCtxRef.current?.close().catch(() => {});
-    };
-  }, []);
-
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, loading]);
-  // Persist chat history to localStorage (AI memory)
-  useEffect(() => {
-    if (!chatHistory || chatHistory.length === 0) return;
-    try { localStorage.setItem("aria_chat_history", JSON.stringify(chatHistory.slice(-60))); } catch {}
-  }, [chatHistory]);
-  useEffect(() => { voiceChatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [voiceSession, voiceLoading]);
-
-  const getAudioCtx = () => {
-    if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
-      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtxRef.current.state === "suspended") {
-      audioCtxRef.current.resume().catch(() => {});
-    }
-    return audioCtxRef.current;
-  };
-
-  const stopAudio = () => {
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current.onended = null; audioRef.current = null; }
-    cancelAnimationFrame(animFrameRef.current);
-    analyserRef.current = null;
-    setSpeaking(false); setOrbScale(1);
-  };
-
-  const handleChatInput = (e) => { if (speaking) stopAudio(); setChatInput(e.target.value); };
-
-  const startOrbAnalyser = (audio) => {
-    try {
-      const ctx = getAudioCtx();
-      const src = ctx.createMediaElementSource(audio);
-      const analyser = ctx.createAnalyser(); analyser.fftSize = 64;
-      src.connect(analyser); analyser.connect(ctx.destination);
-      analyserRef.current = analyser;
-      const data = new Uint8Array(analyser.frequencyBinCount);
-      const tick = () => {
-        if (!analyserRef.current) return;
-        analyser.getByteFrequencyData(data);
-        const avg = data.reduce((a, b) => a + b, 0) / data.length;
-        setOrbScale(1 + (avg / 255) * 0.6);
-        animFrameRef.current = requestAnimationFrame(tick);
-      };
-      tick();
-      audio.onended = () => {
-        cancelAnimationFrame(animFrameRef.current);
-        setOrbScale(1); setSpeaking(false);
-        analyserRef.current = null;
-      };
-    } catch { audio.onended = () => { setSpeaking(false); setOrbScale(1); }; }
-  };
-
-  const speakText = async (text, onDone) => {
-    try {
-      const plain = text.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1").replace(/\n+/g, " ").trim();
-      const sentences = plain.match(/[^.!?]+[.!?]+/g) || [plain];
-      const short = sentences.slice(0, 2).join(" ").trim() || plain;
-
-      const audioRes = await fetch("https://pocketflow-proxy-production.up.railway.app/speak", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: short }),
-      });
-      if (!audioRes.ok) { console.warn("speak endpoint failed:", audioRes.status); onDone?.(); return; }
-
-      const blob = await audioRes.blob();
-      const url = URL.createObjectURL(blob);
-
-      const finish = () => {
-        setSpeaking(false);
-        setOrbScale(1);
-        URL.revokeObjectURL(url);
-        onDone?.();
-      };
-
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      setSpeaking(true);
-      startOrbAnalyser(audio);
-      audio.onended = finish;
-      audio.onerror = finish;
-
-      try {
-        await audio.play();
-      } catch (playErr) {
-        console.warn("audio.play() failed, trying fallback:", playErr);
-        const a2 = new Audio(url);
-        a2.onended = finish;
-        a2.onerror = finish;
-        try { await a2.play(); } catch { finish(); }
-      }
-    } catch (err) {
-      console.error("speakText error:", err);
-      onDone?.();
-    }
-  };
-
-  const buildSystemPrompt = (isVoice = false) => {
-    const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-    const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-    return `You are ${aiName}, an AI business assistant built into Pocketflow — a beauty & personal care business app.
-Today: ${today} at ${time}.
-
-YOUR BUSINESS DATA:
-${bizContext || "No business data loaded yet."}
-
-PERSONALITY: Warm, sharp, direct. Like a smart best friend who knows this business inside out. Never robotic.
-${isVoice
-  ? "VOICE MODE: Reply in 1-2 natural sentences only. No lists, no markdown, no asterisks."
-  : "TEXT MODE: Use **bold** for key figures/names. Max 4 sentences unless detail is requested. Use line breaks between points if listing multiple things."}
-
-NAVIGATION: If user asks to open/go to/show a screen, reply with NAV:[screen] on the first line then your message. Valid screens: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings.
-
-Examples:
-- "show me my schedule" → NAV:schedule\\nOpening your schedule now!
-- "go to payments" → NAV:payments\\nHere's your payments screen.`;
-  };
-
-  const handleNavIntent = (raw, inVoiceMode = false) => {
-    const match = raw.match(/^NAV:\s*(\w+)/i);
-    if (match) {
-      const screen = match[1].toLowerCase();
-      const rest = raw.replace(/^NAV:\w+\n?/i, "").trim();
-      // Navigate but DON'T close voice mode — stay in voice
-      setTimeout(() => navigate(screen), 700);
-      return { navigating: true, screen, text: rest || `Opening ${screen} now!` };
-    }
-    return { navigating: false, text: raw };
-  };
-
-  const unlockAudio = () => {
-    // Unlock mobile audio by playing a silent buffer inside the tap event
-    try {
-      const ctx = getAudioCtx();
-      const buf = ctx.createBuffer(1, 1, 22050);
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(ctx.destination);
-      src.start(0);
-    } catch {}
-  };
-
-  const openVoiceMode = () => {
-    unlockAudio(); // must be called synchronously inside the tap event
-    stopAudio();
-    setVoiceSession([]); voiceSessionRef.current = [];
-    setVoiceLabel("Tap to speak"); setVoiceMode(true);
-    setTimeout(() => startVoiceListen(), 400);
-  };
-
-  const closeVoiceMode = () => {
-    voiceRecogRef.current?.stop(); stopAudio();
-    setVoiceMode(false); setVoiceListening(false); setVoiceLoading(false); setVoiceLabel("Tap to speak");
-    const session = voiceSessionRef.current;
-    if (session.length > 0) {
-      setChatHistory(prev => [...(prev || []), ...session.map(m => ({ ...m, time: new Date() }))]);
-    }
-    voiceSessionRef.current = []; setVoiceSession([]);
-  };
-
-  const startVoiceListen = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
-    const r = new SR(); r.lang = "en-US"; r.continuous = false; r.interimResults = false;
-    r.onresult = e => {
-      const t = e.results[0][0].transcript;
-      setVoiceListening(false); setVoiceLabel("Tap to speak");
-      if (voiceMode) {
-        handleVoiceMessage(t);
-      } else {
-        // Chat mode: show in chat bubbles AND speak back
-        sendChat(t, true);
-      }
-    };
-    r.onerror = () => { setVoiceListening(false); setVoiceLabel("Tap to speak"); };
-    r.onend = () => setVoiceListening(false);
-    voiceRecogRef.current = r; r.start();
-    setVoiceListening(true); setVoiceLabel("Listening...");
-  };
-
-  const handleVoiceMessage = async (text) => {
-    const userMsg = { role: "user", text };
-    const updated = [...voiceSessionRef.current, userMsg];
-    voiceSessionRef.current = updated; setVoiceSession([...updated]);
-    setVoiceLoading(true); setVoiceLabel("Thinking...");
-    try {
-      const history = [...(chatHistory || []), ...updated];
-      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile", max_tokens: 120,
-          messages: [
-            { role: "system", content: buildSystemPrompt(true) },
-            ...history.map(m => ({ role: m.role, content: m.text }))
-          ],
-        }),
-      });
-      const data = await res.json();
-      const raw = data.choices?.[0]?.message?.content || "Got it.";
-      const { text: reply } = handleNavIntent(raw);
-      const assistantMsg = { role: "assistant", text: reply };
-      const withReply = [...voiceSessionRef.current, assistantMsg];
-      voiceSessionRef.current = withReply; setVoiceSession([...withReply]);
-      setVoiceLoading(false); setVoiceLabel("Speaking...");
-      console.log("🔊 speakText called with:", reply.slice(0, 60));
-      speakText(reply, () => {
-        setVoiceLabel("Tap to speak");
-        setTimeout(() => { if (voiceRecogRef.current !== null) startVoiceListen(); }, 600);
-      });
-    } catch {
-      const err = { role: "assistant", text: "Connection issue, try again." };
-      voiceSessionRef.current = [...voiceSessionRef.current, err];
-      setVoiceSession([...voiceSessionRef.current]);
-      setVoiceLoading(false); setVoiceLabel("Tap to speak");
-    }
-  };
-
-  const sendChat = async (overrideText, shouldSpeak = false) => {
-    const text = (typeof overrideText === "string" ? overrideText : chatInput).trim();
-    if (!text || loading) return;
-    stopAudio(); setChatInput("");
-    setChatHistory(p => [...(p || []), { role: "user", text, time: new Date() }]);
-    setLoading(true);
-    const labels = ["Thinking...", "Checking your data...", "On it..."];
-    let li = 0; setLoadingLabel(labels[0]);
-    const iv = setInterval(() => { li = (li + 1) % labels.length; setLoadingLabel(labels[li]); }, 1800);
-    try {
-      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile", max_tokens: 400,
-          messages: [
-            { role: "system", content: buildSystemPrompt(false) },
-            ...(chatHistory || []).map(m => ({ role: m.role, content: m.text })),
-            { role: "user", content: text },
-          ],
-        }),
-      });
-      const data = await res.json();
-      const raw = data.choices?.[0]?.message?.content || "On it.";
-      const { navigating, screen, text: reply } = handleNavIntent(raw);
-      const displayText = navigating ? `Opening **${screen}**... ${reply}` : reply;
-      setChatHistory(p => [...p, { role: "assistant", text: displayText, time: new Date() }]);
-      if (shouldSpeak) speakText(reply, null);
-    } catch {
-      setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again in a second.", time: new Date() }]);
-    }
-    clearInterval(iv);
-    setLoading(false);
-  };
-
-  // Render **bold** and line breaks
-  const renderText = (text) => {
-    if (!text) return null;
-    return text.split(/(\*\*[^*]+\*\*)/g).map((chunk, i) =>
-      chunk.startsWith("**") && chunk.endsWith("**")
-        ? <strong key={i} style={{ fontWeight: 700 }}>{chunk.slice(2, -2)}</strong>
-        : <span key={i}>{chunk.split("\n").map((line, j, arr) =>
-            j < arr.length - 1 ? <span key={j}>{line}<br /></span> : <span key={j}>{line}</span>
-          )}</span>
-    );
-  };
-
-  const formatTime = (d) => { try { return new Date(d).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
-
-  // Orb state
-  const orbState = voiceListening ? "listening" : (loading || voiceLoading) ? "loading" : speaking ? "speaking" : "idle";
-  const orbColor1 = orbState === "listening" ? "#ef4444" : orbState === "loading" ? "#6366f1" : "#7c3aed";
-  const orbColor2 = orbState === "listening" ? "#f97316" : orbState === "loading" ? "#a78bfa" : "#a78bfa";
-  const orbColor3 = orbState === "speaking" ? "#38bdf8" : "#4f46e5";
-  const orbSize = isDesktop ? 190 : 120;
-  const orbBlobSize = isDesktop ? 130 : 82;
-  const smoothScale = speaking ? orbScale : 1;
-
-  const orbWidgetJSX = (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: isDesktop ? "36px 0 28px" : "6px 0 8px" }}>
-      <div
-        onClick={() => { if (!isDesktop && voiceSupported && orbState === "idle") openVoiceMode(); }}
-        style={{ position: "relative", width: orbSize, height: orbSize, display: "flex", alignItems: "center", justifyContent: "center", cursor: !isDesktop && voiceSupported && orbState === "idle" ? "pointer" : "default" }}
-      >
-        {[1.6, 1.35, 1.15].map((scale, i) => (
-          <div key={i} style={{
-            position: "absolute", width: orbSize, height: orbSize, borderRadius: "50%",
-            background: `radial-gradient(circle, ${orbColor1}${["08","12","18"][i]}, transparent 70%)`,
-            transform: `scale(${scale * smoothScale})`,
-            transition: speaking ? "none" : "transform 0.3s ease",
-            animation: orbState !== "idle" ? `orbPulse ${1.5 + i * 0.4}s ease-in-out infinite` : "none",
-            animationDelay: `${i * 0.2}s`,
-          }} />
-        ))}
-        <div style={{
-          width: orbBlobSize, height: orbBlobSize,
-          background: `radial-gradient(circle at 35% 35%, ${orbColor2}, ${orbColor1} 50%, ${orbColor3})`,
-          borderRadius: "60% 40% 30% 70%/60% 30% 70% 40%",
-          boxShadow: `0 0 ${speaking ? 40 : 20}px ${orbColor1}66, 0 0 ${speaking ? 80 : 40}px ${orbColor1}33, inset 0 0 30px rgba(255,255,255,0.1)`,
-          animation: `blobMorph ${orbState === "speaking" ? 1.2 : orbState === "loading" ? 1.8 : 4}s ease-in-out infinite`,
-          transform: `scale(${smoothScale})`, transition: speaking ? "transform 0.08s linear" : "transform 0.3s ease, box-shadow 0.3s, background 0.4s",
-          position: "relative", zIndex: 2,
-        }}>
-          <div style={{ position: "absolute", inset: 0, borderRadius: "inherit", background: "radial-gradient(circle at 30% 25%, rgba(255,255,255,0.35), transparent 60%)", animation: `orbSpinRev ${orbState === "speaking" ? 2 : 6}s linear infinite` }} />
-        </div>
-        <div style={{ position: "absolute", width: orbSize - 8, height: orbSize - 8, borderRadius: "50%", border: `1px dashed ${orbColor1}33`, animation: `orbSpin ${orbState === "speaking" ? 2 : 8}s linear infinite` }}>
-          {[0, 120, 240].map((deg, i) => (
-            <div key={i} style={{ position: "absolute", width: 5, height: 5, borderRadius: "50%", background: orbColor2, opacity: 0.7, top: "50%", left: "50%", transform: `rotate(${deg}deg) translateX(${orbSize / 2 - 6}px) translateY(-50%)`, boxShadow: `0 0 5px ${orbColor2}` }} />
-          ))}
-        </div>
-      </div>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: orbState === "listening" ? "#ef4444" : orbState === "speaking" ? C.accent : C.dim, marginTop: 10, transition: "color 0.3s" }}>
-        {orbState === "listening" ? "Listening..." : orbState === "loading" ? loadingLabel : orbState === "speaking" ? "Speaking..." : aiName}
-      </div>
-      {isDesktop && <div style={{ fontSize: 11, color: C.dim, marginTop: 3, textAlign: "center" }}>AI assistant · online 24/7</div>}
-      {!isDesktop && voiceSupported && orbState === "idle" && (
-        <div style={{ fontSize: 11, color: C.dim, marginTop: 4 }}>Tap orb for voice</div>
-      )}
-      {isDesktop && voiceSupported && (
-        <div onClick={openVoiceMode} style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 8, padding: "9px 20px", borderRadius: 100, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#fff", boxShadow: `0 4px 18px ${C.accent}44` }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-          Voice Chat
-        </div>
-      )}
-      {isDesktop && (
-        <div style={{ marginTop: 24, width: "100%", padding: "0 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: C.dim, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 10 }}>Quick Actions</div>
-          {suggestions.map(c => (
-            <div key={c} onClick={() => sendChat(c)}
-              style={{ padding: "9px 14px", borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, fontSize: 13, color: C.mid, cursor: "pointer", marginBottom: 7, transition: "all 0.15s", fontWeight: 500, lineHeight: 1.4 }}
-              onMouseEnter={e => { e.currentTarget.style.background = C.surfaceHigh; e.currentTarget.style.color = C.text; e.currentTarget.style.borderColor = C.accent + "55"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.mid; e.currentTarget.style.borderColor = C.border; }}
-            >{c}</div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const chatAreaJSX = (
-    <>
-      {!isDesktop && (
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "0 16px 10px", flexShrink: 0 }}>
-          {suggestions.map(c => (
-            <div key={c} onClick={() => sendChat(c)}
-              style={{ padding: "6px 14px", borderRadius: 100, background: C.surface, border: `1px solid ${C.border}`, fontSize: 11, fontWeight: 600, color: C.mid, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>{c}</div>
-          ))}
-        </div>
-      )}
-      <div style={{ flex: 1, overflowY: "auto", padding: isDesktop ? "20px 28px" : "0 16px 12px" }}>
-        {chatHistory === null ? (
-          <div style={{ textAlign: "center", padding: 40, color: C.dim, fontSize: 13 }}>Loading {aiName}...</div>
-        ) : chatHistory.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 16, alignItems: "flex-end", gap: 8 }}>
-            {m.role === "assistant" && (
-              <div style={{ width: 28, height: 28, borderRadius: 9, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>✦</div>
-            )}
-            <div style={{ maxWidth: isDesktop ? "68%" : "80%" }}>
-              <div style={{ padding: "11px 15px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surface, border: m.role === "user" ? "none" : `1px solid ${C.border}`, fontSize: 14, lineHeight: 1.65, color: m.role === "user" ? "#fff" : C.text }}>
-                {renderText(m.text)}
-              </div>
-              {m.time && <div style={{ fontSize: 10, color: C.dim, marginTop: 3, textAlign: m.role === "user" ? "right" : "left", paddingLeft: 3, paddingRight: 3 }}>{formatTime(m.time)}</div>}
-            </div>
-          </div>
-        ))}
-        {loading && (
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, marginBottom: 16 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 9, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>✦</div>
-            <div>
-              <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "18px 18px 18px 4px", padding: "13px 16px", display: "flex", gap: 5, alignItems: "center" }}>
-                {[0,1,2].map(d => <div key={d} style={{ width: 6, height: 6, borderRadius: "50%", background: C.accent, animation: "pulse 1.2s infinite", animationDelay: `${d * 0.2}s` }} />)}
-              </div>
-              <div style={{ fontSize: 10, color: C.dim, marginTop: 3, paddingLeft: 4 }}>{loadingLabel}</div>
-            </div>
-          </div>
-        )}
-        <div ref={chatEndRef} />
-      </div>
-      <div style={{ padding: isDesktop ? "12px 28px 24px" : "10px 16px 28px", background: C.bg, borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
-        {speaking && (
-          <div onClick={stopAudio} style={{ textAlign: "center", marginBottom: 8, fontSize: 12, color: C.accent, cursor: "pointer", fontWeight: 600 }}>
-            ⏹ Tap to stop speaking
-          </div>
-        )}
-        <div style={{ display: "flex", gap: 8, background: C.surface, border: `1px solid ${speaking ? C.accent : C.border}`, borderRadius: 16, padding: "6px 6px 6px 16px", alignItems: "center", transition: "border-color 0.2s", boxShadow: speaking ? `0 0 0 2px ${C.accent}22` : "none" }}>
-          <input
-            value={chatInput} onChange={handleChatInput} onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendChat()}
-            placeholder={speaking ? `${aiName} is speaking — type to interrupt...` : `Ask ${aiName} anything...`}
-            style={{ flex: 1, background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", outline: "none" }}
-          />
-          {voiceSupported && !isDesktop && (
-            <div onClick={openVoiceMode} style={{ width: 36, height: 36, borderRadius: 10, background: C.surfaceHigh, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-            </div>
-          )}
-          <BtnPrimary onClick={() => sendChat()} disabled={loading || !chatInput.trim()} style={{ width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 11, flexShrink: 0, padding: 0 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </BtnPrimary>
-        </div>
-        <div style={{ textAlign: "center", marginTop: 7, fontSize: 10, color: C.dim }}>
-          Try: "open schedule" · "draft a promo" · "who's my top client?"
-        </div>
-      </div>
-    </>
-  );
-
-  const VoiceOverlay = voiceMode ? (
-    <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#07070f", display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <div style={{ width: "100%", maxWidth: 680, padding: "52px 28px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-        <div>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: "#fff" }}>{aiName}</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>Voice conversation</div>
-        </div>
-        <div onClick={closeVoiceMode} style={{ padding: "9px 22px", borderRadius: 100, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>
-          End & Save
-        </div>
-      </div>
-      <div style={{ flex: 1, width: "100%", maxWidth: 680, overflowY: "auto", padding: "0 28px 12px" }}>
-        {voiceSession.length === 0 && (
-          <div style={{ textAlign: "center", marginTop: 60, color: "rgba(255,255,255,0.2)", fontSize: 14, lineHeight: 2 }}>
-            Tap the orb to start talking<br/>
-            <span style={{ fontSize: 12 }}>Conversation saves to chat when you end</span>
-          </div>
-        )}
-        {voiceSession.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 12, alignItems: "flex-end", gap: 8 }}>
-            {m.role === "assistant" && <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, flexShrink: 0 }}>✦</div>}
-            <div style={{ maxWidth: "76%", padding: "10px 14px", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.role === "user" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "rgba(255,255,255,0.07)", border: m.role === "user" ? "none" : "1px solid rgba(255,255,255,0.1)", fontSize: 14, lineHeight: 1.6, color: "#fff" }}>{m.text}</div>
-          </div>
-        ))}
-        {voiceLoading && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-            <div style={{ width: 26, height: 26, borderRadius: 8, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11 }}>✦</div>
-            <div style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "18px 18px 18px 4px", padding: "12px 16px", display: "flex", gap: 5 }}>
-              {[0,1,2].map(d => <div key={d} style={{ width: 5, height: 5, borderRadius: "50%", background: C.accent, animation: "pulse 1.2s infinite", animationDelay: `${d * 0.2}s` }} />)}
-            </div>
-          </div>
-        )}
-        <div ref={voiceChatEndRef} />
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: 52, paddingTop: 8, flexShrink: 0 }}>
-        <div
-          onClick={() => { if (!voiceListening && !voiceLoading && !speaking) startVoiceListen(); }}
-          style={{ position: "relative", width: 160, height: 160, display: "flex", alignItems: "center", justifyContent: "center", cursor: voiceListening || voiceLoading || speaking ? "default" : "pointer" }}
-        >
-          {[1.7, 1.4, 1.18].map((scale, i) => {
-            const c1 = voiceListening ? "#ef4444" : voiceLoading ? "#6366f1" : speaking ? "#7c3aed" : "#6366f1";
-            return <div key={i} style={{ position: "absolute", width: 160, height: 160, borderRadius: "50%", background: `radial-gradient(circle, ${c1}${["08","12","18"][i]}, transparent 70%)`, transform: `scale(${scale * (speaking ? smoothScale : 1)})`, transition: speaking ? "none" : "transform 0.3s", animation: (voiceListening || voiceLoading || speaking) ? `orbPulse ${1.5+i*0.4}s ease-in-out infinite` : "none", animationDelay: `${i * 0.2}s` }} />;
-          })}
-          <div style={{ width: 110, height: 110, borderRadius: "60% 40% 30% 70%/60% 30% 70% 40%",
-            background: voiceListening ? "radial-gradient(circle at 35% 35%,#f97316,#ef4444 50%,#dc2626)" : voiceLoading ? "radial-gradient(circle at 35% 35%,#a78bfa,#6366f1 50%,#4f46e5)" : speaking ? "radial-gradient(circle at 35% 35%,#a78bfa,#7c3aed 50%,#4f46e5)" : "radial-gradient(circle at 35% 35%,#818cf8,#6366f1 50%,#4338ca)",
-            boxShadow: `0 0 ${speaking ? 50 : 25}px ${voiceListening?"#ef444466":"#7c3aed66"},0 0 ${speaking?100:50}px ${voiceListening?"#ef444422":"#7c3aed22"},inset 0 0 30px rgba(255,255,255,0.1)`,
-            animation: `blobMorph ${speaking?1.2:voiceLoading?1.8:4}s ease-in-out infinite`,
-            transform: `scale(${speaking ? smoothScale : 1})`,
-            transition: speaking ? "transform 0.08s linear" : "transform 0.3s, box-shadow 0.3s, background 0.4s",
-            position: "relative", zIndex: 2 }}>
-            <div style={{ position: "absolute", inset: 0, borderRadius: "inherit", background: "radial-gradient(circle at 30% 25%,rgba(255,255,255,0.35),transparent 60%)", animation: `orbSpinRev ${speaking?2:6}s linear infinite` }} />
-          </div>
-        </div>
-        <div style={{ marginTop: 14, fontSize: 13, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: voiceListening ? "#ef4444" : speaking ? C.accent : "rgba(255,255,255,0.4)" }}>
-          {voiceLabel}
-        </div>
-        <div style={{ marginTop: 5, fontSize: 11, color: "rgba(255,255,255,0.18)", textAlign: "center" }}>
-          {voiceSession.length > 0 ? `${Math.ceil(voiceSession.length / 2)} exchange${voiceSession.length > 2 ? "s" : ""} · tap End & Save when done` : "Tap the orb to start speaking"}
-        </div>
-      </div>
-    </div>
-  ) : null;
-
-  if (isDesktop) {
-    return (
-      <>
-      <div style={{ display: "flex", height: "100vh", background: C.bg, overflow: "hidden" }}>
-        <div style={{ width: 272, flexShrink: 0, borderRight: `1px solid ${C.border}`, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-          <div style={{ padding: "32px 20px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800 }}>{aiName}</div>
-              <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 3 }}>● Online</div>
-            </div>
-            {chatHistory && chatHistory.length > 1 && (
-              <div onClick={() => { setChatHistory(h => [h[0]]); localStorage.removeItem("aria_chat_history"); }} title="Clear chat" style={{ width: 32, height: 32, borderRadius: 9, background: C.surfaceHigh, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, flexShrink: 0 }}>🗑</div>
-            )}
-          </div>
-          {orbWidgetJSX}
-        </div>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <div style={{ padding: "20px 28px 14px", borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 700 }}>Chat with {aiName}</div>
-            <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>Ask anything · say "open schedule" to navigate · drafts · analytics</div>
-          </div>
-          {chatAreaJSX}
-        </div>
-      </div>
-      {VoiceOverlay}
-      </>
-    );
-  }
-
-  return (
-    <>
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: C.bg }}>
-      <div style={{ padding: "52px 20px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-        <div>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 800 }}>{aiName}</div>
-          <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>● Online</div>
-        </div>
-        {chatHistory && chatHistory.length > 1 && (
-          <div onClick={() => setChatHistory(h => [h[0]])} style={{ width: 34, height: 34, borderRadius: 10, background: C.surface, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>🗑</div>
-        )}
-      </div>
-      {orbWidgetJSX}
-      {chatAreaJSX}
-      <BottomNav active="assistant" navigate={navigate} />
-    </div>
-    {VoiceOverlay}
-    </>
-  );
-}
-
-
 
 // ── NOTE TAB (stateful sub-component for client notes) ─────────────────────────
 function NoteTab({ client, onNoteUpdate }) {
@@ -1491,7 +876,7 @@ function NoteTab({ client, onNoteUpdate }) {
         rows={4}
         value={note}
         onChange={e => { setNote(e.target.value); setSaved(false); }}
-        style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", resize: "none" }}
+        style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", resize: "none" }}
       />
       {saved
         ? <div style={{ width: "100%", padding: 13, marginTop: 10, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Note saved!</div>
@@ -1633,25 +1018,26 @@ function Clients({ navigate }) {
         <div>
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "10px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." style={{ background: "none", border: "none", fontSize: 13, color: C.text, fontFamily: "'Red Hat Display',sans-serif", width: "100%" }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." style={{ background: "none", border: "none", fontSize: 13, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", width: "100%" }} />
         </div>
         {loading ? (
           <div style={{ textAlign: "center", padding: 40, color: C.mid }}>Loading clients...</div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: C.mid }}>No clients found</div>
-        ) : filtered.map((c) => (
-          <Card key={c.id} style={{ padding: "14px 16px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} onClick={() => { setSelectedClient(c); setActiveTab("history"); }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: C.accentSoft, border: `1px solid ${C.accentSoft}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: C.accent, flexShrink: 0 }}>{c.avatar}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{c.name}</span>
-                {c.badge && <span style={{ fontSize: 10, fontWeight: 700, color: C.gold, background: "#f59e0b18", border: "1px solid #f59e0b33", borderRadius: 100, padding: "2px 7px" }}>{c.badge}</span>}
+        ) : <div style={{ background: "rgba(14,14,22,0.6)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, maxHeight: "calc(100vh - 220px)", overflowY: "auto" }}>{filtered.map((c, idx) => (
+          <div key={c.id} onClick={() => { setSelectedClient(c); setActiveTab("history"); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", cursor: "pointer", borderBottom: idx < filtered.length - 1 ? `1px solid ${C.border}` : "none", background: selectedClient?.id === c.id ? C.accentSoft : "transparent", borderRadius: idx === 0 ? "14px 14px 0 0" : idx === filtered.length - 1 ? "0 0 14px 14px" : 0 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: C.accentSoft, border: `1px solid ${C.accentSoft}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.accent, flexShrink: 0 }}>{c.avatar}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
+                {c.badge && <span style={{ fontSize: 9, fontWeight: 700, color: C.gold, background: "#f59e0b18", border: "1px solid #f59e0b33", borderRadius: 100, padding: "1px 6px", flexShrink: 0 }}>{c.badge}</span>}
               </div>
-              <div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{c.totalVisits} visits · Last: {c.lastVisit}</div>
+              <div style={{ fontSize: 11, color: C.dim, marginTop: 1 }}>{c.totalVisits} visits</div>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{c.totalSpent}</div>
-          </Card>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.gold, flexShrink: 0 }}>{c.totalSpent}</div>
+          </div>
         ))}
+        </div>}
         </div>{/* end col 1 */}
         {isDesktop && (
           <div style={{ position: "sticky", top: 80 }}>
@@ -1708,9 +1094,9 @@ function Clients({ navigate }) {
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add New Client</div>
-            <input placeholder="Full name *" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Instagram handle" value={newInstagram} onChange={e => setNewInstagram(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 20 }} />
+            <input placeholder="Full name *" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Instagram handle" value={newInstagram} onChange={e => setNewInstagram(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 20 }} />
             <BtnPrimary disabled={!newName || adding} onClick={addClient} style={{ width: "100%", padding: 14 }}>{adding ? "Adding..." : "Add Client"}</BtnPrimary>
           </div>
         </div>
@@ -1847,16 +1233,16 @@ function Services({ navigate }) {
             </div>
 
             <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Service Name *</div>
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Knotless Braids" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 14 }} />
+            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Knotless Braids" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 14 }} />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Price ($) *</div>
-                <input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="120" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
+                <input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} placeholder="120" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }} />
               </div>
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Duration *</div>
-                <select value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: form.duration ? C.text : C.dim, fontFamily: "'Red Hat Display',sans-serif" }}>
+                <select value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: form.duration ? C.text : C.dim, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
                   <option value="">Select</option>
                   {DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -1864,7 +1250,7 @@ function Services({ navigate }) {
             </div>
 
             <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Description (optional)</div>
-            <input value={form.desc} onChange={e => setForm(p => ({ ...p, desc: e.target.value }))} placeholder="Short description clients will see" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 14 }} />
+            <input value={form.desc} onChange={e => setForm(p => ({ ...p, desc: e.target.value }))} placeholder="Short description clients will see" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 14 }} />
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", marginBottom: 16, borderTop: `1px solid ${C.border}` }}>
               <div><div style={{ fontSize: 14, fontWeight: 600 }}>Show on booking page</div><div style={{ fontSize: 12, color: C.dim }}>Clients can book this service</div></div>
@@ -1937,7 +1323,7 @@ function Payments({ navigate }) {
               </div>
               <div style={{ display: "flex", alignItems: "center", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 14px", gap: 8 }}>
                 <span style={{ fontSize: 18, color: C.mid }}>{depositType === "percent" ? "%" : "$"}</span>
-                <input value={depositAmount} onChange={e => setDepositAmount(e.target.value)} style={{ flex: 1, background: "none", border: "none", fontSize: 20, fontWeight: 700, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
+                <input value={depositAmount} onChange={e => setDepositAmount(e.target.value)} style={{ flex: 1, background: "none", border: "none", fontSize: 20, fontWeight: 700, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }} />
                 <span style={{ fontSize: 12, color: C.dim }}>{depositType === "percent" ? "of total" : "flat fee"}</span>
               </div>
             </div>
@@ -1954,7 +1340,7 @@ function Payments({ navigate }) {
           <div><div style={{ fontSize: 14, fontWeight: 600 }}>No-show fee</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Charge ${noShowFee ? noShowAmount : "–"} if client doesn't show</div></div>
           <Toggle on={noShowFee} onToggle={() => setNoShowFee(p => !p)} />
         </div>
-        {noShowFee && <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}` }}><div style={{ display: "flex", alignItems: "center", background: C.surfaceHigh, border: `1px solid ${C.borderHigh}`, borderRadius: 12, padding: "10px 14px", gap: 8 }}><span style={{ fontSize: 16, color: C.mid }}>$</span><input value={noShowAmount} onChange={e => setNoShowAmount(e.target.value)} style={{ flex: 1, background: "none", border: "none", fontSize: 18, fontWeight: 700, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} /></div></div>}
+        {noShowFee && <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}` }}><div style={{ display: "flex", alignItems: "center", background: C.surfaceHigh, border: `1px solid ${C.borderHigh}`, borderRadius: 12, padding: "10px 14px", gap: 8 }}><span style={{ fontSize: 16, color: C.mid }}>$</span><input value={noShowAmount} onChange={e => setNoShowAmount(e.target.value)} style={{ flex: 1, background: "none", border: "none", fontSize: 18, fontWeight: 700, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }} /></div></div>}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: lateCancel ? `1px solid ${C.border}` : "none" }}>
           <div><div style={{ fontSize: 14, fontWeight: 600 }}>Late cancellation fee</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Within {lateCancelHours}h of appointment</div></div>
           <Toggle on={lateCancel} onToggle={() => setLateCancel(p => !p)} />
@@ -2054,16 +1440,48 @@ function Settings({ navigate }) {
   const [aiName, setAiName] = useState("Aria");
   const [aiNameSaved, setAiNameSaved] = useState(false);
   const [savingName, setSavingName] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [autoSaveMsg, setAutoSaveMsg] = useState("");
+  const saveTimerRef = useRef(null);
 
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase.from("business_profiles").select("ai_name").eq("user_id", session.user.id).single();
+      const { data } = await supabase.from("business_profiles").select("ai_name,settings").eq("user_id", session.user.id).single();
       if (data?.ai_name) setAiName(data.ai_name);
+      if (data?.settings) {
+        const s = typeof data.settings === "string" ? JSON.parse(data.settings) : data.settings;
+        if (s.aiReplies !== undefined) setAiReplies(s.aiReplies);
+        if (s.aiBookings !== undefined) setAiBookings(s.aiBookings);
+        if (s.aiReminders !== undefined) setAiReminders(s.aiReminders);
+        if (s.aiFollowUps !== undefined) setAiFollowUps(s.aiFollowUps);
+        if (s.aiPromos !== undefined) setAiPromos(s.aiPromos);
+        if (s.tone) setTone(s.tone);
+        if (s.bufferTime) setBufferTime(s.bufferTime);
+        if (s.maxDaily) setMaxDaily(s.maxDaily);
+        if (s.sunday !== undefined) setSunday(s.sunday);
+        if (s.paymentDetails) setPaymentDetails(s.paymentDetails);
+      }
+      setSettingsLoaded(true);
     };
     load();
   }, []);
+
+  // Auto-save settings when anything changes (debounced)
+  useEffect(() => {
+    if (!settingsLoaded) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const settings = { aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, tone, bufferTime, maxDaily, sunday, paymentDetails };
+      await supabase.from("business_profiles").upsert({ user_id: session.user.id, settings }, { onConflict: "user_id" });
+      setAutoSaveMsg("Saved");
+      setTimeout(() => setAutoSaveMsg(""), 1500);
+    }, 800);
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  }, [aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, tone, bufferTime, maxDaily, sunday, paymentDetails, settingsLoaded]);
 
   const saveAiName = async () => {
     if (!aiName.trim()) return;
@@ -2081,6 +1499,7 @@ function Settings({ navigate }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BackBtn onBack={() => navigate("home")} />
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Settings</div>
+          {autoSaveMsg && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginLeft: "auto" }}>✓ {autoSaveMsg}</div>}
         </div>
       </div>
       <div style={{ padding: "0 20px" }}>
@@ -2099,7 +1518,7 @@ function Settings({ navigate }) {
             onChange={e => { setAiName(e.target.value); setAiNameSaved(false); }}
             placeholder="e.g. Aria, Nova, Sage..."
             maxLength={20}
-            style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 10 }}
+            style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 10 }}
           />
           {aiNameSaved
             ? <div style={{ width: "100%", padding: 11, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Saved!</div>
@@ -2167,7 +1586,7 @@ function Settings({ navigate }) {
                     placeholder={p.placeholder}
                     value={paymentDetails[p.label] || ""}
                     onChange={e => setPaymentDetails(prev => ({ ...prev, [p.label]: e.target.value }))}
-                    style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 10 }}
+                    style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 10 }}
                   />
                   <BtnPrimary onClick={() => setPaymentInputOpen(prev => ({ ...prev, [p.label]: false }))} style={{ width: "100%", padding: 11, fontSize: 13 }}>Save</BtnPrimary>
                 </div>
@@ -2303,7 +1722,7 @@ function Loyalty({ navigate }) {
               onChange={e => setNewCode(p => ({ ...p, code: e.target.value.toUpperCase().replace(/\s/g, "") }))}
               placeholder="Code (e.g. WELCOME10)"
               maxLength={20}
-              style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 10, letterSpacing: 1 }}
+              style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 10, letterSpacing: 1 }}
             />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
               {["percent", "fixed"].map(t => (
@@ -2317,13 +1736,13 @@ function Loyalty({ navigate }) {
                 value={newCode.value}
                 onChange={e => setNewCode(p => ({ ...p, value: e.target.value.replace(/\D/g, "") }))}
                 placeholder={newCode.type === "percent" ? "e.g. 10 (10%)" : "e.g. 20 ($20)"}
-                style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }}
+                style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }}
               />
               <input
                 value={newCode.limit}
                 onChange={e => setNewCode(p => ({ ...p, limit: e.target.value.replace(/\D/g, "") }))}
                 placeholder="Usage limit (optional)"
-                style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }}
+                style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }}
               />
             </div>
             <div onClick={() => setNewCode(p => ({ ...p, firstOnly: !p.firstOnly }))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", cursor: "pointer", marginBottom: 14 }}>
@@ -2747,7 +2166,7 @@ function Promotions({ navigate }) {
               <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.6, marginBottom: 12 }}>You have 3 open slots this Friday. Want me to send a flash promo to your last 30 clients?</div>
               <div style={{ display: "flex", gap: 8 }}>
                 <BtnPrimary onClick={() => setCreating(true)} style={{ flex: 1, padding: 11, fontSize: 13 }}>Yes, create it</BtnPrimary>
-                <button onClick={() => {}} style={{ flex: 1, padding: 11, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600 }}>Not now</button>
+                <button onClick={() => {}} style={{ flex: 1, padding: 11, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 600 }}>Not now</button>
               </div>
             </div>
             <SectionLabel>Past Promotions</SectionLabel>
@@ -2768,11 +2187,11 @@ function Promotions({ navigate }) {
           </>
         ) : (
           <>
-            <input placeholder="Promo title (e.g. Friday Flash Deal 🔥)" value={promoTitle} onChange={e => setPromoTitle(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Promo title (e.g. Friday Flash Deal 🔥)" value={promoTitle} onChange={e => setPromoTitle(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
             <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 14, marginBottom: 12 }}>
-              <textarea placeholder="Write your message..." value={promoMsg} onChange={e => setPromoMsg(e.target.value)} rows={4} style={{ width: "100%", background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", resize: "none" }} />
+              <textarea placeholder="Write your message..." value={promoMsg} onChange={e => setPromoMsg(e.target.value)} rows={4} style={{ width: "100%", background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", resize: "none" }} />
             </div>
-            <button onClick={() => setPromoMsg("Hey gorgeous! 💕 I have a few slots open this Friday and I'm running a special — book any service and get 15% off. Limited spots, first come first served! Book here 👉 [your link]")} style={{ width: "100%", padding: 12, background: C.accentSoft, border: `1px solid ${C.accent}44`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.accent, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif", marginBottom: 20 }}>✦ Write with AI</button>
+            <button onClick={() => setPromoMsg("Hey gorgeous! 💕 I have a few slots open this Friday and I'm running a special — book any service and get 15% off. Limited spots, first come first served! Book here 👉 [your link]")} style={{ width: "100%", padding: 12, background: C.accentSoft, border: `1px solid ${C.accent}44`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.accent, cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 20 }}>✦ Write with AI</button>
             <SectionLabel>Send to</SectionLabel>
             <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
               {[{ id: "all", label: "All (47)" }, { id: "regulars", label: "Regulars (18)" }, { id: "inactive", label: "Inactive (12)" }].map(a => (
@@ -2910,22 +2329,18 @@ function Booking({ navigate }) {
 
       // 3. Notify owner — email + in-app notification
       try {
-        // Get owner email from business profile
-        const { data: ownerProf } = await supabase.from("business_profiles").select("biz_name").eq("user_id", uid).single();
-        const { data: ownerAuth } = await supabase.from("profiles").select("email").eq("id", uid).single();
-        const ownerEmail = ownerAuth?.email || (ownerIdFromUrl ? null : null);
-
-        // Email via proxy
+        // Email via proxy (server will look up owner email by owner_id)
         await fetch("https://pocketflow-proxy-production.up.railway.app/notify-booking", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            owner_email: ownerEmail || "omarnassan590@gmail.com",
+            owner_id: uid,
             client_name: name,
+            client_phone: phone,
             service: selectedServices.map(s => s.name).join(", "),
             date: selectedDate,
             time: selectedTime,
-            phone,
             deposit: depositStr,
+            total: "$" + totalPrice,
             biz_name: bizName,
             note: note || "",
           }),
@@ -3114,10 +2529,10 @@ function Booking({ navigate }) {
                 </div>
               ))}
             </Card>
-            <input placeholder="Your full name *" value={name} onChange={e => setName(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Phone number *" type="tel" value={phone} onChange={e => setPhone(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Instagram handle (optional)" value={instagram} onChange={e => setInstagram(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
-            <textarea placeholder="Notes — hair length, allergies, special requests..." value={note} onChange={e => setNote(e.target.value)} rows={3} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", resize: "none" }} />
+            <input placeholder="Your full name *" value={name} onChange={e => setName(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Phone number *" type="tel" value={phone} onChange={e => setPhone(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Instagram handle (optional)" value={instagram} onChange={e => setInstagram(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
+            <textarea placeholder="Notes — hair length, allergies, special requests..." value={note} onChange={e => setNote(e.target.value)} rows={3} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", resize: "none" }} />
           </div>
         )}
 
@@ -3137,24 +2552,24 @@ function Booking({ navigate }) {
             <div style={{ background: C.surface, border: "1px solid " + C.border, borderRadius: 18, padding: "4px 0", marginBottom: 16 }}>
               <div style={{ padding: "12px 16px", borderBottom: "1px solid " + C.border }}>
                 <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>CARDHOLDER NAME</div>
-                <input placeholder="Name on card" value={cardName} onChange={e => setCardName(e.target.value)} style={{ width: "100%", background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600 }} />
+                <input placeholder="Name on card" value={cardName} onChange={e => setCardName(e.target.value)} style={{ width: "100%", background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 600 }} />
               </div>
               <div style={{ padding: "12px 16px", borderBottom: "1px solid " + C.border }}>
                 <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>CARD NUMBER</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <input placeholder="1234 5678 9012 3456" value={cardNumber} onChange={e => setCardNumber(formatCard(e.target.value))} style={{ flex: 1, background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600, letterSpacing: 2 }} />
+                  <input placeholder="1234 5678 9012 3456" value={cardNumber} onChange={e => setCardNumber(formatCard(e.target.value))} style={{ flex: 1, background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 600, letterSpacing: 2 }} />
                   <span style={{ fontSize: 20 }}>💳</span>
                 </div>
               </div>
               <div style={{ display: "flex", padding: "12px 16px", gap: 20 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>EXPIRY</div>
-                  <input placeholder="MM/YY" value={cardExpiry} onChange={e => setCardExpiry(formatExpiry(e.target.value))} style={{ width: "100%", background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600 }} />
+                  <input placeholder="MM/YY" value={cardExpiry} onChange={e => setCardExpiry(formatExpiry(e.target.value))} style={{ width: "100%", background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 600 }} />
                 </div>
                 <div style={{ width: 1, background: C.border }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>CVC</div>
-                  <input placeholder="123" value={cardCvc} onChange={e => setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 3))} style={{ width: "100%", background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Red Hat Display',sans-serif", fontWeight: 600 }} />
+                  <input placeholder="123" value={cardCvc} onChange={e => setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 3))} style={{ width: "100%", background: "none", border: "none", fontSize: 15, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 600 }} />
                 </div>
               </div>
             </div>
@@ -3215,6 +2630,13 @@ function Staff({ navigate }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       const uid = session.user.id;
+
+      // Load staff from Supabase
+      const { data: staffData } = await supabase.from("staff_members").select("*").eq("owner_id", uid).order("created_at", { ascending: true });
+      if (staffData && staffData.length > 0) {
+        setStaff(staffData.map(s => ({ id: s.id, name: s.name, role: s.role, avatar: s.avatar || s.name.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: s.phone || "", status: s.status || "active", appts: s.appts || 0, revenue: s.revenue || "$0", rating: s.rating || 5.0, services: s.services || [] })));
+      }
+
       const [profRes, apptRes, svcRes] = await Promise.all([
         supabase.from("business_profiles").select("ai_name,biz_name,location").eq("user_id", uid).single(),
         supabase.from("appointments").select("client_name,service,time,day,status,price").eq("owner_id", uid).order("created_at",{ascending:false}).limit(20),
@@ -3335,7 +2757,7 @@ function Staff({ navigate }) {
               onChange={e => setGroupInput(e.target.value)}
               onKeyDown={e => { if(e.key==="Enter") sendGroupMessage(); }}
               placeholder={`Message the team or @${aiName}...`}
-              style={{ flex:1, background:"transparent", border:"none", outline:"none", fontSize:14, color:C.text, fontFamily:"'Red Hat Display',sans-serif" }}
+              style={{ flex:1, background:"transparent", border:"none", outline:"none", fontSize:14, color:C.text, fontFamily:"'Plus Jakarta Sans',sans-serif" }}
             />
             <BtnPrimary onClick={sendGroupMessage} disabled={!groupInput.trim()} style={{ width:38, height:38, borderRadius:11, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, padding:0 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -3406,10 +2828,10 @@ function Staff({ navigate }) {
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 430, padding: "24px 20px 40px" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add Staff Member</div>
-            <input placeholder="Full name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Role (e.g. Braider, Stylist)" value={newRole} onChange={e => setNewRole(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 20 }} />
-            <BtnPrimary disabled={!newName || !newRole} onClick={() => { setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar: newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: newPhone, status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); setNewName(""); setNewRole(""); setNewPhone(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add Staff Member</BtnPrimary>
+            <input placeholder="Full name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Role (e.g. Braider, Stylist)" value={newRole} onChange={e => setNewRole(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 20 }} />
+            <BtnPrimary disabled={!newName || !newRole} onClick={async () => { try { const { data: { session } } = await supabase.auth.getSession(); if (!session) return; const avatar = newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(); const row = { name: newName, role: newRole, avatar, phone: newPhone, status: "active", owner_id: session.user.id }; const { data, error } = await supabase.from("staff_members").insert([row]).select().single(); if (!error && data) { setStaff(p => [...p, { id: data.id, name: data.name, role: data.role, avatar, phone: data.phone || "", status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); } else { setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar, phone: newPhone, status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); } } catch(e) { setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar: newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: newPhone, status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); } setNewName(""); setNewRole(""); setNewPhone(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add Staff Member</BtnPrimary>
           </div>
         </div>
       )}
@@ -3426,12 +2848,25 @@ function Waitlist({ navigate }) {
   const [newService, setNewService] = useState("");
   const [newDate, setNewDate] = useState("");
 
-  const notify = (id) => {
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from("waitlist").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: true });
+      if (data) setWaitlist(data.map(w => ({ id: w.id, name: w.name, service: w.service, requestedDate: w.requested_date || "Flexible", addedTime: w.created_at ? new Date(w.created_at).toLocaleDateString() : "Recently", avatar: w.name.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: w.phone || "", notified: w.notified || false })));
+    };
+    load();
+  }, []);
+
+  const notify = async (id) => {
     setWaitlist(p => p.map(w => w.id === id ? { ...w, notified: true } : w));
-    setWaitlist(p => p.map(w => w.id === id ? { ...w, notified: true } : w));
+    try { await supabase.from("waitlist").update({ notified: true }).eq("id", id); } catch(e) {}
   };
 
-  const remove = (id) => setWaitlist(p => p.filter(w => w.id !== id));
+  const remove = async (id) => {
+    setWaitlist(p => p.filter(w => w.id !== id));
+    try { await supabase.from("waitlist").delete().eq("id", id); } catch(e) {}
+  };
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -3475,7 +2910,7 @@ function Waitlist({ navigate }) {
                     ? <BtnPrimary onClick={() => notify(w.id)} style={{ flex: 1, padding: 10, fontSize: 13 }}>Offer Slot</BtnPrimary>
                     : <div style={{ flex: 1, padding: 10, background: "#fbbf2411", border: "1px solid #fbbf2433", borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.yellow, textAlign: "center" }}>Waiting for reply...</div>
                   }
-                  <button onClick={() => remove(w.id)} style={{ width: 40, height: 40, background: "#f43f5e11", border: "1px solid #f43f5e22", borderRadius: 12, fontSize: 16, color: C.red, cursor: "pointer", flexShrink: 0, fontFamily: "'Red Hat Display',sans-serif" }}>×</button>
+                  <button onClick={() => remove(w.id)} style={{ width: 40, height: 40, background: "#f43f5e11", border: "1px solid #f43f5e22", borderRadius: 12, fontSize: 16, color: C.red, cursor: "pointer", flexShrink: 0, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>×</button>
                 </div>
               </Card>
             ))}
@@ -3488,10 +2923,10 @@ function Waitlist({ navigate }) {
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add to Waitlist</div>
-            <input placeholder="Client name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Service requested" value={newService} onChange={e => setNewService(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 12 }} />
-            <input placeholder="Preferred date (e.g. This weekend)" value={newDate} onChange={e => setNewDate(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", marginBottom: 20 }} />
-            <BtnPrimary disabled={!newName || !newService} onClick={() => { setWaitlist(p => [...p, { id: Date.now(), name: newName, service: newService, requestedDate: newDate || "Flexible", addedTime: "Just now", avatar: newName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(), phone: "", notified: false }]); setNewName(""); setNewService(""); setNewDate(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add to Waitlist</BtnPrimary>
+            <input placeholder="Client name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Service requested" value={newService} onChange={e => setNewService(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Preferred date (e.g. This weekend)" value={newDate} onChange={e => setNewDate(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 20 }} />
+            <BtnPrimary disabled={!newName || !newService} onClick={async () => { try { const { data: { session } } = await supabase.auth.getSession(); if (!session) return; const avatar = newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(); const row = { name: newName, service: newService, requested_date: newDate || "Flexible", owner_id: session.user.id, notified: false }; const { data, error } = await supabase.from("waitlist").insert([row]).select().single(); if (!error && data) { setWaitlist(p => [...p, { id: data.id, name: data.name, service: data.service, requestedDate: data.requested_date || "Flexible", addedTime: "Just now", avatar, phone: "", notified: false }]); } else { setWaitlist(p => [...p, { id: Date.now(), name: newName, service: newService, requestedDate: newDate || "Flexible", addedTime: "Just now", avatar, phone: "", notified: false }]); } } catch(e) { setWaitlist(p => [...p, { id: Date.now(), name: newName, service: newService, requestedDate: newDate || "Flexible", addedTime: "Just now", avatar: newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: "", notified: false }]); } setNewName(""); setNewService(""); setNewDate(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add to Waitlist</BtnPrimary>
           </div>
         </div>
       )}
@@ -3508,6 +2943,8 @@ function BusinessProfile({ navigate }) {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
+  const DEFAULT_HOURS = { mon: { open: "9:00", close: "18:00", off: false }, tue: { open: "9:00", close: "18:00", off: false }, wed: { open: "9:00", close: "18:00", off: false }, thu: { open: "9:00", close: "18:00", off: false }, fri: { open: "9:00", close: "18:00", off: false }, sat: { open: "10:00", close: "16:00", off: false }, sun: { open: "", close: "", off: true } };
+  const [hours, setHours] = useState(DEFAULT_HOURS);
 
   useEffect(() => {
     const load = async () => {
@@ -3520,8 +2957,10 @@ function BusinessProfile({ navigate }) {
         setLocation(data.location || "");
         setPhone(data.phone || "");
         setBio(data.bio || "");
+        if (data.business_hours) {
+          try { setHours(typeof data.business_hours === "string" ? JSON.parse(data.business_hours) : data.business_hours); } catch(e) {}
+        }
       } else {
-        // prefill from signup metadata
         setBizName(session.user.user_metadata?.business_name || "");
       }
       setLoading(false);
@@ -3532,7 +2971,7 @@ function BusinessProfile({ navigate }) {
   const handleSave = async () => {
     if (!userId) return;
     setSaving(true);
-    await supabase.from("business_profiles").upsert({ user_id: userId, biz_name: bizName, location, phone, bio }, { onConflict: "user_id" });
+    await supabase.from("business_profiles").upsert({ user_id: userId, biz_name: bizName, location, phone, bio, business_hours: hours }, { onConflict: "user_id" });
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -3556,12 +2995,32 @@ function BusinessProfile({ navigate }) {
             {[["Business name", bizName, setBizName], ["Location", location, setLocation], ["Phone number", phone, setPhone]].map(([label, val, set], i) => (
               <div key={i} style={{ marginBottom: i < 2 ? 16 : 0 }}>
                 <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>{label}</div>
-                <input value={val} onChange={e => { set(e.target.value); setSaved(false); }} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif" }} />
+                <input value={val} onChange={e => { set(e.target.value); setSaved(false); }} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }} />
               </div>
             ))}
           </Card>
           <SectionLabel>Bio</SectionLabel>
-          <textarea value={bio} onChange={e => { setBio(e.target.value); setSaved(false); }} rows={3} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, fontSize: 14, color: C.text, fontFamily: "'Red Hat Display',sans-serif", resize: "none", marginBottom: 20 }} />
+          <textarea value={bio} onChange={e => { setBio(e.target.value); setSaved(false); }} rows={3} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", resize: "none", marginBottom: 20 }} />
+          <SectionLabel>Business Hours</SectionLabel>
+          <Card style={{ padding: 0, marginBottom: 20, overflow: "hidden" }}>
+            {["mon","tue","wed","thu","fri","sat","sun"].map((day, i) => {
+              const d = hours[day] || { open: "", close: "", off: true };
+              const label = {mon:"Monday",tue:"Tuesday",wed:"Wednesday",thu:"Thursday",fri:"Friday",sat:"Saturday",sun:"Sunday"}[day];
+              return (
+                <div key={day} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: i < 6 ? `1px solid ${C.border}` : "none" }}>
+                  <div style={{ width: 70, fontSize: 13, fontWeight: 600, color: d.off ? C.dim : C.text }}>{label.slice(0,3)}</div>
+                  <div onClick={() => { const h = {...hours}; h[day] = {...d, off: !d.off}; setHours(h); setSaved(false); }} style={{ width: 36, height: 20, borderRadius: 10, background: d.off ? C.border : C.green, cursor: "pointer", position: "relative", flexShrink: 0, transition: "background 0.2s" }}>
+                    <div style={{ width: 16, height: 16, borderRadius: 8, background: "#fff", position: "absolute", top: 2, left: d.off ? 2 : 18, transition: "left 0.2s" }} />
+                  </div>
+                  {d.off ? <div style={{ fontSize: 12, color: C.dim, fontStyle: "italic" }}>Closed</div> : <>
+                    <input value={d.open} onChange={e => { const h = {...hours}; h[day] = {...d, open: e.target.value}; setHours(h); setSaved(false); }} type="time" style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 8px", fontSize: 12, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }} />
+                    <span style={{ fontSize: 11, color: C.dim }}>to</span>
+                    <input value={d.close} onChange={e => { const h = {...hours}; h[day] = {...d, close: e.target.value}; setHours(h); setSaved(false); }} type="time" style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 8px", fontSize: 12, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }} />
+                  </>}
+                </div>
+              );
+            })}
+          </Card>
           <SectionLabel>Booking Link</SectionLabel>
           <Card style={{ padding: 16, marginBottom: 20 }}>
             <div style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>Share this link so clients can book directly</div>
@@ -3664,11 +3123,11 @@ function ConnectedAccounts({ navigate }) {
               </div>
             </div>
             {googleConnected ? (
-              <button onClick={disconnectGoogle} style={{ padding: "7px 14px", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif" }}>
+              <button onClick={disconnectGoogle} style={{ padding: "7px 14px", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
                 Disconnect
               </button>
             ) : (
-              <button onClick={connectGoogle} disabled={googleLoading} style={{ padding: "7px 14px", background: "linear-gradient(135deg,#4285F4,#34A853)", border: "none", borderRadius: 10, fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "'Red Hat Display',sans-serif", opacity: googleLoading ? 0.7 : 1 }}>
+              <button onClick={connectGoogle} disabled={googleLoading} style={{ padding: "7px 14px", background: "linear-gradient(135deg,#4285F4,#34A853)", border: "none", borderRadius: 10, fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif", opacity: googleLoading ? 0.7 : 1 }}>
                 {googleLoading ? "..." : "Connect"}
               </button>
             )}
@@ -3947,6 +3406,148 @@ function Subscription({ navigate }) {
 }
 
 
+// ── PACKAGES / MEMBERSHIPS ────────────────────────────────────────────────────
+function Packages({ navigate }) {
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [pName, setPName] = useState("");
+  const [pDesc, setPDesc] = useState("");
+  const [pSessions, setPSessions] = useState("4");
+  const [pPrice, setPPrice] = useState("");
+  const [pExpiry, setPExpiry] = useState("90");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLoading(false); return; }
+      const { data } = await supabase.from("packages").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: false });
+      if (data) setPackages(data);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const addPackage = async () => {
+    if (!pName || !pPrice) return;
+    setSaving(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setSaving(false); return; }
+    const { data, error } = await supabase.from("packages").insert([{
+      owner_id: session.user.id, name: pName, description: pDesc,
+      sessions: parseInt(pSessions) || 4, price: parseFloat(pPrice) || 0,
+      expiry_days: parseInt(pExpiry) || 90, active: true,
+    }]).select().single();
+    if (!error && data) setPackages(p => [data, ...p]);
+    setPName(""); setPDesc(""); setPSessions("4"); setPPrice(""); setPExpiry("90");
+    setSaving(false); setShowAdd(false);
+  };
+
+  const toggleActive = async (pkg) => {
+    const newActive = !pkg.active;
+    setPackages(p => p.map(x => x.id === pkg.id ? { ...x, active: newActive } : x));
+    await supabase.from("packages").update({ active: newActive }).eq("id", pkg.id);
+  };
+
+  const deletePackage = async (id) => {
+    setPackages(p => p.filter(x => x.id !== id));
+    await supabase.from("packages").delete().eq("id", id);
+  };
+
+  const perSession = (pkg) => pkg.sessions > 0 ? "$" + Math.round(pkg.price / pkg.sessions) : "$0";
+
+  return (
+    <div style={{ paddingBottom: 80 }}>
+      <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <BackBtn onBack={() => navigate("home")} />
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 800 }}>Packages</div>
+          </div>
+          <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "9px 16px", fontSize: 13 }}>+ Create</BtnPrimary>
+        </div>
+        <div style={{ fontSize: 13, color: C.mid, marginTop: 4 }}>{packages.filter(p => p.active).length} active packages</div>
+      </div>
+      <div style={{ padding: "0 20px" }}>
+        {loading ? <div style={{ textAlign: "center", padding: 40, color: C.mid }}>Loading...</div> :
+        packages.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 20px" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📦</div>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>No packages yet</div>
+            <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.6, marginBottom: 20 }}>Create service bundles your clients can pre-pay for. Great for recurring clients!</div>
+            <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "13px 28px" }}>Create First Package</BtnPrimary>
+          </div>
+        ) : packages.map(pkg => (
+          <Card key={pkg.id} style={{ padding: 16, marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15, fontWeight: 700 }}>{pkg.name}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: pkg.active ? C.green : C.dim, background: pkg.active ? "#10b98118" : C.surfaceHigh, border: `1px solid ${pkg.active ? "#10b98133" : C.border}`, borderRadius: 100, padding: "2px 8px" }}>{pkg.active ? "Active" : "Paused"}</span>
+                </div>
+                {pkg.description && <div style={{ fontSize: 12, color: C.mid, marginTop: 4, lineHeight: 1.5 }}>{pkg.description}</div>}
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: C.gold }}>${pkg.price}</div>
+                <div style={{ fontSize: 10, color: C.dim, marginTop: 2 }}>{perSession(pkg)}/session</div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+              {[["Sessions", pkg.sessions], ["Valid", pkg.expiry_days + " days"]].map(([l, v]) => (
+                <div key={l} style={{ background: C.surfaceHigh, borderRadius: 10, padding: "8px 14px", flex: 1, textAlign: "center" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700 }}>{v}</div>
+                  <div style={{ fontSize: 10, color: C.dim, marginTop: 2 }}>{l}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => toggleActive(pkg)} style={{ flex: 1, padding: 10, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{pkg.active ? "Pause" : "Activate"}</button>
+              <button onClick={() => deletePackage(pkg.id)} style={{ width: 40, height: 40, background: "#f43f5e11", border: "1px solid #f43f5e22", borderRadius: 12, fontSize: 16, color: C.red, cursor: "pointer", flexShrink: 0, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>×</button>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {showAdd && (
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Create Package</div>
+            <input placeholder="Package name (e.g. Monthly Braids Bundle)" value={pName} onChange={e => setPName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
+            <input placeholder="Description (optional)" value={pDesc} onChange={e => setPDesc(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif", marginBottom: 12 }} />
+            <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, marginBottom: 6 }}>SESSIONS</div>
+                <input type="number" value={pSessions} onChange={e => setPSessions(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, marginBottom: 6 }}>PRICE ($)</div>
+                <input type="number" value={pPrice} onChange={e => setPPrice(e.target.value)} placeholder="e.g. 400" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'Plus Jakarta Sans',sans-serif" }} />
+              </div>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, marginBottom: 6 }}>VALID FOR (DAYS)</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {["30", "60", "90", "180", "365"].map(d => (
+                  <div key={d} onClick={() => setPExpiry(d)} style={{ flex: 1, padding: "10px 4px", borderRadius: 10, background: pExpiry === d ? C.accentSoft : C.surfaceHigh, border: `1px solid ${pExpiry === d ? C.accent : C.border}`, textAlign: "center", fontSize: 12, fontWeight: 600, color: pExpiry === d ? C.accent : C.mid, cursor: "pointer" }}>{d}d</div>
+                ))}
+              </div>
+            </div>
+            {pName && pPrice && <div style={{ background: C.surfaceHigh, borderRadius: 12, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: C.mid, textAlign: "center" }}>
+              {pSessions} sessions for ${pPrice} = <span style={{ color: C.gold, fontWeight: 700 }}>${Math.round(parseFloat(pPrice) / (parseInt(pSessions) || 1))}/session</span>
+            </div>}
+            <BtnPrimary disabled={!pName || !pPrice || saving} onClick={addPackage} style={{ width: "100%", padding: 14 }}>{saving ? "Creating..." : "Create Package"}</BtnPrimary>
+          </div>
+        </div>
+      )}
+
+      <BottomNav active="home" navigate={navigate} />
+    </div>
+  );
+}
+
+
 // ── SHARE LINK ─────────────────────────────────────────────────────────────────
 function ShareLink({ navigate }) {
   const [copied, setCopied] = useState(false);
@@ -4031,10 +3632,10 @@ function Sidebar({ active, navigate }) {
     load();
   }, []);
   const mainNav = [
-    { id: "home", icon: "⌂", label: "Home" },
-    { id: "schedule", icon: "◫", label: "Schedule" },
-    { id: "inbox", icon: "◻", label: "Inbox" },
-    { id: "clients", icon: "◯", label: "Clients" },
+    { id: "home", icon: "🏠", label: "Home" },
+    { id: "schedule", icon: "📅", label: "Schedule" },
+    { id: "inbox", icon: "✉️", label: "Inbox" },
+    { id: "clients", icon: "👤", label: "Clients" },
   ];
   const secondaryNav = [
     { id: "services", icon: "✂️", label: "Services" },
@@ -4047,11 +3648,11 @@ function Sidebar({ active, navigate }) {
   ];
 
   return (
-    <div style={{ width: 240, background: C.surface, borderRight: `1px solid ${C.border}`, height: "100vh", position: "fixed", left: 0, top: 0, display: "flex", flexDirection: "column", padding: "24px 0", zIndex: 100 }}>
+    <div style={{ width: 240, background: "rgba(10,10,16,0.9)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderRight: "1px solid rgba(255,255,255,0.06)", height: "100vh", position: "fixed", left: 0, top: 0, display: "flex", flexDirection: "column", padding: "24px 0", zIndex: 100 }}>
       {/* Logo */}
-      <div style={{ padding: "0 20px 28px", borderBottom: `1px solid ${C.border}` }}>
+      <div style={{ padding: "0 20px 28px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 11, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>✦</div>
+          <div style={{ width: 36, height: 36, borderRadius: 11, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, boxShadow: "0 0 20px rgba(139,92,246,0.25)" }}>✦</div>
           <div>
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 16, fontWeight: 800, color: C.text }}>Pocketflow</div>
             <div style={{ fontSize: 10, color: C.mid }}>{bizName}</div>
@@ -4080,7 +3681,7 @@ function Sidebar({ active, navigate }) {
       </div>
 
       {/* Bottom */}
-      <div style={{ padding: "16px 12px 0", borderTop: `1px solid ${C.border}` }}>
+      <div style={{ padding: "16px 12px 0", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <div onClick={() => navigate("settings")} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, background: active === "settings" ? C.accentSoft : "transparent", cursor: "pointer", marginBottom: 8 }}>
           <span style={{ fontSize: 14 }}>⚙️</span>
           <span style={{ fontSize: 14, fontWeight: 500, color: active === "settings" ? C.accent : C.mid }}>Settings</span>
@@ -4289,7 +3890,7 @@ You remember this conversation — reference earlier messages when relevant.`;
   };
 
   // Strips NAV: prefix, triggers navigation, returns clean display text
-  const VALID_SCREENS = ["schedule","inbox","clients","payments","analytics","promotions","loyalty","services","staff","waitlist","settings","home","assistant","notifications"];
+  const VALID_SCREENS = ["schedule","inbox","clients","payments","analytics","promotions","loyalty","services","staff","waitlist","settings","home","notifications","packages"];
 
   const handleNavIntent = (raw) => {
     // Try explicit NAV: prefix first
@@ -4447,7 +4048,7 @@ You remember this conversation — reference earlier messages when relevant.`;
       {/* Header */}
       <div style={{ padding:"16px 14px 12px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
         <div>
-          <div style={{ fontFamily:"'Red Hat Display',sans-serif", fontSize:16, fontWeight:800, letterSpacing:-0.3 }}>{aiName}</div>
+          <div style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:16, fontWeight:800, letterSpacing:-0.3 }}>{aiName}</div>
           <div style={{ fontSize:10, color:C.green, fontWeight:600, marginTop:1 }}>● Online · AI Assistant</div>
         </div>
         {chatHistory && chatHistory.length > 1 && (
@@ -4504,7 +4105,7 @@ You remember this conversation — reference earlier messages when relevant.`;
             onChange={e => setChatInput(e.target.value)}
             onKeyDown={e => { if(e.key==="Enter") { e.preventDefault(); sendChat(); } }}
             placeholder={voiceListening?"Listening...":`Ask ${aiName} anything...`}
-            style={{ flex:1, background:"transparent", border:"none", outline:"none", fontSize:13, color:C.text, fontFamily:"'Red Hat Display',sans-serif" }}
+            style={{ flex:1, background:"transparent", border:"none", outline:"none", fontSize:13, color:C.text, fontFamily:"'Plus Jakarta Sans',sans-serif" }}
           />
           {voiceSupported && (
             <div
@@ -4627,7 +4228,7 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
-  const screens = { login: Login, onboarding: Onboarding, home: Home, schedule: Schedule, inbox: Inbox, assistant: Assistant, clients: Clients, payments: Payments, settings: Settings, loyalty: Loyalty, notifications: Notifications, analytics: Analytics, promotions: Promotions, booking: Booking, staff: Staff, waitlist: Waitlist, profile: BusinessProfile, connections: ConnectedAccounts, subscription: Subscription, sharelink: ShareLink, services: Services };
+  const screens = { login: Login, onboarding: Onboarding, home: Home, schedule: Schedule, inbox: Inbox, clients: Clients, payments: Payments, settings: Settings, loyalty: Loyalty, notifications: Notifications, analytics: Analytics, promotions: Promotions, booking: Booking, staff: Staff, waitlist: Waitlist, profile: BusinessProfile, connections: ConnectedAccounts, subscription: Subscription, packages: Packages, sharelink: ShareLink, services: Services };
   const Screen = screens[screen] || Home;
 
   const isAuthScreen = screen === "login" || screen === "onboarding" || screen === "booking";
@@ -4637,7 +4238,7 @@ export default function App() {
   const freeScreens = ["login", "onboarding", "booking", "subscription", "settings", "sharelink"];
   const needsPaywall = !freeScreens.includes(screen) && subscriptionPlan === "free" && !isAuthScreen;
 
-  const showAISidebar = isDesktop && !isAuthScreen && screen !== "settings" && screen !== "assistant";
+  const showAISidebar = isDesktop && !isAuthScreen && screen !== "settings";
   const [aiSidebarCollapsed, setAiSidebarCollapsed] = useState(() => {
     try { return localStorage.getItem("aria_sidebar_collapsed") === "true"; } catch { return false; }
   });
@@ -4648,7 +4249,7 @@ export default function App() {
   }, []);
 
   return (
-    <div style={{ fontFamily: "'Red Hat Display',sans-serif", background: C.bg, minHeight: "100vh", color: C.text }}>
+    <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", background: C.bg, minHeight: "100vh", color: C.text }}>
       <style>{GLOBAL_STYLES}</style>
       {showSidebar && <Sidebar active={screen} navigate={navigate} />}
       {needsPaywall && (

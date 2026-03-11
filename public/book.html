@@ -9,14 +9,14 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://js.stripe.com/v3/"></script>
   <style>
-    .StripeElement { background:#16161f; border:1px solid #1e1e2e; border-radius:14px; padding:14px 16px; transition:border 0.2s; }
-    .StripeElement--focus { border-color:#a78bfa; }
+    .StripeElement { background:#16161f; border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:14px 16px; transition:border 0.2s; }
+    .StripeElement--focus { border-color:#b49cff; }
     .StripeElement--invalid { border-color:#f43f5e; }
   </style>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     ::-webkit-scrollbar { display: none; }
-    html, body { background: #050508; font-family: 'Outfit', sans-serif; color: #f1f0ff; min-height: 100vh; }
+    html, body { background: #06060a; font-family: 'Outfit', sans-serif; color: #f0eeff; min-height: 100vh; }
     input, textarea { font-family: 'Outfit', sans-serif; color: #f1f0ff; }
     input:focus, textarea:focus { outline: none; }
     input::placeholder, textarea::placeholder { color: #3d3d55; }
@@ -33,7 +33,7 @@
     .sticky-cta {
       position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
       width: 100%; max-width: 520px;
-      background: #050508; border-top: 1px solid #1e1e2e;
+      background: #06060a; border-top: 1px solid rgba(255,255,255,0.06);
       padding: 14px 20px 30px; z-index: 50;
     }
 
@@ -41,28 +41,28 @@
     @media (min-width: 900px) {
       body { display: flex; }
       .layout { max-width: 100%; width: 100%; display: flex; flex-direction: row; min-height: 100vh; padding-bottom: 0; }
-      .left-panel { width: 400px; flex-shrink: 0; border-right: 1px solid #1e1e2e; min-height: 100vh; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+      .left-panel { width: 400px; flex-shrink: 0; border-right: 1px solid rgba(255,255,255,0.06); min-height: 100vh; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
       .right-panel { flex: 1; padding: 52px 52px 60px; overflow-y: auto; max-width: 720px; }
-      .sticky-cta { position: static; transform: none; border-top: 1px solid #1e1e2e; padding: 20px 24px 28px; background: transparent; max-width: none; width: 100%; margin-top: auto; }
+      .sticky-cta { position: static; transform: none; border-top: 1px solid rgba(255,255,255,0.06); padding: 20px 24px 28px; background: transparent; max-width: none; width: 100%; margin-top: auto; }
       .desktop-summary { display: block !important; }
       .service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       .time-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important; }
     }
 
-    .card { background: #0e0e14; border: 1px solid #1e1e2e; border-radius: 18px; }
-    .btn { background: linear-gradient(135deg,#7c3aed,#a78bfa); border: none; border-radius: 14px; color: #fff; font-family: 'Outfit',sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s; padding: 16px 20px; width: 100%; }
-    .btn:disabled { background: #1e1e2e; color: #3d3d55; cursor: not-allowed; }
+    .card { background: #0e0e16; border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; }
+    .btn { background: linear-gradient(135deg,#8b5cf6,#b49cff); border: none; border-radius: 14px; color: #fff; font-family: 'Outfit',sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s; padding: 16px 20px; width: 100%; }
+    .btn:disabled { background: rgba(255,255,255,0.06); color: #3d3d55; cursor: not-allowed; }
     .btn:not(:disabled):hover { opacity: 0.9; }
-    .btn-ghost { background: #0e0e14; border: 1px solid #1e1e2e; border-radius: 12px; color: #8b8ba8; font-family: 'Outfit',sans-serif; font-weight: 600; font-size: 13px; cursor: pointer; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px; }
-    .input { width: 100%; background: #16161f; border: 1px solid #1e1e2e; border-radius: 14px; padding: 14px 16px; font-size: 14px; color: #f1f0ff; margin-bottom: 12px; transition: border 0.2s; }
-    .input:focus { border-color: #a78bfa; }
-    .service-card { display: flex; align-items: center; gap: 14px; background: #0e0e14; border: 1px solid #1e1e2e; border-radius: 18px; padding: 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
-    .service-card:hover { border-color: #a78bfa44; background: #0e0e14; }
-    .service-card.sel { background: #a78bfa18; border-color: #a78bfa; }
-    .date-chip { padding: 14px 14px; border-radius: 16px; background: #0e0e14; border: 1px solid #1e1e2e; text-align: center; cursor: pointer; flex-shrink: 0; min-width: 72px; transition: all 0.2s; }
-    .date-chip.sel { background: linear-gradient(135deg,#7c3aed,#a78bfa); border-color: transparent; }
-    .time-chip { padding: 13px 8px; border-radius: 14px; background: #0e0e14; border: 1px solid #1e1e2e; text-align: center; font-size: 13px; font-weight: 600; color: #8b8ba8; cursor: pointer; transition: all 0.2s; }
-    .time-chip.sel { background: #a78bfa18; border-color: #a78bfa; color: #a78bfa; }
+    .btn-ghost { background: #0e0e16; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; color: #8b8ba8; font-family: 'Outfit',sans-serif; font-weight: 600; font-size: 13px; cursor: pointer; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px; }
+    .input { width: 100%; background: #16161f; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 14px 16px; font-size: 14px; color: #f1f0ff; margin-bottom: 12px; transition: border 0.2s; }
+    .input:focus { border-color: #b49cff; }
+    .service-card { display: flex; align-items: center; gap: 14px; background: #0e0e16; border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+    .service-card:hover { border-color: #b49cff44; background: #0e0e16; }
+    .service-card.sel { background: #b49cff18; border-color: #b49cff; }
+    .date-chip { padding: 14px 14px; border-radius: 16px; background: #0e0e16; border: 1px solid rgba(255,255,255,0.06); text-align: center; cursor: pointer; flex-shrink: 0; min-width: 72px; transition: all 0.2s; }
+    .date-chip.sel { background: linear-gradient(135deg,#8b5cf6,#b49cff); border-color: transparent; }
+    .time-chip { padding: 13px 8px; border-radius: 14px; background: #0e0e16; border: 1px solid rgba(255,255,255,0.06); text-align: center; font-size: 13px; font-weight: 600; color: #8b8ba8; cursor: pointer; transition: all 0.2s; }
+    .time-chip.sel { background: #b49cff18; border-color: #b49cff; color: #b49cff; }
     .step-bar { height: 3px; border-radius: 2px; transition: background 0.3s; }
     .spinner { width: 20px; height: 20px; border: 2px solid #ffffff44; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; }
     .desktop-summary { display: none; }
@@ -84,12 +84,17 @@ const sb = createClient(
 );
 
 const BUSINESS_ID = new URLSearchParams(window.location.search).get('id');
+const MANAGE_REF = new URLSearchParams(window.location.search).get('manage');
+
+function genRef() {
+  return 'PF' + Math.random().toString(36).substring(2, 8).toUpperCase();
+}
 
 const C = {
-  bg:'#050508', surface:'#0e0e14', surfaceHigh:'#16161f',
-  border:'#1e1e2e', accent:'#a78bfa', accentDark:'#7c3aed',
-  gold:'#f59e0b', green:'#10b981', red:'#f43f5e',
-  text:'#f1f0ff', mid:'#8b8ba8', dim:'#3d3d55',
+  bg:'#06060a', surface:'#0e0e16', surfaceHigh:'#16161f',
+  border:'rgba(255,255,255,0.06)', accent:'#b49cff', accentDark:'#8b5cf6',
+  gold:'#f0b866', green:'#34d399', red:'#fb6f84',
+  text:'#f0eeff', mid:'#8b8ba8', dim:'#4a4a66',
 };
 
 const PROXY = 'https://pocketflow-proxy-production.up.railway.app';
@@ -109,15 +114,34 @@ function getAvailableDates() {
   return out;
 }
 const DATES = getAvailableDates();
-const TIMES = ['9:00 AM','10:30 AM','12:00 PM','1:30 PM','3:00 PM','4:30 PM','6:00 PM'];
 
-let biz = { name:'', location:'', userId: null };
+let biz = { name:'', location:'', userId: null, hours: null };
+
+function generateTimesFromHours(hours, dayStr) {
+  if (!hours) return ['9:00 AM','10:30 AM','12:00 PM','1:30 PM','3:00 PM','4:30 PM','6:00 PM'];
+  const dayMap = { Sun:'sun', Mon:'mon', Tue:'tue', Wed:'wed', Thu:'thu', Fri:'fri', Sat:'sat' };
+  const dayKey = dayMap[dayStr.split(' ')[0]];
+  if (!dayKey || !hours[dayKey] || hours[dayKey].off) return [];
+  const d = hours[dayKey];
+  const openParts = d.open.split(':'); const closeParts = d.close.split(':');
+  if (!openParts[0] || !closeParts[0]) return [];
+  const openMin = parseInt(openParts[0]) * 60 + parseInt(openParts[1] || 0);
+  const closeMin = parseInt(closeParts[0]) * 60 + parseInt(closeParts[1] || 0);
+  const slots = [];
+  for (let m = openMin; m < closeMin; m += 90) {
+    let h = Math.floor(m / 60); const min = m % 60;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    if (h > 12) h -= 12; if (h === 0) h = 12;
+    slots.push(`${h}:${String(min).padStart(2,'0')} ${ampm}`);
+  }
+  return slots;
+}
 let S = {
-  step:0, services: DEFAULT_SERVICES,
-  selectedServices:[], selectedDate:null, selectedTime:null,
-  name:'', phone:'', instagram:'', note:'', promoCode:'', promoResult:null, discount:0,
-  cardNumber:'', cardExpiry:'', cardCvc:'', cardName:'',
-  booked:false, paying:false, error:'',
+  step:0, services: [],
+  selectedServices:[], selectedDate:null, selectedTime:null, bookedTimes:[],
+  name:'', phone:'', email:'', instagram:'', note:'', promoCode:'', promoResult:null, discount:0,
+  cardName:'',
+  booked:false, paying:false, error:'', bookingRef:'',
 };
 
 const rawTotal = () => S.selectedServices.reduce((a,x)=>a+x.price,0);
@@ -147,19 +171,35 @@ function toggleSvc(s) {
 async function loadBiz() {
   if (!BUSINESS_ID) { biz={name:'Invalid Link',location:'',userId:null}; render(); return; }
   const [profileRes, servicesRes] = await Promise.all([
-    sb.from('business_profiles').select('biz_name,location,user_id').eq('user_id',BUSINESS_ID).single(),
+    sb.from('business_profiles').select('biz_name,location,user_id,business_hours').eq('user_id',BUSINESS_ID).single(),
     sb.from('services').select('*').eq('owner_id',BUSINESS_ID).neq('active',false).order('created_at',{ascending:true})
   ]);
   if (profileRes.data) {
-    biz = { name: profileRes.data.biz_name||'Book an Appointment', location: profileRes.data.location||'', userId: profileRes.data.user_id };
+    let hrs = null;
+    if (profileRes.data.business_hours) {
+      try { hrs = typeof profileRes.data.business_hours === 'string' ? JSON.parse(profileRes.data.business_hours) : profileRes.data.business_hours; } catch(e) {}
+    }
+    biz = { name: profileRes.data.biz_name||'Book an Appointment', location: profileRes.data.location||'', userId: profileRes.data.user_id, hours: hrs };
     document.title = `Book · ${biz.name}`;
   } else {
-    biz = { name:'Business Not Found', location:'', userId:null };
+    biz = { name:'Business Not Found', location:'', userId:null, hours: null };
   }
   if (servicesRes.data && servicesRes.data.length > 0) {
     S.services = servicesRes.data.map(s => ({ id: s.id, name: s.name, price: Number(s.price), duration: s.duration, icon: s.icon||'✨', desc: s.description||'' }));
   }
   render();
+}
+
+async function loadBookedTimes(dateStr) {
+  if (!BUSINESS_ID || !dateStr) { S.bookedTimes = []; return; }
+  try {
+    const { data } = await sb.from('appointments')
+      .select('time')
+      .eq('owner_id', BUSINESS_ID)
+      .eq('day', dateStr)
+      .in('status', ['confirmed', 'pending']);
+    S.bookedTimes = data ? data.map(a => a.time) : [];
+  } catch(e) { S.bookedTimes = []; }
 }
 
 async function applyPromo() {
@@ -222,14 +262,22 @@ function buildGCalUrl() {
 
 async function handlePay() {
   if (!biz.userId) { set({error:'Invalid booking link.'}); return; }
-  set({ paying:true, error:'' });
+
+  // Save card element reference BEFORE set() rebuilds the page
+  const savedCard = cardElement;
+  const savedCardName = S.cardName;
+
+  // Update CTA only (don't rebuild page — that destroys the Stripe element)
+  S.paying = true;
+  S.error = '';
+  refreshCTA();
 
   try {
     // Step 1: Create PaymentIntent on server
     const piRes = await fetch(`${PROXY}/create-payment-intent`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        amount: deposit(),
+        amount: deposit() * 100,
         currency: 'usd',
         metadata: { client_name: S.name, service: S.selectedServices.map(s=>s.name).join(', '), owner_id: biz.userId },
       }),
@@ -240,21 +288,25 @@ async function handlePay() {
     // Step 2: Confirm card payment with Stripe
     const { error: stripeErr, paymentIntent } = await stripe.confirmCardPayment(piData.client_secret, {
       payment_method: {
-        card: cardElement,
-        billing_details: { name: S.cardName },
+        card: savedCard,
+        billing_details: { name: savedCardName },
       },
     });
-    if (stripeErr) { set({ paying:false, error: stripeErr.message }); return; }
-    if (paymentIntent.status !== 'succeeded') { set({ paying:false, error:'Payment did not complete. Please try again.' }); return; }
+    if (stripeErr) { S.paying=false; S.error=stripeErr.message; refreshCTA(); return; }
+    if (paymentIntent.status !== 'succeeded') { S.paying=false; S.error='Payment did not complete. Please try again.'; refreshCTA(); return; }
 
     // Step 3: Save appointment to Supabase
+    const bookingRef = genRef();
     const { error: apptErr } = await sb.from('appointments').insert([{
       client_name: S.name,
+      client_phone: S.phone,
       client_avatar: S.name.trim().split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(),
       service: S.selectedServices.map(s=>s.name).join(', '),
       time: S.selectedTime,
       duration: S.selectedServices.map(s=>s.duration).join('+'),
       price: '$'+total(),
+      deposit: '$'+deposit(),
+      booking_ref: bookingRef,
       status: 'confirmed',
       note: S.note,
       day: S.selectedDate,
@@ -262,13 +314,29 @@ async function handlePay() {
     }]);
     if (apptErr) { set({ paying:false, error:'Booking saved payment but failed to save appointment: ' + apptErr.message }); return; }
 
-    // Step 4: Add client record (best-effort)
+    // Step 4: Add or update client record (best-effort)
     try {
-      await sb.from('clients').insert([{
-        name: S.name, phone: S.phone, instagram: S.instagram,
-        total_visits: 1, total_spent: total(),
-        owner_id: biz.userId,
-      }]);
+      const { data: existing } = await sb.from('clients')
+        .select('id, total_visits, total_spent')
+        .eq('owner_id', biz.userId)
+        .eq('phone', S.phone)
+        .limit(1);
+      if (existing && existing.length > 0) {
+        await sb.from('clients').update({
+          name: S.name,
+          instagram: S.instagram,
+          email: S.email || undefined,
+          total_visits: (existing[0].total_visits || 0) + 1,
+          total_spent: (existing[0].total_spent || 0) + total(),
+        }).eq('id', existing[0].id);
+      } else {
+        await sb.from('clients').insert([{
+          name: S.name, phone: S.phone, instagram: S.instagram,
+          email: S.email || undefined,
+          total_visits: 1, total_spent: total(),
+          owner_id: biz.userId,
+        }]);
+      }
     } catch(e) {}
 
     // Step 5: Increment promo code usage (best-effort)
@@ -284,10 +352,13 @@ async function handlePay() {
           owner_id: biz.userId,
           client_name: S.name,
           client_phone: S.phone,
+          client_email: S.email,
+          booking_ref: bookingRef,
           service: S.selectedServices.map(s=>s.name).join(', '),
           date: S.selectedDate,
           time: S.selectedTime,
           deposit: '$'+deposit(),
+          total: '$'+total(),
           biz_name: biz.name,
           note: S.note,
         }),
@@ -309,7 +380,7 @@ async function handlePay() {
       });
     } catch(e) {}
 
-    set({ paying:false, booked:true });
+    set({ paying:false, booked:true, bookingRef: bookingRef });
 
   } catch(err) {
     set({ paying:false, error: err.message || 'Something went wrong. Please try again.' });
@@ -342,7 +413,8 @@ function render() {
         </div>
         <div style="font-size:13px;color:${C.mid};line-height:1.8;margin-bottom:20px">
           You'll receive a reminder 24 hours before your appointment ✨<br/>
-          <span style="font-size:12px;color:${C.dim}">Screenshot this page as your confirmation.</span>
+          ${S.bookingRef ? `<a href="?manage=${S.bookingRef}" style="color:${C.accent};font-weight:600;text-decoration:none">Manage or cancel your booking</a><br/>` : ''}
+          <span style="font-size:12px;color:${C.dim}">Ref: ${S.bookingRef || 'N/A'}</span>
         </div>
         ${buildGCalUrl() ? '<a href="'+buildGCalUrl()+'" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 0;border-radius:14px;background:'+C.surface+';border:1px solid '+C.border+';font-size:14px;font-weight:700;color:'+C.text+';text-decoration:none;margin-bottom:16px">📅 Add to Google Calendar</a>' : ''}
         <div style="font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Pocketflow</span></div>
@@ -487,10 +559,13 @@ function renderStep() {
     <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:16px;margin-bottom:28px">
       ${DATES.map(d=>{
         const p=d.split(' '), sel=S.selectedDate===d;
-        return `<div class="date-chip${sel?' sel':''}" data-date="${d}">
+        const dayMap = {Sun:'sun',Mon:'mon',Tue:'tue',Wed:'wed',Thu:'thu',Fri:'fri',Sat:'sat'};
+        const dayKey = dayMap[p[0]];
+        const closed = biz.hours && biz.hours[dayKey] && biz.hours[dayKey].off;
+        return `<div class="date-chip${sel?' sel':''}" data-date="${d}" style="${closed?'opacity:0.35;':''}">
           <div style="font-size:10px;font-weight:700;color:${sel?'#ffffffaa':C.dim};margin-bottom:4px">${p[0].toUpperCase()}</div>
           <div style="font-size:22px;font-weight:800;color:${sel?'#fff':C.text}">${p[2]}</div>
-          <div style="font-size:10px;color:${sel?'#ffffffaa':C.dim};margin-top:3px">${p[1]}</div>
+          <div style="font-size:10px;color:${sel?'#ffffffaa':C.dim};margin-top:3px">${closed?'Closed':p[1]}</div>
         </div>`;
       }).join('')}
     </div>
@@ -498,7 +573,15 @@ function renderStep() {
       <div class="fade-in">
         <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">Available Times</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px" class="time-grid">
-          ${TIMES.map(t=>`<div class="time-chip${S.selectedTime===t?' sel':''}" data-time="${t}">${t}</div>`).join('')}
+          ${(function(){
+            const times = generateTimesFromHours(biz.hours, S.selectedDate);
+            if (times.length === 0) return '<div style="grid-column:1/-1;text-align:center;padding:20px;color:'+C.dim+';font-size:14px">Closed on this day</div>';
+            return times.map(t=>{
+              const booked = S.bookedTimes.includes(t);
+              if (booked) return '<div class="time-chip" style="opacity:0.35;cursor:not-allowed;text-decoration:line-through">'+t+'</div>';
+              return '<div class="time-chip'+(S.selectedTime===t?' sel':'')+'" data-time="'+t+'">'+t+'</div>';
+            }).join('');
+          })()}
         </div>
       </div>`:''}`;
 
@@ -514,6 +597,7 @@ function renderStep() {
     </div>
     <input class="input" id="f_name"      placeholder="Your full name *"              value="${S.name}" />
     <input class="input" id="f_phone"     type="tel" placeholder="Phone number *"     value="${S.phone}" />
+    <input class="input" id="f_email"     type="email" placeholder="Email (for receipt, optional)" value="${S.email}" />
     <input class="input" id="f_instagram" placeholder="Instagram (optional)"          value="${S.instagram}" />
     <textarea class="input" id="f_note" placeholder="Notes — hair length, allergies, special requests..." rows="3" style="resize:none;margin-bottom:0">${S.note}</textarea>`;
 
@@ -549,7 +633,7 @@ function renderStep() {
           </div>`
         : `<div style="display:flex;gap:10px">
             <input class="input" id="f_promo" placeholder="Enter promo code" value="${S.promoCode}" style="margin-bottom:0;text-transform:uppercase;letter-spacing:1px;flex:1" />
-            <button id="applyPromoBtn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;border-radius:14px;color:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:13px;cursor:pointer;padding:0 18px;flex-shrink:0;white-space:nowrap">Apply</button>
+            <button id="applyPromoBtn" style="background:linear-gradient(135deg,#8b5cf6,#b49cff);border:none;border-radius:14px;color:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:13px;cursor:pointer;padding:0 18px;flex-shrink:0;white-space:nowrap">Apply</button>
           </div>
           ${S.promoResult && !S.promoResult.success ? `<div style="font-size:12px;color:${C.red};margin-top:8px">${S.promoResult.message}</div>` : ''}`
       }
@@ -583,7 +667,14 @@ function bindEvents() {
     })
   );
   document.querySelectorAll('[data-date]').forEach(el=>
-    el.addEventListener('click',()=>set({selectedDate:el.dataset.date,selectedTime:null}))
+    el.addEventListener('click', async ()=>{
+      S.selectedDate = el.dataset.date;
+      S.selectedTime = null;
+      S.bookedTimes = [];
+      render();
+      await loadBookedTimes(el.dataset.date);
+      render();
+    })
   );
   document.querySelectorAll('[data-time]').forEach(el=>
     el.addEventListener('click',()=>set({selectedTime:el.dataset.time}))
@@ -595,7 +686,7 @@ function bindEvents() {
   document.getElementById('f_promo')?.addEventListener('input', e=>{ S.promoCode=e.target.value.toUpperCase(); e.target.value=S.promoCode; });
 
   // Step 2 — update state and refresh CTA so Continue button enables as you type
-  [['f_name','name'],['f_phone','phone'],['f_instagram','instagram'],['f_note','note']].forEach(([id,key])=>{
+  [['f_name','name'],['f_phone','phone'],['f_email','email'],['f_instagram','instagram'],['f_note','note']].forEach(([id,key])=>{
     document.getElementById(id)?.addEventListener('input',e=>{ S[key]=e.target.value; refreshCTA(); });
   });
 
@@ -627,7 +718,90 @@ function bindEvents() {
   }
 }
 
-loadBiz();
+// ── MANAGE BOOKING PAGE ──────────────────────────────────────────────────────
+let manageAppt = null;
+let manageLoading = true;
+let manageCancelled = false;
+
+async function loadManageBooking() {
+  if (!MANAGE_REF) return;
+  manageLoading = true;
+  renderManage();
+  try {
+    const { data, error } = await sb.from('appointments')
+      .select('*')
+      .eq('booking_ref', MANAGE_REF)
+      .single();
+    if (data) {
+      manageAppt = data;
+      // Also load biz name
+      const { data: bp } = await sb.from('business_profiles').select('biz_name,location').eq('user_id', data.owner_id).single();
+      if (bp) { biz.name = bp.biz_name || ''; biz.location = bp.location || ''; }
+    }
+  } catch(e) {}
+  manageLoading = false;
+  renderManage();
+}
+
+async function cancelBooking() {
+  if (!manageAppt) return;
+  try {
+    await sb.from('appointments').update({ status: 'cancelled' }).eq('id', manageAppt.id);
+    manageCancelled = true;
+    renderManage();
+  } catch(e) { alert('Failed to cancel. Please try again.'); }
+}
+
+function renderManage() {
+  const app = document.getElementById('app');
+  app.style.display = 'flex';
+  app.style.alignItems = 'center';
+  app.style.justifyContent = 'center';
+  app.style.minHeight = '100vh';
+
+  if (manageLoading) {
+    app.innerHTML = `<div style="text-align:center"><div class="spinner" style="width:32px;height:32px;margin:0 auto 16px"></div><div style="color:${C.dim};font-size:14px">Loading your booking...</div></div>`;
+    return;
+  }
+
+  if (!manageAppt) {
+    app.innerHTML = `<div style="text-align:center;max-width:360px;padding:32px"><div style="font-size:52px;margin-bottom:16px">🔍</div><div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:800;margin-bottom:10px">Booking Not Found</div><div style="font-size:14px;color:${C.mid};line-height:1.7">We couldn't find a booking with this reference. It may have been cancelled or the link is incorrect.</div></div>`;
+    return;
+  }
+
+  if (manageCancelled) {
+    app.innerHTML = `<div style="text-align:center;max-width:400px;padding:32px" class="fade-in"><div style="width:80px;height:80px;border-radius:24px;background:${C.red}22;border:2px solid ${C.red}44;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px">✕</div><div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:800;margin-bottom:8px">Booking Cancelled</div><div style="font-size:14px;color:${C.mid};line-height:1.7;margin-bottom:20px">Your appointment has been cancelled. If a deposit was paid, please contact ${biz.name || 'the business'} for refund details.</div><div style="font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Pocketflow</span></div></div>`;
+    return;
+  }
+
+  const isCancelled = manageAppt.status === 'cancelled';
+  app.innerHTML = `
+  <div style="max-width:480px;width:100%;padding:32px" class="fade-in">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="width:70px;height:70px;border-radius:22px;background:${isCancelled ? C.red+'22' : C.accent+'22'};border:2px solid ${isCancelled ? C.red+'44' : C.accent+'44'};display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px">${isCancelled ? '✕' : '📅'}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:800;margin-bottom:4px">Your Booking</div>
+      <div style="font-size:14px;color:${C.mid}">${biz.name || ''}${biz.location ? ' · '+biz.location : ''}</div>
+    </div>
+    <div class="card" style="padding:18px;margin-bottom:20px">
+      ${[['Service', manageAppt.service], ['Date', manageAppt.day], ['Time', manageAppt.time], ['Status', manageAppt.status?.charAt(0).toUpperCase()+manageAppt.status?.slice(1)], ['Deposit', manageAppt.deposit || '—'], ['Ref', MANAGE_REF]].map(([k,v],i,a) => `
+        <div style="display:flex;justify-content:space-between;padding:10px 0;${i<a.length-1?'border-bottom:1px solid '+C.border:''}gap:12px">
+          <span style="font-size:13px;color:${C.mid};flex-shrink:0">${k}</span>
+          <span style="font-size:14px;font-weight:600;color:${k==='Status'?(v==='Confirmed'?C.green:v==='Cancelled'?C.red:C.text):C.text};text-align:right">${v}</span>
+        </div>`).join('')}
+    </div>
+    ${!isCancelled ? `
+      <button class="btn" id="cancelBookingBtn" style="width:100%;padding:15px;background:${C.red};margin-bottom:12px">Cancel Booking</button>
+      <div style="font-size:12px;color:${C.dim};text-align:center;line-height:1.6">Need to reschedule? Cancel and rebook with a new time.</div>
+    ` : `<div style="text-align:center;font-size:13px;color:${C.dim}">This booking has been cancelled.</div>`}
+    <div style="text-align:center;margin-top:20px;font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Pocketflow</span></div>
+  </div>`;
+
+  document.getElementById('cancelBookingBtn')?.addEventListener('click', () => {
+    if (confirm('Are you sure you want to cancel this booking?')) cancelBooking();
+  });
+}
+
+if (MANAGE_REF) { loadManageBooking(); } else { loadBiz(); }
 </script>
 </body>
 </html>
