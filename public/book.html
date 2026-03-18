@@ -10,7 +10,7 @@
   <script src="https://js.stripe.com/v3/"></script>
   <style>
     .StripeElement { background:#16161f; border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:14px 16px; transition:border 0.2s; }
-    .StripeElement--focus { border-color:#b49cff; }
+    .StripeElement--focus { border-color:#c4b5fd; }
     .StripeElement--invalid { border-color:#f43f5e; }
   </style>
   <style>
@@ -50,19 +50,19 @@
     }
 
     .card { background: #0e0e16; border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; }
-    .btn { background: linear-gradient(135deg,#8b5cf6,#b49cff); border: none; border-radius: 14px; color: #fff; font-family: 'Outfit',sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s; padding: 16px 20px; width: 100%; }
+    .btn { background: linear-gradient(135deg,#8b5cf6,#c4b5fd); border: none; border-radius: 14px; color: #fff; font-family: 'Outfit',sans-serif; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s; padding: 16px 20px; width: 100%; }
     .btn:disabled { background: rgba(255,255,255,0.06); color: #3d3d55; cursor: not-allowed; }
     .btn:not(:disabled):hover { opacity: 0.9; }
     .btn-ghost { background: #0e0e16; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; color: #8b8ba8; font-family: 'Outfit',sans-serif; font-weight: 600; font-size: 13px; cursor: pointer; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px; }
     .input { width: 100%; background: #16161f; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 14px 16px; font-size: 14px; color: #f1f0ff; margin-bottom: 12px; transition: border 0.2s; }
-    .input:focus { border-color: #b49cff; }
+    .input:focus { border-color: #c4b5fd; }
     .service-card { display: flex; align-items: center; gap: 14px; background: #0e0e16; border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
-    .service-card:hover { border-color: #b49cff44; background: #0e0e16; }
-    .service-card.sel { background: #b49cff18; border-color: #b49cff; }
+    .service-card:hover { border-color: #c4b5fd44; background: #0e0e16; }
+    .service-card.sel { background: #c4b5fd18; border-color: #c4b5fd; }
     .date-chip { padding: 14px 14px; border-radius: 16px; background: #0e0e16; border: 1px solid rgba(255,255,255,0.06); text-align: center; cursor: pointer; flex-shrink: 0; min-width: 72px; transition: all 0.2s; }
-    .date-chip.sel { background: linear-gradient(135deg,#8b5cf6,#b49cff); border-color: transparent; }
+    .date-chip.sel { background: linear-gradient(135deg,#8b5cf6,#c4b5fd); border-color: transparent; }
     .time-chip { padding: 13px 8px; border-radius: 14px; background: #0e0e16; border: 1px solid rgba(255,255,255,0.06); text-align: center; font-size: 13px; font-weight: 600; color: #8b8ba8; cursor: pointer; transition: all 0.2s; }
-    .time-chip.sel { background: #b49cff18; border-color: #b49cff; color: #b49cff; }
+    .time-chip.sel { background: #c4b5fd18; border-color: #c4b5fd; color: #c4b5fd; }
     .step-bar { height: 3px; border-radius: 2px; transition: background 0.3s; }
     .spinner { width: 20px; height: 20px; border: 2px solid #ffffff44; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; vertical-align: middle; }
     .desktop-summary { display: none; }
@@ -92,9 +92,9 @@ function genRef() {
 
 const C = {
   bg:'#06060a', surface:'#0e0e16', surfaceHigh:'#16161f',
-  border:'rgba(255,255,255,0.06)', accent:'#b49cff', accentDark:'#8b5cf6',
-  gold:'#f0b866', green:'#34d399', red:'#fb6f84',
-  text:'#f0eeff', mid:'#8b8ba8', dim:'#4a4a66',
+  border:'rgba(255,255,255,0.07)', accent:'#c4b5fd', accentDark:'#8b5cf6',
+  gold:'#fbbf24', green:'#4ade80', red:'#fb7185',
+  text:'#f5f3ff', mid:'#9ca3af', dim:'#6b7280',
 };
 
 const PROXY = 'https://pocketflow-proxy-production.up.railway.app';
@@ -633,7 +633,7 @@ function renderStep() {
           </div>`
         : `<div style="display:flex;gap:10px">
             <input class="input" id="f_promo" placeholder="Enter promo code" value="${S.promoCode}" style="margin-bottom:0;text-transform:uppercase;letter-spacing:1px;flex:1" />
-            <button id="applyPromoBtn" style="background:linear-gradient(135deg,#8b5cf6,#b49cff);border:none;border-radius:14px;color:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:13px;cursor:pointer;padding:0 18px;flex-shrink:0;white-space:nowrap">Apply</button>
+            <button id="applyPromoBtn" style="background:linear-gradient(135deg,#8b5cf6,#c4b5fd);border:none;border-radius:14px;color:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:13px;cursor:pointer;padding:0 18px;flex-shrink:0;white-space:nowrap">Apply</button>
           </div>
           ${S.promoResult && !S.promoResult.success ? `<div style="font-size:12px;color:${C.red};margin-top:8px">${S.promoResult.message}</div>` : ''}`
       }
