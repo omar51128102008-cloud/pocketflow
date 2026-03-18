@@ -476,8 +476,8 @@ function Home({ navigate }) {
     load();
   }, []);
 
-  const [now, setNow] = React.useState(new Date());
-  React.useEffect(() => {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
