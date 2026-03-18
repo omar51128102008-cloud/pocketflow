@@ -132,6 +132,21 @@ function timeAgo(ts) {
   return Math.floor(diff/86400) + "d ago";
 }
 
+function compressImage(dataUrl, maxW, quality) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas");
+      const scale = Math.min(1, maxW / img.width);
+      c.width = img.width * scale;
+      c.height = img.height * scale;
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL("image/jpeg", quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
 function Login({ navigate }) {
   const [mode, setMode] = useState("login");
@@ -296,13 +311,13 @@ function Onboarding({ navigate }) {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <div style={{ width: "100%", maxWidth: 560, padding: "52px 24px 0" }}>
+      <div style={{ width: "100%", maxWidth: 640, padding: "52px 24px 0" }}>
         {step > 0 && <div onClick={() => setStep(p => p - 1)} style={{ width: 38, height: 38, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", marginBottom: 20 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></div>}
         <div style={{ display: "flex", gap: 5, marginBottom: 28 }}>
           {Array.from({ length: totalSteps }).map((_, i) => <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= step ? `linear-gradient(90deg,${C.accentDark},${C.accent})` : C.border, transition: "background 0.3s" }} />)}
         </div>
       </div>
-      <div style={{ flex: 1, padding: "0 24px", overflowY: "auto", width: "100%", maxWidth: 560 }}>
+      <div style={{ flex: 1, padding: "0 24px", overflowY: "auto", width: "100%", maxWidth: 640 }}>
         {step === 0 && (
           <div className="fade-in">
             <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Step 1 of 5</div>
@@ -402,7 +417,7 @@ function Onboarding({ navigate }) {
         )}
         <div style={{ height: 120 }} />
       </div>
-      <div style={{ padding: "16px 24px 36px", background: `linear-gradient(0deg,${C.bg} 80%,transparent)`, position: "sticky", bottom: 0, width: "100%", maxWidth: 560 }}>
+      <div style={{ padding: "16px 24px 36px", background: `linear-gradient(0deg,${C.bg} 80%,transparent)`, position: "sticky", bottom: 0, width: "100%", maxWidth: 640 }}>
         <BtnPrimary disabled={!canContinue()} onClick={() => step < totalSteps - 1 ? setStep(p => p + 1) : setDone(true)} style={{ width: "100%", padding: 16 }}>
           {step === totalSteps - 1 ? "Launch Pocketflow 🚀" : "Continue"}
         </BtnPrimary>
@@ -1451,6 +1466,8 @@ function Settings({ navigate }) {
   const saveTimerRef = useRef(null);
   const [displayName, setDisplayName] = useState("");
   const [profilePic, setProfilePic] = useState("");
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -1491,7 +1508,7 @@ function Settings({ navigate }) {
       setTimeout(() => setAutoSaveMsg(""), 1500);
     }, 800);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
-  }, [aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, tone, bufferTime, maxDaily, sunday, paymentDetails, displayName, profilePic, settingsLoaded]);
+  }, [aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, tone, bufferTime, maxDaily, sunday, paymentDetails, settingsLoaded]);
 
   const saveAiName = async () => {
     if (!aiName.trim()) return;
@@ -1552,6 +1569,24 @@ function Settings({ navigate }) {
             {tone === "friendly" ? '"Hey girl! 💕 I have a 2pm open this Saturday, does that work?"' : tone === "professional" ? '"Good afternoon. I have availability at 2:00 PM this Saturday."' : '"Yo! Saturday at 2 works? Let me know 🔥"'}
           </div>
         </Card>
+        <SectionLabel>Account</SectionLabel>
+        <Card>
+          {[
+            { icon: "✂️", label: "Services", sub: "Manage your services & prices", screen: "services" },
+            { icon: "👤", label: "Business Profile", sub: "Edit your business info", screen: "profile" },
+            { icon: "🔗", label: "Connected Accounts", sub: "WhatsApp, Instagram, Google", screen: "connections" },
+            { icon: "💳", label: "Subscription", sub: "Pro Plan · $29/mo", screen: "subscription" },
+          ].map(({ icon, label, sub, screen }, i) => (
+            <div key={i} onClick={() => navigate(screen)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 3 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
+              <span style={{ fontSize: 20 }}>{icon}</span>
+              <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{label}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{sub}</div></div>
+              <span style={{ fontSize: 12, color: C.mid }}>›</span>
+            </div>
+          ))}
+        </Card>
+        <div style={{ textAlign: "center", padding: "20px 0" }}>
+          <span onClick={async () => { await supabase.auth.signOut(); navigate("login"); }} style={{ fontSize: 13, color: C.red, fontWeight: 600, cursor: "pointer" }}>Sign Out</span>
+        </div>
         </div>{/* end col 1 */}
         <div>{/* col 2 */}
         <SectionLabel>Booking Rules</SectionLabel>
@@ -1618,34 +1653,20 @@ function Settings({ navigate }) {
             </div>
           </div>
           <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Display Name</div>
-          <input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="e.g. Omar, Sarah..." style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 14 }} />
+          <input value={displayName} onChange={e => { setDisplayName(e.target.value); setProfileSaved(false); }} placeholder="e.g. Omar, Sarah..." style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 14 }} />
           <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Profile Picture</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
             <label style={{ flex: 1, padding: "12px 14px", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", textAlign: "center", fontWeight: 600 }}>
               {profilePic ? "Change Photo" : "Upload Photo"}
-              <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = ev => setProfilePic(ev.target.result); reader.readAsDataURL(file); }} />
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async ev => { const compressed = await compressImage(ev.target.result, 150, 0.7); setProfilePic(compressed); setProfileSaved(false); }; reader.readAsDataURL(file); }} />
             </label>
-            {profilePic && <button onClick={() => setProfilePic("")} style={{ padding: "12px 14px", background: "transparent", border: `1px solid ${C.red}44`, borderRadius: 12, fontSize: 13, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", fontWeight: 600 }}>Remove</button>}
+            {profilePic && <button onClick={() => { setProfilePic(""); setProfileSaved(false); }} style={{ padding: "12px 14px", background: "transparent", border: `1px solid ${C.red}44`, borderRadius: 12, fontSize: 13, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", fontWeight: 600 }}>Remove</button>}
           </div>
+          {profileSaved
+            ? <div style={{ width: "100%", padding: 12, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Profile Saved!</div>
+            : <BtnPrimary onClick={async () => { setSavingProfile(true); const { data: { session } } = await supabase.auth.getSession(); if (session) { const { data } = await supabase.from("business_profiles").select("settings").eq("user_id", session.user.id).single(); const prev = data?.settings || {}; await supabase.from("business_profiles").upsert({ user_id: session.user.id, settings: { ...prev, displayName, profilePic } }, { onConflict: "user_id" }); } setSavingProfile(false); setProfileSaved(true); setTimeout(() => setProfileSaved(false), 3000); }} disabled={savingProfile} style={{ width: "100%", padding: 12, fontSize: 13 }}>{savingProfile ? "Saving..." : "Save Profile"}</BtnPrimary>
+          }
         </Card>
-        <SectionLabel>Account</SectionLabel>
-        <Card>
-          {[
-            { icon: "✂️", label: "Services", sub: "Manage your services & prices", screen: "services" },
-            { icon: "👤", label: "Business Profile", sub: "Edit your business info", screen: "profile" },
-            { icon: "🔗", label: "Connected Accounts", sub: "WhatsApp, Instagram, Google", screen: "connections" },
-            { icon: "💳", label: "Subscription", sub: "Pro Plan · $29/mo", screen: "subscription" },
-          ].map(({ icon, label, sub, screen }, i) => (
-            <div key={i} onClick={() => navigate(screen)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 3 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
-              <span style={{ fontSize: 20 }}>{icon}</span>
-              <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{label}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{sub}</div></div>
-              <span style={{ fontSize: 12, color: C.mid }}>›</span>
-            </div>
-          ))}
-        </Card>
-        <div style={{ textAlign: "center", padding: "20px 0" }}>
-          <span onClick={async () => { await supabase.auth.signOut(); navigate("login"); }} style={{ fontSize: 13, color: C.red, fontWeight: 600, cursor: "pointer" }}>Sign Out</span>
-        </div>
         </div>{/* end col 2 */}
         </div>{/* end grid */}
       </div>
@@ -3038,7 +3059,7 @@ function BusinessProfile({ navigate }) {
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <label style={{ flex: 1, padding: "12px 14px", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", textAlign: "center", fontWeight: 600 }}>
                 {logoUrl ? "Change Logo" : "Upload Logo"}
-                <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = ev => { setLogoUrl(ev.target.result); setSaved(false); }; reader.readAsDataURL(file); }} />
+                <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async ev => { const compressed = await compressImage(ev.target.result, 200, 0.7); setLogoUrl(compressed); setSaved(false); }; reader.readAsDataURL(file); }} />
               </label>
               {logoUrl && <button onClick={() => { setLogoUrl(""); setSaved(false); }} style={{ padding: "12px 14px", background: "transparent", border: `1px solid ${C.red}44`, borderRadius: 12, fontSize: 13, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", fontWeight: 600 }}>Remove</button>}
             </div>
