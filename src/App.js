@@ -469,7 +469,11 @@ function Home({ navigate }) {
       const weekRevenue = allAppts
         .filter(a => a.status === "confirmed")
         .reduce((s, a) => s + (parseInt((a.price||"0").replace(/\D/g,""))||0), 0);
-      const todayCount = allAppts.filter(a => a.day === "Today").length;
+      const _dn = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      const _mn = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const _now = new Date();
+      const _ts = `${_dn[_now.getDay()]} ${_mn[_now.getMonth()]} ${_now.getDate()}`;
+      const todayCount = allAppts.filter(a => a.day === _ts || a.day === "Today").length;
       const aiHandled = allMsgs.filter(m => m.handled).length;
       const clientCount = (clientsRes.data || []).length;
 
@@ -1695,10 +1699,7 @@ function Loyalty({ navigate }) {
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState(null);
 
-  const reviews = [
-    { name: "Jasmine R.", rating: 5, text: "Best braider in Atlanta! My hair lasted 8 weeks 😍", date: "2 days ago", replied: true },
-    { name: "Tasha M.", rating: 5, text: "Always on time and my silk press was PERFECT", date: "1 week ago", replied: false },
-  ];
+  const reviews = [];
 
   useEffect(() => {
     const load = async () => {
@@ -1912,13 +1913,47 @@ function Notifications({ navigate }) {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase
+      const uid = session.user.id;
+
+      // Load real notifications
+      const { data: realNotifs } = await supabase
         .from("notifications")
         .select("*")
-        .eq("user_id", session.user.id)
+        .eq("user_id", uid)
         .order("created_at", { ascending: false })
         .limit(50);
-      setNotifs(data || []);
+
+      // Also auto-generate from recent appointments if no real notifs
+      const { data: recentAppts } = await supabase
+        .from("appointments")
+        .select("client_name,service,day,time,status,price,created_at")
+        .eq("owner_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      const apptNotifs = (recentAppts || []).map(a => ({
+        id: "appt_" + a.created_at,
+        type: "booking",
+        title: a.status === "cancelled" ? "Booking Cancelled" : "New Booking",
+        body: `${a.client_name} — ${a.service} on ${a.day} at ${a.time}${a.price ? " · " + a.price : ""}`,
+        read: a.status !== "pending",
+        created_at: a.created_at,
+      }));
+
+      const all = [...(realNotifs || []), ...apptNotifs]
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 50);
+
+      // Deduplicate by title+body
+      const seen = new Set();
+      const deduped = all.filter(n => {
+        const key = n.title + n.body;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      setNotifs(deduped);
       setLoading(false);
     };
     load();
@@ -2013,7 +2048,11 @@ function Analytics({ navigate }) {
 
   const confirmed = appts.filter(a => a.status === "confirmed");
   const totalRev = confirmed.reduce((s, a) => s + parsePrice(a.price), 0);
-  const todayAppts = appts.filter(a => a.day === "Today");
+  const nowA = new Date();
+  const dayNamesA = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const monthNamesA = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const todayStrA = `${dayNamesA[nowA.getDay()]} ${monthNamesA[nowA.getMonth()]} ${nowA.getDate()}`;
+  const todayAppts = appts.filter(a => a.day === todayStrA || a.day === "Today");
   const todayRev = todayAppts.filter(a => a.status === "confirmed").reduce((s, a) => s + parsePrice(a.price), 0);
 
   // Service breakdown
@@ -2076,9 +2115,21 @@ function Analytics({ navigate }) {
     ? "$" + bars.reduce((s, b) => s + b.revenue, 0)
     : "$" + totalRev;
 
+  const cancelledCount = appts.filter(a => a.status === "cancelled").length;
+  const pendingCount = appts.filter(a => a.status === "pending").length;
+  const avgPerAppt = confirmed.length > 0 ? Math.round(totalRev / confirmed.length) : 0;
+  const completionRate = appts.length > 0 ? Math.round((confirmed.length / appts.length) * 100) : 0;
+
   const insights = topServices.length > 0
-    ? [`${topServices[0]?.name} is your top earner`, `${confirmed.length} confirmed appointments total`, `$${Math.round(totalRev / Math.max(confirmed.length, 1))} average per appointment`, todayRev > 0 ? `$${todayRev} earned today` : "Add more appointments to see trends"]
-    : ["Book your first clients to start seeing analytics", "Share your booking link to get started", "Track revenue, services, and client trends here", "Everything updates automatically as you get bookings"];
+    ? [
+        `${topServices[0]?.name} is your #1 earner at $${Math.round(topServices[0]?.revenue || 0)}`,
+        `${completionRate}% of bookings are confirmed (${confirmed.length}/${appts.length})`,
+        `$${avgPerAppt} average revenue per appointment`,
+        cancelledCount > 0 ? `${cancelledCount} cancelled — consider adding a cancellation policy` : `No cancellations — your clients show up!`,
+        pendingCount > 0 ? `${pendingCount} pending bookings need attention` : null,
+        todayRev > 0 ? `$${todayRev} earned today so far` : null,
+      ].filter(Boolean)
+    : ["Book your first clients to start seeing analytics", "Share your booking link to get started", "Track revenue, services, and client trends here"];
 
   return (
     <div style={{ paddingBottom: 80 }}>
