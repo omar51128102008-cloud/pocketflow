@@ -4302,17 +4302,16 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
-        const { data } = await supabase.from("business_profiles").select("biz_name").eq("user_id", session.user.id).single();
-        if (data?.biz_name) setScreen("home");
-        else setScreen("onboarding");
+        try {
+          const { data } = await supabase.from("business_profiles").select("biz_name").eq("user_id", session.user.id).single();
+          if (data?.biz_name) setScreen("home");
+          else setScreen("onboarding");
+        } catch {
+          setScreen("home");
+        }
       }
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN") {
-        const { data } = await supabase.from("business_profiles").select("biz_name").eq("user_id", session.user.id).single();
-        if (data?.biz_name) setScreen("home");
-        else setScreen("onboarding");
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") setScreen("login");
     });
     return () => subscription.unsubscribe();
