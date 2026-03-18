@@ -140,7 +140,6 @@ function Login({ navigate }) {
   const [bizName, setBizName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [confirmSent, setConfirmSent] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
@@ -148,16 +147,18 @@ function Login({ navigate }) {
     setError("");
     setLoading(true);
     if (mode === "login") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setError(error.message);
-      else navigate("home");
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) { setError(error.message); setLoading(false); return; }
+      const { data: prof } = await supabase.from("business_profiles").select("biz_name").eq("user_id", data.user.id).single();
+      if (prof?.biz_name) navigate("home");
+      else navigate("onboarding");
     } else {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email, password,
         options: { data: { business_name: bizName } }
       });
-      if (error) setError(error.message);
-      else setConfirmSent(true);
+      if (error) { setError(error.message); setLoading(false); return; }
+      navigate("onboarding");
     }
     setLoading(false);
   };
@@ -4350,8 +4351,8 @@ export default function App() {
   const showSidebar = isDesktop && !isAuthScreen;
 
   // Screens that are always free (no paywall)
-  const freeScreens = ["login", "onboarding", "booking", "subscription", "settings", "sharelink"];
-  const needsPaywall = !freeScreens.includes(screen) && subscriptionPlan === "free" && !isAuthScreen;
+  const freeScreens = ["login", "onboarding", "booking", "subscription", "settings", "sharelink", "home", "notifications", "profile", "connections", "schedule", "inbox", "clients", "payments", "services", "analytics", "promotions", "loyalty", "staff", "waitlist"];
+  const needsPaywall = false; // Disabled until Stripe live mode is ready
 
   const showAISidebar = isDesktop && !isAuthScreen && screen !== "settings";
   const [aiSidebarCollapsed, setAiSidebarCollapsed] = useState(() => {
