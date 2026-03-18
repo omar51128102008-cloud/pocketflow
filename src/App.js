@@ -442,14 +442,15 @@ function Home({ navigate }) {
       const uid = session.user.id;
 
       const [profRes, apptsRes, msgsRes, clientsRes] = await Promise.all([
-        supabase.from("business_profiles").select("biz_name").eq("user_id", uid).single(),
+        supabase.from("business_profiles").select("biz_name,logo_url,settings").eq("user_id", uid).single(),
         supabase.from("appointments").select("*").eq("owner_id", uid).order("created_at", { ascending: false }),
         supabase.from("messages").select("*").eq("owner_id", uid).order("created_at", { ascending: false }),
         supabase.from("clients").select("id").eq("owner_id", uid),
       ]);
 
       setBizName(profRes.data?.biz_name || session.user.user_metadata?.business_name || "");
-      setUserName(session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "");
+      const dn = profRes.data?.settings?.displayName;
+      setUserName(dn || session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "");
 
       const allAppts = apptsRes.data || [];
       const allMsgs = msgsRes.data || [];
