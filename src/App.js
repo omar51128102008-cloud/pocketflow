@@ -183,15 +183,6 @@ function Login({ navigate }) {
     </div>
   );
 
-  if (confirmSent) return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
-      <div style={{ fontSize: 60, marginBottom: 24 }}>📧</div>
-      <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800, marginBottom: 12 }}>Check your email</div>
-      <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7, marginBottom: 28 }}>We sent a confirmation link to<br /><span style={{ color: C.accent, fontWeight: 600 }}>{email}</span><br />Click it to activate your account.</div>
-      <BtnPrimary onClick={() => setConfirmSent(false)} style={{ padding: "13px 28px" }}>Back to Login</BtnPrimary>
-    </div>
-  );
-
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", padding: "60px 24px 40px", position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", top: "-20%", left: "50%", transform: "translateX(-50%)", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
