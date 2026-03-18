@@ -4384,7 +4384,7 @@ export default function App() {
         marginRight: showAISidebar && !aiSidebarCollapsed ? 360 : 0,
         minHeight: "100vh",
       }}>
-        <div style={{ maxWidth: showSidebar ? "none" : 400, margin: "0 auto", padding: showSidebar ? "0 24px" : "0" }}>
+        <div style={{ maxWidth: showSidebar ? "none" : isDesktop ? 720 : 400, margin: "0 auto", padding: showSidebar ? "0 24px" : isDesktop ? "0 24px" : "0" }}>
           <Screen navigate={navigate} />
         </div>
       </div>
