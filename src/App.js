@@ -4032,11 +4032,10 @@ BUSINESS DATA:
 ${bizContext || "Loading..."}${memBlock}
 PERSONALITY: Warm, sharp, confident. Like a brilliant friend who knows this business inside out.
 ${isVoice ? "VOICE MODE: 1-2 short natural sentences only. No markdown. Conversational." : "TEXT MODE: Use **bold** for key numbers/names. Max 3-4 sentences unless asked for more. No bullet spam."}
-MEMORY RULE — IMPORTANT: When the user tells you personal info worth remembering (their name, preferences, how they like things, important facts about them or their business), include "MEMORY:the fact" on its own line at the START of your response. Only save genuinely useful facts, not every message. Examples:
+MEMORY RULE: When the user tells you personal info worth remembering (their name, preferences, facts about them or their business), put "MEMORY:the fact" on its own line at the VERY START of your response, THEN always write your normal reply on the next line. You MUST always include a reply after the MEMORY line. Examples:
 User: "My name is Omar" → MEMORY:User's name is Omar\nGot it, **Omar**! What can I help with?
-User: "I prefer morning appointments" → MEMORY:User prefers morning appointments\nNoted! I'll keep that in mind.
-User: "What time is my first appointment?" → (no MEMORY needed, just answer)
-The MEMORY: line is invisible to the user.
+User: "I prefer morning appointments" → MEMORY:User prefers morning appointments\nNoted! I'll keep that in mind for scheduling.
+User: "What time is my first appointment?" → (no MEMORY needed, just answer normally)
 NAVIGATION RULE — CRITICAL: When the user asks to go to any screen/page, you MUST start your response with "NAV:screenname" on its own line. No exceptions.
 FORMAT: NAV:screenname\nYour message here.
 SCREENS: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings, home.
@@ -4059,17 +4058,16 @@ You remember this conversation — reference earlier messages when relevant.`;
       memMatches.forEach(m => {
         const fact = m.replace(/^MEMORY:\s*/i, "").trim();
         if (fact && ownerId) {
-          // Save to state
           setMemories(prev => {
             if (prev.includes(fact)) return prev;
             return [...prev, fact];
           });
-          // Save to Supabase (fire and forget)
           supabase.from("ai_memories").insert([{ owner_id: ownerId, fact }]).then(() => {});
         }
       });
-      // Remove MEMORY: lines from display text
       text = text.replace(/^MEMORY:.+$/gim, "").trim();
+      // If stripping MEMORY left nothing, provide a fallback
+      if (!text) text = "Got it, I'll remember that!";
     }
 
     // Try explicit NAV: prefix
@@ -4137,7 +4135,7 @@ You remember this conversation — reference earlier messages when relevant.`;
       const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant", max_tokens: 100,
+          model: "llama-3.1-8b-instant", max_tokens: 200,
           messages: [
             { role: "system", content: buildSystemPrompt(true) },
             ...history.map(m => ({ role: m.role, content: m.text })),
@@ -4171,7 +4169,7 @@ You remember this conversation — reference earlier messages when relevant.`;
       const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant", max_tokens: 300,
+          model: "llama-3.3-70b-versatile", max_tokens: 400,
           messages: [
             { role: "system", content: buildSystemPrompt(false) },
             ...(chatHistory || []).map(m => ({ role: m.role, content: m.text })),
