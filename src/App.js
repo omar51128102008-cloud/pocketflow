@@ -167,6 +167,13 @@ function formatDate(dayStr) {
   return dayStr;
 }
 
+function handlePhoneInput(val) {
+  const d = val.replace(/\D/g, "").slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `(${d.slice(0,3)}) ${d.slice(3)}`;
+  return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+}
+
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
 function Login({ navigate }) {
   const [mode, setMode] = useState("login");
@@ -649,8 +656,8 @@ function Home({ navigate }) {
               ))}
             </Card>
             <div style={{ display: "flex", gap: 10 }}>
-              <button style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Reschedule</button>
-              <BtnPrimary style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
+              <button onClick={() => { if (confirm(`Cancel this appointment and let ${selectedAppt.name} rebook?\n\nThis will mark the appointment as cancelled.`)) { supabase.from("appointments").update({ status: "cancelled" }).eq("id", selectedAppt.id).then(() => { setAppts(p => p.map(a => a.id === selectedAppt.id ? { ...a, status: "cancelled" } : a)); setSelectedAppt(null); }); } }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Reschedule</button>
+              <BtnPrimary onClick={() => { const msg = `Hi ${selectedAppt.name}! Just a reminder about your appointment tomorrow. See you then! 😊`; if (confirm(`Send this reminder?\n\n"${msg}"`)) { fetch("https://pocketflow-proxy-production.up.railway.app/send-reminder", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client_name: selectedAppt.name, client_phone: selectedAppt.client_phone || selectedAppt.phone, service: selectedAppt.service, date: selectedAppt.day, time: selectedAppt.time, biz_name: bizName }) }).then(() => alert("Reminder sent!")).catch(() => alert("Failed to send.")); } }} style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
             </div>
           </div>
         </div>
@@ -775,8 +782,10 @@ Price: ${a.price || ""}`);
             {reminderSent
               ? <div style={{ padding: 13, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Reminder sent!</div>
               : <div style={{ display: "flex", gap: 10 }}>
-                  <button onClick={() => setSelectedAppt(null)} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Reschedule</button>
+                  <button onClick={() => { if (confirm(`Cancel this appointment and let ${selectedAppt.client_name} rebook?\n\nThis will mark the appointment as cancelled.`)) { supabase.from("appointments").update({ status: "cancelled" }).eq("id", selectedAppt.id).then(() => { setAppts(p => p.map(a => a.id === selectedAppt.id ? { ...a, status: "cancelled" } : a)); setSelectedAppt(null); }); } }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Reschedule</button>
                   <BtnPrimary onClick={async () => {
+                    const msg = `Hi ${selectedAppt.client_name}! Just a reminder about your ${selectedAppt.service} appointment on ${formatDate(selectedAppt.day)} at ${selectedAppt.time}. See you then! 😊`;
+                    if (!confirm(`Send this reminder?\n\n"${msg}"`)) return;
                     setReminderSent(true);
                     try {
                       await fetch("https://pocketflow-proxy-production.up.railway.app/send-reminder", {
@@ -941,6 +950,7 @@ function Clients({ navigate }) {
   const [newPhone, setNewPhone] = useState("");
   const [newInstagram, setNewInstagram] = useState("");
   const [adding, setAdding] = useState(false);
+  const [clientAppts, setClientAppts] = useState([]);
 
   useEffect(() => {
     const loadClients = async () => {
@@ -982,12 +992,14 @@ function Clients({ navigate }) {
 
   const filtered = clients.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
 
-  const history = [
-    { service: "Knotless Braids", date: "Today", price: "$220", status: "upcoming" },
-    { service: "Knotless Braids", date: "Jan 28", price: "$220", status: "completed" },
-    { service: "Silk Press", date: "Dec 15", price: "$120", status: "completed" },
-    { service: "Knotless Braids", date: "Nov 3", price: "$200", status: "completed" },
-  ];
+  const selectClient = async (c) => {
+    setSelectedClient(c);
+    setActiveTab("history");
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data } = await supabase.from("appointments").select("service,day,time,price,status,created_at").eq("owner_id", session.user.id).eq("client_name", c.name).order("created_at", { ascending: false }).limit(20);
+    setClientAppts(data || []);
+  };
 
   if (selectedClient) return (
     <div style={{ paddingBottom: 80 }}>
@@ -1017,15 +1029,21 @@ function Clients({ navigate }) {
       </div>
       <div style={{ padding: "0 20px" }}>
         {activeTab === "history" && (
-          <Card>
-            {history.map((h, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderBottom: i < history.length - 1 ? `1px solid ${C.border}` : "none" }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: h.status === "upcoming" ? C.accent : C.green, flexShrink: 0 }} />
-                <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{h.service}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{h.date}</div></div>
-                <div style={{ textAlign: "right" }}><div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{h.price}</div><div style={{ fontSize: 10, color: h.status === "upcoming" ? C.accent : C.green, marginTop: 3, textTransform: "capitalize" }}>{h.status}</div></div>
-              </div>
-            ))}
-          </Card>
+          clientAppts.length === 0 ? (
+            <Card style={{ padding: "32px 20px", textAlign: "center" }}>
+              <div style={{ fontSize: 13, color: C.dim }}>No appointment history yet</div>
+            </Card>
+          ) : (
+            <Card>
+              {clientAppts.map((h, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderBottom: i < clientAppts.length - 1 ? `1px solid ${C.border}` : "none" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: h.status === "pending" ? C.yellow : h.status === "confirmed" ? C.green : h.status === "cancelled" ? C.red : C.green, flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{h.service}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{formatDate(h.day)} · {h.time}</div></div>
+                  <div style={{ textAlign: "right" }}><div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{h.price}</div><div style={{ fontSize: 10, color: h.status === "confirmed" ? C.green : h.status === "cancelled" ? C.red : C.yellow, marginTop: 3, textTransform: "capitalize" }}>{h.status}</div></div>
+                </div>
+              ))}
+            </Card>
+          )
         )}
         {activeTab === "notes" && <NoteTab client={selectedClient} onNoteUpdate={(note) => setSelectedClient(p => ({ ...p, note: note === "__CLEAR__" ? "" : (p.note ? p.note + "\n\n" : "") + note }))} />}
         {activeTab === "contact" && (
@@ -1067,7 +1085,7 @@ function Clients({ navigate }) {
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: C.mid }}>No clients found</div>
         ) : <div style={{ background: "rgba(14,14,22,0.6)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, maxHeight: "calc(100vh - 220px)", overflowY: "auto" }}>{filtered.map((c, idx) => (
-          <div key={c.id} onClick={() => { setSelectedClient(c); setActiveTab("history"); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", cursor: "pointer", borderBottom: idx < filtered.length - 1 ? `1px solid ${C.border}` : "none", background: selectedClient?.id === c.id ? C.accentSoft : "transparent", borderRadius: idx === 0 ? "14px 14px 0 0" : idx === filtered.length - 1 ? "0 0 14px 14px" : 0 }}>
+          <div key={c.id} onClick={() => selectClient(c)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", cursor: "pointer", borderBottom: idx < filtered.length - 1 ? `1px solid ${C.border}` : "none", background: selectedClient?.id === c.id ? C.accentSoft : "transparent", borderRadius: idx === 0 ? "14px 14px 0 0" : idx === filtered.length - 1 ? "0 0 14px 14px" : 0 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: C.accentSoft, border: `1px solid ${C.accentSoft}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.accent, flexShrink: 0 }}>{c.avatar}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -1137,7 +1155,7 @@ function Clients({ navigate }) {
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add New Client</div>
             <input placeholder="Full name *" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
-            <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
+            <input placeholder="(555) 123-4567" type="tel" value={newPhone} onChange={e => setNewPhone(handlePhoneInput(e.target.value))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="Instagram handle" value={newInstagram} onChange={e => setNewInstagram(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }} />
             <BtnPrimary disabled={!newName || adding} onClick={addClient} style={{ width: "100%", padding: 14 }}>{adding ? "Adding..." : "Add Client"}</BtnPrimary>
           </div>
@@ -2774,7 +2792,7 @@ function Booking({ navigate }) {
               ))}
             </Card>
             <input placeholder="Your full name *" value={name} onChange={e => setName(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
-            <input placeholder="Phone number *" type="tel" value={phone} onChange={e => setPhone(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
+            <input placeholder="(555) 123-4567" type="tel" value={phone} onChange={e => setPhone(handlePhoneInput(e.target.value))} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="Instagram handle (optional)" value={instagram} onChange={e => setInstagram(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <textarea placeholder="Notes — hair length, allergies, special requests..." value={note} onChange={e => setNote(e.target.value)} rows={3} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", resize: "none" }} />
           </div>
@@ -3075,7 +3093,7 @@ function Staff({ navigate }) {
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add Staff Member</div>
             <input placeholder="Full name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="Role (e.g. Braider, Stylist)" value={newRole} onChange={e => setNewRole(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
-            <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }} />
+            <input placeholder="(555) 123-4567" type="tel" value={newPhone} onChange={e => setNewPhone(handlePhoneInput(e.target.value))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }} />
             <BtnPrimary disabled={!newName || !newRole} onClick={async () => { try { const { data: { session } } = await supabase.auth.getSession(); if (!session) return; const avatar = newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(); const row = { name: newName, role: newRole, avatar, phone: newPhone, status: "active", owner_id: session.user.id }; const { data, error } = await supabase.from("staff_members").insert([row]).select().single(); if (!error && data) { setStaff(p => [...p, { id: data.id, name: data.name, role: data.role, avatar, phone: data.phone || "", status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); } else { setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar, phone: newPhone, status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); } } catch(e) { setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar: newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: newPhone, status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); } setNewName(""); setNewRole(""); setNewPhone(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add Staff Member</BtnPrimary>
           </div>
         </div>
@@ -3172,7 +3190,7 @@ function Waitlist({ navigate }) {
             <input placeholder="Client name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="Service requested" value={newService} onChange={e => setNewService(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="Preferred date (e.g. This weekend)" value={newDate} onChange={e => setNewDate(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
-            <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} type="tel" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }} />
+            <input placeholder="(555) 123-4567" value={newPhone} onChange={e => setNewPhone(handlePhoneInput(e.target.value))} type="tel" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }} />
             <BtnPrimary disabled={!newName || !newService} onClick={async () => { try { const { data: { session } } = await supabase.auth.getSession(); if (!session) return; const avatar = newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(); const row = { name: newName, service: newService, requested_date: newDate || "Flexible", phone: newPhone, owner_id: session.user.id, notified: false }; const { data, error } = await supabase.from("waitlist").insert([row]).select().single(); if (!error && data) { setWaitlist(p => [...p, { id: data.id, name: data.name, service: data.service, requestedDate: data.requested_date || "Flexible", addedTime: "Just now", avatar, phone: newPhone, notified: false }]); } else { setWaitlist(p => [...p, { id: Date.now(), name: newName, service: newService, requestedDate: newDate || "Flexible", addedTime: "Just now", avatar, phone: newPhone, notified: false }]); } } catch(e) { setWaitlist(p => [...p, { id: Date.now(), name: newName, service: newService, requestedDate: newDate || "Flexible", addedTime: "Just now", avatar: newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: newPhone, notified: false }]); } setNewName(""); setNewService(""); setNewDate(""); setNewPhone(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add to Waitlist</BtnPrimary>
           </div>
         </div>
@@ -4474,6 +4492,21 @@ You remember this conversation — reference earlier messages when relevant.`;
 export default function App() {
   const [screen, setScreen] = useState("login");
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  const screenHistoryRef = useRef([]);
+
+  // Handle browser back button
+  useEffect(() => {
+    const handlePop = () => {
+      const hist = screenHistoryRef.current;
+      if (hist.length > 1) {
+        hist.pop(); // remove current
+        const prev = hist[hist.length - 1] || "home";
+        setScreen(prev);
+      }
+    };
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 768);
@@ -4566,6 +4599,8 @@ export default function App() {
   }, [screen]); // re-check on every screen change
 
   const navigate = (s) => {
+    screenHistoryRef.current.push(s);
+    window.history.pushState({ screen: s }, "", "");
     setScreen(s);
     window.scrollTo(0, 0);
   };
