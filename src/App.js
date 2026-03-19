@@ -3861,6 +3861,8 @@ function AISidebarPanel({ navigate, isMobile }) {
   const [chatInput, setChatInput] = useState("");
   const [aiName, setAiName] = useState("Aria");
   const [bizContext, setBizContext] = useState("");
+  const [memories, setMemories] = useState([]);
+  const [ownerId, setOwnerId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [orbScale, setOrbScale] = useState(1);
@@ -3891,13 +3893,16 @@ function AISidebarPanel({ navigate, isMobile }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       const uid = session.user.id;
-      const [profRes, apptRes, clientRes, msgRes, svcRes] = await Promise.all([
+      setOwnerId(uid);
+      const [profRes, apptRes, clientRes, msgRes, svcRes, memRes] = await Promise.all([
         supabase.from("business_profiles").select("ai_name,biz_name,location").eq("user_id", uid).single(),
         supabase.from("appointments").select("client_name,service,time,day,status,price").eq("owner_id", uid).order("created_at", { ascending: false }).limit(30),
         supabase.from("clients").select("name,total_visits,total_spent").eq("owner_id", uid).limit(8),
         supabase.from("messages").select("name,platform,preview,handled").eq("owner_id", uid).eq("handled", false).limit(10),
         supabase.from("services").select("name,price,duration").eq("owner_id", uid).eq("active", true).limit(10),
+        supabase.from("ai_memories").select("fact").eq("owner_id", uid).order("created_at", { ascending: false }).limit(50),
       ]);
+      if (memRes.data) setMemories(memRes.data.map(m => m.fact));
       const name = profRes.data?.ai_name || "Aria";
       const biz = profRes.data?.biz_name || "your business";
       const loc = profRes.data?.location || "";
@@ -4020,20 +4025,25 @@ function AISidebarPanel({ navigate, isMobile }) {
   const buildSystemPrompt = (isVoice = false) => {
     const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
     const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    const memBlock = memories.length > 0 ? `\nTHINGS YOU REMEMBER ABOUT THE USER:\n${memories.map(m => "- " + m).join("\n")}` : "";
     return `You are ${aiName}, an AI business assistant inside Pocketflow.
 Today: ${today} at ${time}.
 BUSINESS DATA:
-${bizContext || "Loading..."}
+${bizContext || "Loading..."}${memBlock}
 PERSONALITY: Warm, sharp, confident. Like a brilliant friend who knows this business inside out.
 ${isVoice ? "VOICE MODE: 1-2 short natural sentences only. No markdown. Conversational." : "TEXT MODE: Use **bold** for key numbers/names. Max 3-4 sentences unless asked for more. No bullet spam."}
+MEMORY RULE — IMPORTANT: When the user tells you personal info worth remembering (their name, preferences, how they like things, important facts about them or their business), include "MEMORY:the fact" on its own line at the START of your response. Only save genuinely useful facts, not every message. Examples:
+User: "My name is Omar" → MEMORY:User's name is Omar\nGot it, **Omar**! What can I help with?
+User: "I prefer morning appointments" → MEMORY:User prefers morning appointments\nNoted! I'll keep that in mind.
+User: "What time is my first appointment?" → (no MEMORY needed, just answer)
+The MEMORY: line is invisible to the user.
 NAVIGATION RULE — CRITICAL: When the user asks to go to any screen/page, you MUST start your response with "NAV:screenname" on its own line. No exceptions.
 FORMAT: NAV:screenname\nYour message here.
 SCREENS: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings, home.
 EXAMPLES:
 User: "take me to inbox" → NAV:inbox\nHere are your messages!
 User: "open schedule" → NAV:schedule\nHere's your schedule!
-User: "go to clients" → NAV:clients\nHere are your clients!
-The "NAV:screenname" part is invisible to the user — it triggers navigation automatically.
+The NAV:screenname and MEMORY: parts are invisible to the user — they trigger actions automatically.
 You remember this conversation — reference earlier messages when relevant.`;
   };
 
@@ -4041,11 +4051,32 @@ You remember this conversation — reference earlier messages when relevant.`;
   const VALID_SCREENS = ["schedule","inbox","clients","payments","analytics","promotions","loyalty","services","staff","waitlist","settings","home","notifications"];
 
   const handleNavIntent = (raw) => {
-    // Try explicit NAV: prefix first
-    const match = raw.match(/^NAV:\s*(\w+)/i);
+    let text = raw;
+
+    // Extract MEMORY: lines and save
+    const memMatches = text.match(/^MEMORY:(.+)$/gim);
+    if (memMatches) {
+      memMatches.forEach(m => {
+        const fact = m.replace(/^MEMORY:\s*/i, "").trim();
+        if (fact && ownerId) {
+          // Save to state
+          setMemories(prev => {
+            if (prev.includes(fact)) return prev;
+            return [...prev, fact];
+          });
+          // Save to Supabase (fire and forget)
+          supabase.from("ai_memories").insert([{ owner_id: ownerId, fact }]).then(() => {});
+        }
+      });
+      // Remove MEMORY: lines from display text
+      text = text.replace(/^MEMORY:.+$/gim, "").trim();
+    }
+
+    // Try explicit NAV: prefix
+    const match = text.match(/^NAV:\s*(\w+)/i);
     if (match) {
       const screen = match[1].toLowerCase();
-      const rest = raw.replace(/^NAV:\s*\w+\s*/i, "").trim();
+      const rest = text.replace(/^NAV:\s*\w+\s*/i, "").trim();
       setTimeout(() => navigate(screen), 700);
       return { navigating: true, screen, text: rest || `Taking you to **${screen}**!` };
     }
@@ -4059,16 +4090,16 @@ You remember this conversation — reference earlier messages when relevant.`;
       /going to (?:the |your )?(\w+)/i,
     ];
     for (const pattern of navPhrases) {
-      const m = raw.match(pattern);
+      const m = text.match(pattern);
       if (m) {
         const candidate = m[1].toLowerCase();
         if (VALID_SCREENS.includes(candidate)) {
           setTimeout(() => navigate(candidate), 700);
-          return { navigating: true, screen: candidate, text: raw };
+          return { navigating: true, screen: candidate, text };
         }
       }
     }
-    return { navigating: false, text: raw };
+    return { navigating: false, text };
   };
 
   const unlockAudio = () => {
