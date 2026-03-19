@@ -1700,14 +1700,19 @@ function Loyalty({ navigate }) {
   const [userId, setUserId] = useState(null);
 
   const reviews = [];
+  const [realReviews, setRealReviews] = useState([]);
 
   useEffect(() => {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       setUserId(session.user.id);
-      const { data } = await supabase.from("discount_codes").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: false });
-      setCodes(data || []);
+      const [codeRes, revRes] = await Promise.all([
+        supabase.from("discount_codes").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: false }),
+        supabase.from("reviews").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: false }).limit(20),
+      ]);
+      setCodes(codeRes.data || []);
+      setRealReviews(revRes.data || []);
       setLoadingCodes(false);
     };
     load();
@@ -1884,17 +1889,21 @@ function Loyalty({ navigate }) {
         </Card>
 
         <SectionLabel>Recent Reviews</SectionLabel>
-        {reviews.map((r,i) => (
+        {realReviews.length === 0 ? (
+          <Card style={{ padding: "32px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>⭐</div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No reviews yet</div>
+            <div style={{ fontSize: 13, color: C.dim }}>Reviews from clients will appear here</div>
+          </Card>
+        ) : realReviews.map((r,i) => (
           <Card key={i} style={{ padding:16,marginBottom:10 }}>
             <div style={{ display:"flex",justifyContent:"space-between",marginBottom:8 }}>
-              <span style={{ fontSize:14,fontWeight:600 }}>{r.name}</span>
-              <span style={{ fontSize:11,color:C.dim }}>{r.date}</span>
+              <span style={{ fontSize:14,fontWeight:600 }}>{r.client_name}</span>
+              <span style={{ fontSize:11,color:C.dim }}>{timeAgo(r.created_at)}</span>
             </div>
-            <div style={{ fontSize:16,marginBottom:8 }}>{"⭐".repeat(r.rating)}</div>
-            <div style={{ fontSize:13,color:C.mid,lineHeight:1.5,marginBottom:r.replied?10:0 }}>"{r.text}"</div>
-            {r.replied
-              ? <div style={{ background:"#10b98111",border:"1px solid #10b98122",borderRadius:10,padding:"8px 12px",fontSize:12,color:"#6ee7b7" }}>✓ AI replied</div>
-              : <BtnPrimary style={{ width:"100%",marginTop:10,padding:10,fontSize:13 }}>Reply with AI</BtnPrimary>}
+            <div style={{ fontSize:16,marginBottom:8 }}>{"⭐".repeat(r.rating || 5)}</div>
+            {r.text && <div style={{ fontSize:13,color:C.mid,lineHeight:1.5 }}>{r.text}</div>}
+            {r.service && <div style={{ fontSize:11,color:C.dim,marginTop:6 }}>{r.service}</div>}
           </Card>
         ))}
         </div>{/* end col 2 */}
@@ -2232,23 +2241,99 @@ function Promotions({ navigate }) {
   const [promoTitle, setPromoTitle] = useState("");
   const [promoMsg, setPromoMsg] = useState("");
   const [audience, setAudience] = useState("all");
-  const [channel, setChannel] = useState(["whatsapp"]);
+  const [channel, setChannel] = useState(["email"]);
+  const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sentCount, setSentCount] = useState(0);
+  const [clients, setClients] = useState([]);
+  const [pastPromos, setPastPromos] = useState([]);
+  const [bizName, setBizName] = useState("");
+  const [bookingUrl, setBookingUrl] = useState("");
 
-  const past = [
-    { title: "Valentine's Special 💕", sent: "Feb 10", reach: 47, bookings: 12, revenue: "$1,440" },
-    { title: "Slow Monday Deal", sent: "Jan 27", reach: 31, bookings: 7, revenue: "$630" },
-    { title: "New Year New Hair 🎉", sent: "Jan 1", reach: 52, bookings: 18, revenue: "$2,160" },
-  ];
+  useEffect(() => {
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const uid = session.user.id;
+      const [cRes, pRes, bRes] = await Promise.all([
+        supabase.from("clients").select("name,email,phone,total_visits").eq("owner_id", uid),
+        supabase.from("promotions").select("*").eq("owner_id", uid).order("created_at", { ascending: false }).limit(20),
+        supabase.from("business_profiles").select("biz_name").eq("user_id", uid).single(),
+      ]);
+      setClients(cRes.data || []);
+      setPastPromos(pRes.data || []);
+      setBizName(bRes.data?.biz_name || "");
+      setBookingUrl(`https://omar51128102008-cloud.github.io/pocketflow/book?id=${uid}`);
+    };
+    load();
+  }, []);
+
+  const getAudience = () => {
+    if (audience === "regulars") return clients.filter(c => (c.total_visits || 0) >= 3);
+    if (audience === "inactive") return clients.filter(c => (c.total_visits || 0) < 2);
+    return clients;
+  };
+
+  const handleSend = async () => {
+    const targets = getAudience();
+    if (!targets.length) { alert("No clients to send to!"); return; }
+    setSending(true);
+    let count = 0;
+    const htmlBody = `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#0f0f14;color:#fff;border-radius:16px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:32px 28px 24px;">
+          <div style="font-size:22px;font-weight:800;margin-bottom:4px;">${promoTitle}</div>
+          <div style="font-size:14px;opacity:0.8;">${bizName}</div>
+        </div>
+        <div style="padding:28px;font-size:14px;line-height:1.7;color:#ddd;">
+          ${promoMsg.replace(/\n/g, "<br/>")}
+          <div style="margin-top:20px;"><a href="${bookingUrl}" style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:12px;text-decoration:none;font-weight:700;">Book Now</a></div>
+        </div>
+      </div>`;
+
+    for (const c of targets) {
+      try {
+        const body = { subject: promoTitle };
+        if (channel.includes("email") && c.email) {
+          body.to_email = c.email;
+          body.html_body = htmlBody;
+        }
+        if (channel.includes("sms") && c.phone) {
+          body.to_phone = c.phone;
+          body.sms_body = `${promoTitle}\n\n${promoMsg}\n\nBook now: ${bookingUrl}`;
+        }
+        if (body.to_email || body.to_phone) {
+          await fetch("https://pocketflow-proxy-production.up.railway.app/send-promo", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+          });
+          count++;
+        }
+      } catch {}
+    }
+
+    // Save promo record
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await supabase.from("promotions").insert([{ owner_id: session.user.id, title: promoTitle, message: promoMsg, audience, channel: channel.join(","), sent_count: count }]);
+    }
+
+    setSentCount(count);
+    setSending(false);
+    setSent(true);
+  };
 
   if (sent) return (
     <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, textAlign: "center" }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>🚀</div>
       <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Promo sent!</div>
-      <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Sent to 47 clients via WhatsApp & Instagram</div>
+      <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Sent to {sentCount} client{sentCount !== 1 ? "s" : ""} via {channel.join(" & ")}</div>
       <BtnPrimary onClick={() => { setSent(false); setCreating(false); setPromoTitle(""); setPromoMsg(""); }} style={{ padding: "13px 28px" }}>Back to Promotions</BtnPrimary>
     </div>
   );
+
+  const allCount = clients.length;
+  const regCount = clients.filter(c => (c.total_visits || 0) >= 3).length;
+  const inactiveCount = clients.filter(c => (c.total_visits || 0) < 2).length;
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -2262,32 +2347,30 @@ function Promotions({ navigate }) {
         {!creating ? (
           <>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
-              {[{ label: "Total promos sent", value: "8", color: C.accent }, { label: "Revenue from promos", value: "$4,230", color: C.gold }].map((s, i) => (
+              {[{ label: "Total promos sent", value: String(pastPromos.length), color: C.accent }, { label: "Total clients", value: String(allCount), color: C.gold }].map((s, i) => (
                 <Card key={i} style={{ padding: 16, textAlign: "center" }}>
                   <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800, color: s.color }}>{s.value}</div>
                   <div style={{ fontSize: 11, color: C.dim, marginTop: 4 }}>{s.label}</div>
                 </Card>
               ))}
             </div>
-            <div style={{ background: `${C.accentDark}18`, border: `1px solid ${C.accent}22`, borderRadius: 16, padding: 16, marginTop: 20, marginBottom: 4 }}>
-              <div style={{ fontSize: 12, color: C.accent, fontWeight: 700, marginBottom: 8 }}>✦ AI SUGGESTION</div>
-              <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.6, marginBottom: 12 }}>You have 3 open slots this Friday. Want me to send a flash promo to your last 30 clients?</div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <BtnPrimary onClick={() => setCreating(true)} style={{ flex: 1, padding: 11, fontSize: 13 }}>Yes, create it</BtnPrimary>
-                <button onClick={() => {}} style={{ flex: 1, padding: 11, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", fontWeight: 600 }}>Not now</button>
-              </div>
-            </div>
             <SectionLabel>Past Promotions</SectionLabel>
-            {past.map((p, i) => (
+            {pastPromos.length === 0 ? (
+              <Card style={{ padding: "32px 20px", textAlign: "center", marginBottom: 16 }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>📣</div>
+                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No promotions yet</div>
+                <div style={{ fontSize: 13, color: C.dim }}>Create your first promo to reach your clients</div>
+              </Card>
+            ) : pastPromos.map((p, i) => (
               <Card key={i} style={{ padding: 16, marginBottom: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                   <div style={{ fontSize: 15, fontWeight: 700 }}>{p.title}</div>
-                  <div style={{ fontSize: 11, color: C.dim }}>Sent {p.sent}</div>
+                  <div style={{ fontSize: 11, color: C.dim }}>{timeAgo(p.created_at)}</div>
                 </div>
+                <div style={{ fontSize: 12, color: C.mid, marginBottom: 8 }}>{p.message?.slice(0, 80)}...</div>
                 <div style={{ display: "flex", gap: 16 }}>
-                  {[["Reached", p.reach, C.text], ["Booked", p.bookings, C.accent], ["Revenue", p.revenue, C.gold]].map(([l, v, color]) => (
-                    <div key={l}><div style={{ fontSize: 11, color: C.dim }}>{l}</div><div style={{ fontSize: 16, fontWeight: 700, color }}>{v}</div></div>
-                  ))}
+                  <div><div style={{ fontSize: 11, color: C.dim }}>Sent to</div><div style={{ fontSize: 16, fontWeight: 700, color: C.accent }}>{p.sent_count || 0}</div></div>
+                  <div><div style={{ fontSize: 11, color: C.dim }}>Via</div><div style={{ fontSize: 12, fontWeight: 600, color: C.mid }}>{p.channel || "email"}</div></div>
                 </div>
               </Card>
             ))}
@@ -2299,20 +2382,20 @@ function Promotions({ navigate }) {
             <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 14, marginBottom: 12 }}>
               <textarea placeholder="Write your message..." value={promoMsg} onChange={e => setPromoMsg(e.target.value)} rows={4} style={{ width: "100%", background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", resize: "none" }} />
             </div>
-            <button onClick={() => setPromoMsg("Hey gorgeous! 💕 I have a few slots open this Friday and I'm running a special — book any service and get 15% off. Limited spots, first come first served! Book here 👉 [your link]")} style={{ width: "100%", padding: 12, background: C.accentSoft, border: `1px solid ${C.accent}44`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.accent, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }}>✦ Write with AI</button>
+            <button onClick={() => setPromoMsg(`Hey! 💕 We have some amazing slots open this week and we're running a special — book any service and get 15% off. Limited spots, first come first served!\n\nBook here: ${bookingUrl}`)} style={{ width: "100%", padding: 12, background: C.accentSoft, border: `1px solid ${C.accent}44`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.accent, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }}>✦ Generate with AI</button>
             <SectionLabel>Send to</SectionLabel>
             <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-              {[{ id: "all", label: "All (47)" }, { id: "regulars", label: "Regulars (18)" }, { id: "inactive", label: "Inactive (12)" }].map(a => (
+              {[{ id: "all", label: `All (${allCount})` }, { id: "regulars", label: `Regulars (${regCount})` }, { id: "inactive", label: `Inactive (${inactiveCount})` }].map(a => (
                 <div key={a.id} onClick={() => setAudience(a.id)} style={{ flex: 1, padding: "10px 6px", borderRadius: 12, background: audience === a.id ? C.accentSoft : C.surface, border: `1px solid ${audience === a.id ? C.accent : C.border}`, textAlign: "center", fontSize: 11, fontWeight: 600, color: audience === a.id ? C.accent : C.mid, cursor: "pointer" }}>{a.label}</div>
               ))}
             </div>
             <SectionLabel>Send via</SectionLabel>
             <div style={{ display: "flex", gap: 8, marginBottom: 28 }}>
-              {[{ id: "whatsapp", label: "💬 WhatsApp" }, { id: "instagram", label: "📸 Instagram" }].map(ch => (
+              {[{ id: "email", label: "📧 Email" }, { id: "sms", label: "📱 SMS" }].map(ch => (
                 <div key={ch.id} onClick={() => setChannel(p => p.includes(ch.id) ? p.filter(x => x !== ch.id) : [...p, ch.id])} style={{ flex: 1, padding: "12px", borderRadius: 12, background: channel.includes(ch.id) ? C.accentSoft : C.surface, border: `1px solid ${channel.includes(ch.id) ? C.accent : C.border}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: channel.includes(ch.id) ? C.accent : C.mid, cursor: "pointer" }}>{ch.label}</div>
               ))}
             </div>
-            <BtnPrimary disabled={!promoTitle || !promoMsg} onClick={() => setSent(true)} style={{ width: "100%", padding: 16 }}>Send Promo 🚀</BtnPrimary>
+            <BtnPrimary disabled={!promoTitle || !promoMsg || sending} onClick={handleSend} style={{ width: "100%", padding: 16 }}>{sending ? "Sending..." : "Send Promo 🚀"}</BtnPrimary>
           </>
         )}
       </div>
