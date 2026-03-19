@@ -615,9 +615,9 @@ function Home({ navigate }) {
       </div>
 
       {selectedAppt && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", maxWidth: 400, margin: "0 auto" }} onClick={() => setSelectedAppt(null)}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
-            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setSelectedAppt(null)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 520, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
               <div style={{ width: 52, height: 52, borderRadius: 16, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: C.accent }}>{selectedAppt.avatar}</div>
               <div><div style={{ fontSize: 18, fontWeight: 700 }}>{selectedAppt.name}</div><div style={{ fontSize: 13, color: C.mid, marginTop: 3 }}>{selectedAppt.service}</div></div>
@@ -706,9 +706,9 @@ function Schedule({ navigate }) {
         )}
       </div>
       {selectedAppt && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", maxWidth: 430, margin: "0 auto" }} onClick={() => { setSelectedAppt(null); setReminderSent(null); }}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
-            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => { setSelectedAppt(null); setReminderSent(null); }}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 520, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
               <div style={{ width: 52, height: 52, borderRadius: 16, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: C.accent }}>{selectedAppt.client_avatar || selectedAppt.client_name?.slice(0,2).toUpperCase()}</div>
               <div><div style={{ fontSize: 18, fontWeight: 700 }}>{selectedAppt.client_name}</div><div style={{ fontSize: 13, color: C.mid }}>{selectedAppt.service}</div></div>
@@ -1110,9 +1110,9 @@ function Clients({ navigate }) {
       </div>
 
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
-            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add New Client</div>
             <input placeholder="Full name *" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="Phone number" value={newPhone} onChange={e => setNewPhone(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
@@ -1240,8 +1240,8 @@ function Services({ navigate }) {
 
       {/* Add / Edit Modal */}
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 20, fontWeight: 800, marginBottom: 20 }}>{editingId ? "Edit Service" : "New Service"}</div>
 
             {/* Icon picker */}
@@ -1430,9 +1430,9 @@ function Payments({ navigate }) {
         )}
       </div>
       {selectedInvoice && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setSelectedInvoice(null)}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px" }} onClick={e => e.stopPropagation()}>
-            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setSelectedInvoice(null)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 4 }}>{selectedInvoice.client_name}</div>
             <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>{selectedInvoice.service}</div>
             <Card style={{ padding: 16, marginBottom: 16 }}>
@@ -2933,9 +2933,9 @@ function Staff({ navigate }) {
         )}
       </div>
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 430, padding: "24px 20px 40px" }} onClick={e => e.stopPropagation()}>
-            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 430, padding: "24px 20px 40px" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add Staff Member</div>
             <input placeholder="Full name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="Role (e.g. Braider, Stylist)" value={newRole} onChange={e => setNewRole(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
@@ -3029,9 +3029,9 @@ function Waitlist({ navigate }) {
       </div>
 
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
-            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add to Waitlist</div>
             <input placeholder="Client name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="Service requested" value={newService} onChange={e => setNewService(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
@@ -3637,9 +3637,9 @@ function Packages({ navigate }) {
       </div>
 
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
-            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px" }} />
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Create Package</div>
             <input placeholder="Package name (e.g. Monthly Braids Bundle)" value={pName} onChange={e => setPName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="Description (optional)" value={pDesc} onChange={e => setPDesc(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
