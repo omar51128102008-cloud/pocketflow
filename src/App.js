@@ -1673,6 +1673,16 @@ function Settings({ navigate }) {
             : <BtnPrimary onClick={async () => { setSavingProfile(true); const { data: { session } } = await supabase.auth.getSession(); if (session) { const { data } = await supabase.from("business_profiles").select("settings").eq("user_id", session.user.id).single(); const prev = data?.settings || {}; await supabase.from("business_profiles").upsert({ user_id: session.user.id, settings: { ...prev, displayName, profilePic } }, { onConflict: "user_id" }); } setSavingProfile(false); setProfileSaved(true); setTimeout(() => setProfileSaved(false), 3000); }} disabled={savingProfile} style={{ width: "100%", padding: 12, fontSize: 13 }}>{savingProfile ? "Saving..." : "Save Profile"}</BtnPrimary>
           }
         </Card>
+        <Card style={{ padding: 16, marginTop: 8 }}>
+          <div onClick={() => { const bug = prompt("Describe the bug or issue:"); if (bug && bug.trim()) { supabase.auth.getSession().then(({ data: { session } }) => { if (session) { supabase.from("bug_reports").insert([{ user_id: session.user.id, message: bug.trim() }]).then(() => {}); } }); alert("Thanks! Your bug report has been submitted."); } }} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: `${C.red}18`, border: `1px solid ${C.red}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🐛</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>Report a Bug</div>
+              <div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>Found something broken? Let us know</div>
+            </div>
+            <span style={{ fontSize: 12, color: C.mid }}>›</span>
+          </div>
+        </Card>
         </div>{/* end col 2 */}
         </div>{/* end grid */}
       </div>
@@ -2245,6 +2255,7 @@ function Promotions({ navigate }) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [sentCount, setSentCount] = useState(0);
+  const [generating, setGenerating] = useState(false);
   const [clients, setClients] = useState([]);
   const [pastPromos, setPastPromos] = useState([]);
   const [bizName, setBizName] = useState("");
@@ -2382,7 +2393,25 @@ function Promotions({ navigate }) {
             <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 14, marginBottom: 12 }}>
               <textarea placeholder="Write your message..." value={promoMsg} onChange={e => setPromoMsg(e.target.value)} rows={4} style={{ width: "100%", background: "none", border: "none", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", resize: "none" }} />
             </div>
-            <button onClick={() => setPromoMsg(`Hey! 💕 We have some amazing slots open this week and we're running a special — book any service and get 15% off. Limited spots, first come first served!\n\nBook here: ${bookingUrl}`)} style={{ width: "100%", padding: 12, background: C.accentSoft, border: `1px solid ${C.accent}44`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.accent, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }}>✦ Generate with AI</button>
+            <button disabled={generating} onClick={async () => {
+              setGenerating(true);
+              try {
+                const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    model: "llama-3.1-8b-instant", max_tokens: 250,
+                    messages: [
+                      { role: "system", content: `You write short, engaging promotional messages for a beauty business called "${bizName}". Write a casual, warm promo message that includes a call to action. No subject line, just the message body. Keep it under 4 sentences. Include an emoji or two. End with "Book now: ${bookingUrl}"` },
+                      { role: "user", content: promoTitle ? `Write a promo about: ${promoTitle}` : "Write a general promotional message for open slots this week with a discount offer" },
+                    ],
+                  }),
+                });
+                const data = await res.json();
+                const msg = data.choices?.[0]?.message?.content || "";
+                if (msg) setPromoMsg(msg.trim());
+              } catch {}
+              setGenerating(false);
+            }} style={{ width: "100%", padding: 12, background: C.accentSoft, border: `1px solid ${C.accent}44`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.accent, cursor: generating ? "wait" : "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }}>{generating ? "✦ Generating..." : "✦ Generate with AI"}</button>
             <SectionLabel>Send to</SectionLabel>
             <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
               {[{ id: "all", label: `All (${allCount})` }, { id: "regulars", label: `Regulars (${regCount})` }, { id: "inactive", label: `Inactive (${inactiveCount})` }].map(a => (
