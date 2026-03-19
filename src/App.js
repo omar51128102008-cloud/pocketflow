@@ -286,22 +286,35 @@ function Onboarding({ navigate }) {
   const [done, setDone] = useState(false);
   const [bizName, setBizName] = useState("");
   const [bizType, setBizType] = useState("");
-  const [bizLocation, setBizLocation] = useState("");
-  const [services, setServices] = useState([{ id: 1, name: "Knotless Braids", price: "180", duration: "4h" }, { id: 2, name: "Silk Press", price: "120", duration: "2h" }]);
-  const [newService, setNewService] = useState({ name: "", price: "", duration: "" });
+  const [ownerName, setOwnerName] = useState("");
+  const [ownerPhone, setOwnerPhone] = useState("");
+  const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
+  const [address, setAddress] = useState("");
+  const [services, setServices] = useState([]);
+  const [newService, setNewService] = useState({ name: "", price: "", duration: "1h" });
   const [workDays, setWorkDays] = useState(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
-  const [startTime, setStartTime] = useState("9:00 AM");
-  const [endTime, setEndTime] = useState("7:00 PM");
+  const [dayHours, setDayHours] = useState({
+    Mon: { open: "9:00 AM", close: "6:00 PM" },
+    Tue: { open: "9:00 AM", close: "6:00 PM" },
+    Wed: { open: "9:00 AM", close: "6:00 PM" },
+    Thu: { open: "9:00 AM", close: "6:00 PM" },
+    Fri: { open: "9:00 AM", close: "6:00 PM" },
+    Sat: { open: "10:00 AM", close: "5:00 PM" },
+    Sun: { open: "10:00 AM", close: "4:00 PM" },
+  });
   const [connectedPlatforms, setConnectedPlatforms] = useState([]);
   const [aiPerms, setAiPerms] = useState(["reply_dms", "send_reminders", "follow_ups"]);
   const [aiTone, setAiTone] = useState("friendly");
   const totalSteps = 5;
+  const TIME_OPTIONS = ["7:00 AM","8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM","1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM","6:00 PM","7:00 PM","8:00 PM","9:00 PM","10:00 PM"];
+  const COUNTRIES = ["United States","Canada","United Kingdom","Australia","Nigeria","South Africa","Ghana","Jamaica","Trinidad","India","Palestine","UAE","Saudi Arabia","Other"];
 
   const canContinue = () => {
-    if (step === 0) return bizName.length > 1 && bizType;
+    if (step === 0) return bizName.length > 1 && bizType && ownerName.length > 1 && country;
     if (step === 1) return services.length > 0;
     if (step === 2) return workDays.length > 0;
-    if (step === 3) return connectedPlatforms.length > 0;
+    if (step === 3) return true;
     return true;
   };
 
@@ -321,12 +334,35 @@ function Onboarding({ navigate }) {
       <BtnPrimary onClick={async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          // Save business profile
-          await supabase.from("business_profiles").upsert({ user_id: session.user.id, biz_name: bizName, location: bizLocation }, { onConflict: "user_id" });
+          const uid = session.user.id;
+          const loc = [city, country].filter(Boolean).join(", ");
+          // Build business hours from dayHours
+          const dayMap = { Mon: "mon", Tue: "tue", Wed: "wed", Thu: "thu", Fri: "fri", Sat: "sat", Sun: "sun" };
+          const hours = {};
+          DAYS.forEach(d => {
+            const key = dayMap[d];
+            if (workDays.includes(d)) {
+              const dh = dayHours[d];
+              const toMil = t => { const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i); if (!m) return "9:00"; let h = parseInt(m[1]); if (m[3].toUpperCase() === "PM" && h < 12) h += 12; if (m[3].toUpperCase() === "AM" && h === 12) h = 0; return `${h}:${m[2]}`; };
+              hours[key] = { open: toMil(dh.open), close: toMil(dh.close), off: false };
+            } else {
+              hours[key] = { open: "", close: "", off: true };
+            }
+          });
+          // Save business profile with all info
+          await supabase.from("business_profiles").upsert({
+            user_id: uid, biz_name: bizName, location: loc, phone: ownerPhone.replace(/\D/g, ""),
+            business_hours: hours,
+            settings: { displayName: ownerName, tone: aiTone, aiReplies: aiPerms.includes("reply_dms"), aiBookings: aiPerms.includes("auto_book"), aiReminders: aiPerms.includes("send_reminders"), aiFollowUps: aiPerms.includes("follow_ups") },
+          }, { onConflict: "user_id" });
           // Save services
           if (services.length > 0) {
-            const rows = services.map(s => ({ owner_id: session.user.id, name: s.name, price: parseFloat(s.price) || 0, duration: s.duration || "1h", icon: "✨", active: true }));
+            const rows = services.map(s => ({ owner_id: uid, name: s.name, price: parseFloat(s.price) || 0, duration: s.duration || "1h", icon: "✨", active: true }));
             await supabase.from("services").insert(rows);
+          }
+          // Save AI memory with owner name
+          if (ownerName) {
+            await supabase.from("ai_memories").insert([{ owner_id: uid, fact: `User's name is ${ownerName}` }]);
           }
         }
         navigate("home");
@@ -348,14 +384,25 @@ function Onboarding({ navigate }) {
             <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Step 1 of 5</div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Tell us about<br />your business</div>
             <div style={{ fontSize: 14, color: C.mid, marginBottom: 28 }}>We'll set everything up around you.</div>
+            <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>YOUR NAME</div>
+            <input placeholder="e.g. Jasmine, Omar..." value={ownerName} onChange={e => setOwnerName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 16 }} />
+            <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>YOUR PHONE</div>
+            <input placeholder="(555) 123-4567" type="tel" value={ownerPhone} onChange={e => setOwnerPhone(handlePhoneInput(e.target.value))} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 16 }} />
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>BUSINESS NAME</div>
             <input placeholder="e.g. Luxe Hair Studio" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 16 }} />
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>TYPE</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
               {BUSINESS_TYPES.map(t => <div key={t} onClick={() => setBizType(t)} style={{ padding: "9px 16px", borderRadius: 100, background: bizType === t ? C.accentSoft : C.surface, border: `1px solid ${bizType === t ? C.accent : C.border}`, fontSize: 13, color: bizType === t ? C.accent : C.mid, cursor: "pointer", fontWeight: bizType === t ? 600 : 400, transition: "all 0.2s" }}>{t}</div>)}
             </div>
-            <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>LOCATION</div>
-            <input placeholder="e.g. Atlanta, GA" value={bizLocation} onChange={e => setBizLocation(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
+            <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>COUNTRY</div>
+            <select value={country} onChange={e => setCountry(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: country ? C.text : C.dim, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 16 }}>
+              <option value="">Select country</option>
+              {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>CITY</div>
+            <input placeholder="e.g. Atlanta" value={city} onChange={e => setCity(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 16 }} />
+            <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>ADDRESS <span style={{ color: C.dim, fontWeight: 400 }}>(optional)</span></div>
+            <input placeholder="Street address" value={address} onChange={e => setAddress(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
           </div>
         )}
         {step === 1 && (
@@ -371,12 +418,14 @@ function Onboarding({ navigate }) {
             ))}
             <div style={{ background: C.surface, border: `1px dashed ${C.borderHigh}`, borderRadius: 14, padding: 14 }}>
               <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 10 }}>ADD SERVICE</div>
-              <input placeholder="Service name" value={newService.name} onChange={e => setNewService(p => ({ ...p, name: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }} />
+              <input placeholder="Service name (e.g. Knotless Braids)" value={newService.name} onChange={e => setNewService(p => ({ ...p, name: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }} />
               <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                <input placeholder="Price $" value={newService.price} onChange={e => setNewService(p => ({ ...p, price: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
-                <input placeholder="Duration" value={newService.duration} onChange={e => setNewService(p => ({ ...p, duration: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
+                <input placeholder="Price ($)" type="number" value={newService.price} onChange={e => setNewService(p => ({ ...p, price: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
+                <select value={newService.duration} onChange={e => setNewService(p => ({ ...p, duration: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>
+                  {["30m","45m","1h","1.5h","2h","2.5h","3h","3.5h","4h","4.5h","5h","6h"].map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
               </div>
-              <button onClick={() => { if (!newService.name) return; setServices(p => [...p, { ...newService, id: Date.now() }]); setNewService({ name: "", price: "", duration: "" }); }} style={{ width: "100%", padding: 11, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", fontWeight: 600 }}>+ Add Service</button>
+              <button onClick={() => { if (!newService.name) return; setServices(p => [...p, { ...newService, id: Date.now() }]); setNewService({ name: "", price: "", duration: "1h" }); }} style={{ width: "100%", padding: 11, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", fontWeight: 600 }}>+ Add Service</button>
             </div>
           </div>
         )}
@@ -384,27 +433,22 @@ function Onboarding({ navigate }) {
           <div className="fade-in">
             <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Step 3 of 5</div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>When are you<br />available?</div>
-            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>AI will never book outside these hours.</div>
-            <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 12 }}>WORKING DAYS</div>
-            <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Tap a day to toggle it. Set custom hours for each day.</div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
               {DAYS.map(d => <div key={d} onClick={() => setWorkDays(p => p.includes(d) ? p.filter(x => x !== d) : [...p, d])} style={{ flex: 1, height: 44, borderRadius: 12, background: workDays.includes(d) ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surface, border: `1px solid ${workDays.includes(d) ? "transparent" : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: workDays.includes(d) ? "#fff" : C.dim, cursor: "pointer", transition: "all 0.2s" }}>{d}</div>)}
             </div>
-            <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 12 }}>WORKING HOURS</div>
-            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>Opens at</div>
-                <select value={startTime} onChange={e => setStartTime(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>
-                  {["7:00 AM","8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM"].map(t => <option key={t}>{t}</option>)}
+            {workDays.map(d => (
+              <div key={d} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <div style={{ width: 40, fontSize: 12, fontWeight: 700, color: C.mid }}>{d}</div>
+                <select value={dayHours[d]?.open || "9:00 AM"} onChange={e => setDayHours(p => ({ ...p, [d]: { ...p[d], open: e.target.value } }))} style={{ flex: 1, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 12px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>
+                  {TIME_OPTIONS.map(t => <option key={t}>{t}</option>)}
+                </select>
+                <span style={{ color: C.dim, fontSize: 12 }}>to</span>
+                <select value={dayHours[d]?.close || "6:00 PM"} onChange={e => setDayHours(p => ({ ...p, [d]: { ...p[d], close: e.target.value } }))} style={{ flex: 1, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 12px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>
+                  {TIME_OPTIONS.map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
-              <div style={{ color: C.dim, marginTop: 16 }}>→</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: C.dim, marginBottom: 6 }}>Closes at</div>
-                <select value={endTime} onChange={e => setEndTime(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>
-                  {["4:00 PM","5:00 PM","6:00 PM","7:00 PM","8:00 PM","9:00 PM","10:00 PM"].map(t => <option key={t}>{t}</option>)}
-                </select>
-              </div>
-            </div>
+            ))}
           </div>
         )}
         {step === 3 && (
@@ -1175,6 +1219,7 @@ function Services({ navigate }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ name: "", price: "", duration: "", desc: "", icon: "✨", active: true });
+  const [generatingDesc, setGeneratingDesc] = useState(false);
   const [userId, setUserId] = useState(null);
 
   const ICONS = ["✨","💫","🌟","💨","🌀","👑","💅","🪮","💆","🎨","🔥","💎","🌸","✂️","💜"];
@@ -1309,7 +1354,25 @@ function Services({ navigate }) {
               </div>
             </div>
 
-            <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Description (optional)</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase" }}>Description (optional)</div>
+              <button disabled={generatingDesc || !form.name.trim()} onClick={async () => {
+                setGeneratingDesc(true);
+                try {
+                  const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      model: "llama-3.1-8b-instant", max_tokens: 80,
+                      messages: [{ role: "system", content: "Write a one-sentence description for a beauty service. Keep it short, warm, and professional. No quotes. Just the description text." }, { role: "user", content: `Service: ${form.name}${form.price ? `, $${form.price}` : ""}${form.duration ? `, ${form.duration}` : ""}` }],
+                    }),
+                  });
+                  const data = await res.json();
+                  const desc = data.choices?.[0]?.message?.content?.trim() || "";
+                  if (desc) setForm(p => ({ ...p, desc }));
+                } catch {}
+                setGeneratingDesc(false);
+              }} style={{ padding: "5px 10px", background: C.accentSoft, border: `1px solid ${C.accent}44`, borderRadius: 8, fontSize: 11, fontWeight: 700, color: C.accent, cursor: generatingDesc || !form.name.trim() ? "not-allowed" : "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", opacity: !form.name.trim() ? 0.4 : 1 }}>{generatingDesc ? "..." : "✦ AI"}</button>
+            </div>
             <input value={form.desc} onChange={e => setForm(p => ({ ...p, desc: e.target.value }))} placeholder="Short description clients will see" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 14 }} />
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", marginBottom: 16, borderTop: `1px solid ${C.border}` }}>
