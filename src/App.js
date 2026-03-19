@@ -3885,7 +3885,6 @@ function AISidebarPanel({ navigate, isMobile }) {
     } catch {}
     return null;
   });
-  const [pendingReply, setPendingReply] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -3947,7 +3946,7 @@ function AISidebarPanel({ navigate, isMobile }) {
     return () => { cancelAnimationFrame(animFrameRef.current); audioCtxRef.current?.close().catch(() => {}); };
   }, []);
 
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, loading, pendingReply]);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory, loading]);
   useEffect(() => {
     if (!chatHistory || chatHistory.length === 0) return;
     try { localStorage.setItem("aria_chat_history", JSON.stringify(chatHistory.slice(-60))); } catch {}
@@ -4153,26 +4152,11 @@ You remember this conversation — reference earlier messages when relevant.`;
       const raw = data.choices?.[0]?.message?.content || "On it.";
       console.log("🤖 AI raw (chat):", raw);
       const { text: reply } = handleNavIntent(raw);
-      setPendingReply(reply);
+      setChatHistory(p => [...p, { role: "assistant", text: reply, time: new Date() }]);
     } catch {
       setChatHistory(p => [...p, { role: "assistant", text: "Connection issue. Try again.", time: new Date() }]);
     }
     setLoading(false);
-  };
-
-  const approvePendingReply = () => {
-    if (!pendingReply) return;
-    setChatHistory(p => [...p, { role: "assistant", text: pendingReply, time: new Date() }]);
-    setPendingReply(null);
-  };
-
-  const editPendingReply = (newText) => {
-    setChatHistory(p => [...p, { role: "assistant", text: newText, time: new Date() }]);
-    setPendingReply(null);
-  };
-
-  const discardPendingReply = () => {
-    setPendingReply(null);
   };
 
   const renderText = (text) => {
@@ -4243,17 +4227,6 @@ You remember this conversation — reference earlier messages when relevant.`;
             <div style={{ width:22, height:22, borderRadius:7, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9 }}>✦</div>
             <div style={{ background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:"16px 16px 16px 4px", padding:"10px 14px", display:"flex", gap:4 }}>
               {[0,1,2].map(d=><div key={d} style={{width:5,height:5,borderRadius:"50%",background:C.accent,animation:"pulse 1.2s infinite",animationDelay:`${d*0.2}s`}}/>)}
-            </div>
-          </div>
-        )}
-        {pendingReply && (
-          <div style={{ marginBottom:10, background:`${C.accent}11`, border:`1px solid ${C.accent}33`, borderRadius:16, padding:12, animation:"fadeUp 0.3s ease" }}>
-            <div style={{ fontSize:10, color:C.accent, fontWeight:700, letterSpacing:1, textTransform:"uppercase", marginBottom:6 }}>AI Draft — Review before sending</div>
-            <div style={{ fontSize:13, color:C.text, lineHeight:1.5, marginBottom:10 }}>{renderText(pendingReply)}</div>
-            <div style={{ display:"flex", gap:6 }}>
-              <BtnPrimary onClick={approvePendingReply} style={{ flex:1, padding:"8px 12px", fontSize:12, borderRadius:10 }}>✓ Send</BtnPrimary>
-              <button onClick={() => { const edited = prompt("Edit the response:", pendingReply); if (edited && edited.trim()) editPendingReply(edited.trim()); }} style={{ flex:1, padding:"8px 12px", fontSize:12, borderRadius:10, background:C.surfaceHigh, border:`1px solid ${C.border}`, color:C.mid, cursor:"pointer", fontFamily:"'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", fontWeight:600 }}>Edit</button>
-              <button onClick={discardPendingReply} style={{ padding:"8px 12px", fontSize:12, borderRadius:10, background:"transparent", border:`1px solid ${C.red}44`, color:C.red, cursor:"pointer", fontFamily:"'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", fontWeight:600 }}>✕</button>
             </div>
           </div>
         )}
