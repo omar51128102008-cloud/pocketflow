@@ -4058,11 +4058,33 @@ You remember this conversation — reference earlier messages when relevant.`;
       memMatches.forEach(m => {
         const fact = m.replace(/^MEMORY:\s*/i, "").trim();
         if (fact && ownerId) {
+          // Check if this updates an existing memory (same category like "name", "preference")
+          const factLower = fact.toLowerCase();
+          const keywords = ["name is", "name's", "prefer", "favorite", "likes", "wants", "birthday", "located", "lives in"];
+          const matchedKey = keywords.find(k => factLower.includes(k));
+
           setMemories(prev => {
+            // Remove old memory with same keyword to avoid conflicts
+            if (matchedKey) {
+              const filtered = prev.filter(p => !p.toLowerCase().includes(matchedKey));
+              return [...filtered, fact];
+            }
             if (prev.includes(fact)) return prev;
             return [...prev, fact];
           });
-          supabase.from("ai_memories").insert([{ owner_id: ownerId, fact }]).then(() => {});
+
+          // Delete old conflicting memories from Supabase, then insert new
+          if (matchedKey) {
+            supabase.from("ai_memories").select("id,fact").eq("owner_id", ownerId).then(({ data }) => {
+              if (data) {
+                const old = data.filter(d => d.fact.toLowerCase().includes(matchedKey));
+                old.forEach(o => supabase.from("ai_memories").delete().eq("id", o.id).then(() => {}));
+              }
+              supabase.from("ai_memories").insert([{ owner_id: ownerId, fact }]).then(() => {});
+            });
+          } else {
+            supabase.from("ai_memories").insert([{ owner_id: ownerId, fact }]).then(() => {});
+          }
         }
       });
       text = text.replace(/^MEMORY:.+$/gim, "").trim();
@@ -4218,8 +4240,8 @@ You remember this conversation — reference earlier messages when relevant.`;
   return (
     <>
     {/* Toggle tab on the edge - desktop only */}
-    {!isMobile && <div onClick={toggleCollapsed} style={{ position:"fixed", top:12, right:collapsed?0:360, zIndex:41, background:C.surface, border:`1px solid ${C.border}`, borderRight:collapsed?`1px solid ${C.border}`:"none", borderRadius:"10px 0 0 10px", padding:"10px 8px", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4, transition:"right 0.25s ease", boxShadow:"-2px 0 12px rgba(0,0,0,0.15)" }}>
-      <div style={{ fontSize:11, writingMode:"vertical-rl", textOrientation:"mixed", color:C.accent, fontWeight:700, letterSpacing:1 }}>{collapsed?"AI ✦":"hide"}</div>
+    {!isMobile && <div onClick={toggleCollapsed} style={{ position:"fixed", top:80, right:collapsed?0:360, zIndex:41, background:C.surface, border:`1px solid ${C.border}`, borderRight:collapsed?`1px solid ${C.border}`:"none", borderRadius:"12px 0 0 12px", padding:"14px 10px", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4, transition:"right 0.25s ease", boxShadow:"-2px 0 12px rgba(0,0,0,0.15)" }}>
+      <div style={{ fontSize:13, writingMode:"vertical-rl", textOrientation:"mixed", color:C.accent, fontWeight:700, letterSpacing:1 }}>{collapsed?"AI ✦":"hide"}</div>
     </div>}
     <div style={isMobile ? { display:"flex", flexDirection:"column", height:"100%", background:C.bg } : { position:"fixed", top:0, right:0, width:360, height:"100vh", background:C.surface, borderLeft:`1px solid ${C.border}`, display:"flex", flexDirection:"column", zIndex:40, transform:collapsed?"translateX(360px)":"translateX(0)", transition:"transform 0.25s ease" }}>
       {/* Header */}
