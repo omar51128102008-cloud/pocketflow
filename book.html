@@ -85,6 +85,7 @@ const sb = createClient(
 
 const BUSINESS_ID = new URLSearchParams(window.location.search).get('id');
 const MANAGE_REF = new URLSearchParams(window.location.search).get('manage');
+const REVIEW_REF = new URLSearchParams(window.location.search).get('review');
 
 function genRef() {
   return 'PF' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -775,6 +776,27 @@ function renderManage() {
   }
 
   const isCancelled = manageAppt.status === 'cancelled';
+  // No-show protection: block cancellation within 24h
+  let tooLateToCancel = false;
+  if (!isCancelled && manageAppt.day && manageAppt.time) {
+    try {
+      const dayParts = manageAppt.day.split(' '); // e.g. "Wed Mar 19"
+      const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+      const monthIdx = months[dayParts[1]] ?? -1;
+      const dayNum = parseInt(dayParts[2]);
+      const timeParts = manageAppt.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (monthIdx >= 0 && dayNum && timeParts) {
+        let h = parseInt(timeParts[1]);
+        const m = parseInt(timeParts[2]);
+        const ampm = timeParts[3].toUpperCase();
+        if (ampm === 'PM' && h < 12) h += 12;
+        if (ampm === 'AM' && h === 12) h = 0;
+        const apptDate = new Date(new Date().getFullYear(), monthIdx, dayNum, h, m);
+        const hoursUntil = (apptDate - new Date()) / 3600000;
+        if (hoursUntil < 24 && hoursUntil > -24) tooLateToCancel = true;
+      }
+    } catch(e) {}
+  }
   app.innerHTML = `
   <div style="max-width:480px;width:100%;padding:32px" class="fade-in">
     <div style="text-align:center;margin-bottom:24px">
@@ -789,10 +811,15 @@ function renderManage() {
           <span style="font-size:14px;font-weight:600;color:${k==='Status'?(v==='Confirmed'?C.green:v==='Cancelled'?C.red:C.text):C.text};text-align:right">${v}</span>
         </div>`).join('')}
     </div>
-    ${!isCancelled ? `
+    ${!isCancelled ? (tooLateToCancel ? `
+      <div style="text-align:center;padding:14px;background:${C.red}12;border:1px solid ${C.red}33;border-radius:14px;margin-bottom:12px">
+        <div style="font-size:14px;font-weight:700;color:${C.red};margin-bottom:4px">Cannot cancel within 24 hours</div>
+        <div style="font-size:12px;color:${C.mid}">Please contact the business directly to make changes.</div>
+      </div>
+    ` : `
       <button class="btn" id="cancelBookingBtn" style="width:100%;padding:15px;background:${C.red};margin-bottom:12px">Cancel Booking</button>
       <div style="font-size:12px;color:${C.dim};text-align:center;line-height:1.6">Need to reschedule? Cancel and rebook with a new time.</div>
-    ` : `<div style="text-align:center;font-size:13px;color:${C.dim}">This booking has been cancelled.</div>`}
+    `) : `<div style="text-align:center;font-size:13px;color:${C.dim}">This booking has been cancelled.</div>`}
     ${biz.phone || biz.name ? `
     <div class="card" style="padding:16px;margin-top:16px">
       <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Contact Business</div>
@@ -808,7 +835,93 @@ function renderManage() {
   });
 }
 
-if (MANAGE_REF) { loadManageBooking(); } else { loadBiz(); }
+// ── REVIEW SYSTEM ──
+let reviewAppt = null;
+let reviewLoading = true;
+let reviewSubmitted = false;
+let reviewRating = 5;
+let reviewText = '';
+
+async function loadReview() {
+  if (!REVIEW_REF) return;
+  try {
+    const { data } = await sb.from('appointments').select('*').eq('booking_ref', REVIEW_REF).single();
+    if (data) {
+      reviewAppt = data;
+      const { data: bp } = await sb.from('business_profiles').select('biz_name').eq('user_id', data.owner_id).single();
+      if (bp) biz.name = bp.biz_name || '';
+    }
+  } catch(e) {}
+  reviewLoading = false;
+  renderReview();
+}
+
+async function submitReview() {
+  if (!reviewAppt) return;
+  try {
+    await sb.from('reviews').insert([{
+      owner_id: reviewAppt.owner_id,
+      client_name: reviewAppt.client_name,
+      service: reviewAppt.service,
+      rating: reviewRating,
+      text: reviewText,
+      booking_ref: REVIEW_REF,
+    }]);
+    reviewSubmitted = true;
+    renderReview();
+  } catch(e) { alert('Failed to submit review.'); }
+}
+
+function renderReview() {
+  const app = document.getElementById('app');
+  app.style.display = 'flex';
+  app.style.alignItems = 'center';
+  app.style.justifyContent = 'center';
+  app.style.minHeight = '100vh';
+
+  if (reviewLoading) {
+    app.innerHTML = `<div style="text-align:center"><div class="spinner" style="width:32px;height:32px;margin:0 auto 16px"></div><div style="color:${C.dim};font-size:14px">Loading...</div></div>`;
+    return;
+  }
+
+  if (!reviewAppt) {
+    app.innerHTML = `<div style="text-align:center;max-width:360px;padding:32px"><div style="font-size:52px;margin-bottom:16px">🔍</div><div style="font-size:24px;font-weight:800;margin-bottom:10px">Not Found</div><div style="font-size:14px;color:${C.mid}">We couldn't find this booking.</div></div>`;
+    return;
+  }
+
+  if (reviewSubmitted) {
+    app.innerHTML = `<div style="text-align:center;max-width:400px;padding:32px" class="fade-in"><div style="font-size:52px;margin-bottom:16px">🌟</div><div style="font-size:24px;font-weight:800;margin-bottom:8px">Thank you!</div><div style="font-size:14px;color:${C.mid};line-height:1.7">Your review for ${biz.name || 'this business'} has been submitted.</div></div>`;
+    return;
+  }
+
+  app.innerHTML = `
+  <div style="max-width:480px;width:100%;padding:32px" class="fade-in">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:42px;margin-bottom:12px">⭐</div>
+      <div style="font-size:24px;font-weight:800;margin-bottom:4px">Leave a Review</div>
+      <div style="font-size:14px;color:${C.mid}">${biz.name || 'Business'} — ${reviewAppt.service}</div>
+    </div>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Your Rating</div>
+      <div id="starRow" style="display:flex;justify-content:center;gap:8px">
+        ${[1,2,3,4,5].map(n => `<span class="star" data-n="${n}" style="font-size:32px;cursor:pointer;color:${n <= reviewRating ? '#fbbf24' : '#333'}">${n <= reviewRating ? '★' : '☆'}</span>`).join('')}
+      </div>
+    </div>
+    <textarea id="reviewTextarea" placeholder="Tell us about your experience..." rows="4" style="width:100%;background:${C.surface};border:1px solid ${C.border};border-radius:14px;padding:14px 16px;font-size:14px;color:${C.text};font-family:'DM Sans',sans-serif;resize:none;margin-bottom:16px">${reviewText}</textarea>
+    <button class="btn" id="submitReviewBtn" style="width:100%;padding:15px;">Submit Review</button>
+  </div>`;
+
+  document.querySelectorAll('.star').forEach(s => {
+    s.addEventListener('click', () => {
+      reviewRating = parseInt(s.dataset.n);
+      renderReview();
+    });
+  });
+  document.getElementById('reviewTextarea')?.addEventListener('input', e => { reviewText = e.target.value; });
+  document.getElementById('submitReviewBtn')?.addEventListener('click', submitReview);
+}
+
+if (REVIEW_REF) { loadReview(); } else if (MANAGE_REF) { loadManageBooking(); } else { loadBiz(); }
 </script>
 </body>
 </html>
