@@ -137,14 +137,34 @@ function compressImage(dataUrl, maxW, quality) {
     const img = new Image();
     img.onload = () => {
       const c = document.createElement("canvas");
-      const scale = Math.min(1, maxW / img.width);
-      c.width = img.width * scale;
-      c.height = img.height * scale;
-      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      // Crop to square from center
+      const size = Math.min(img.width, img.height);
+      const sx = (img.width - size) / 2;
+      const sy = (img.height - size) / 2;
+      const outSize = Math.min(size, maxW);
+      c.width = outSize;
+      c.height = outSize;
+      c.getContext("2d").drawImage(img, sx, sy, size, size, 0, 0, outSize, outSize);
       resolve(c.toDataURL("image/jpeg", quality));
     };
     img.src = dataUrl;
   });
+}
+
+function formatPhone(p) {
+  if (!p) return "";
+  const d = p.replace(/\D/g, "");
+  if (d.length === 11 && d[0] === "1") return `(${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+  return p;
+}
+
+function formatDate(dayStr) {
+  if (!dayStr) return "";
+  // Convert "Wed Mar 19" to "Mar 19 (Wed)"
+  const parts = dayStr.split(" ");
+  if (parts.length === 3) return `${parts[1]} ${parts[2]} (${parts[0]})`;
+  return dayStr;
 }
 
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
@@ -169,8 +189,7 @@ function Login({ navigate }) {
       else navigate("onboarding");
     } else {
       const { data, error } = await supabase.auth.signUp({
-        email, password,
-        options: { data: { business_name: bizName } }
+        email, password
       });
       if (error) { setError(error.message); setLoading(false); return; }
       navigate("onboarding");
@@ -223,7 +242,6 @@ function Login({ navigate }) {
                 <div key={m} onClick={() => { setMode(m); setError(""); }} style={{ flex: 1, padding: "11px", borderRadius: 11, background: mode === m ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "transparent", textAlign: "center", fontSize: 14, fontWeight: 600, color: mode === m ? "#fff" : C.mid, cursor: "pointer", transition: "all 0.2s" }}>{m === "login" ? "Log In" : "Sign Up"}</div>
               ))}
             </div>
-            {mode === "signup" && <input placeholder="Business name" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />}
             <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }} />
             {error && <div style={{ background: "#f43f5e18", border: "1px solid #f43f5e33", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
@@ -623,7 +641,7 @@ function Home({ navigate }) {
               <div><div style={{ fontSize: 18, fontWeight: 700 }}>{selectedAppt.name}</div><div style={{ fontSize: 13, color: C.mid, marginTop: 3 }}>{selectedAppt.service}</div></div>
             </div>
             <Card style={{ padding: 16, marginBottom: 16 }}>
-              {[["Time", selectedAppt.time], ["Price", selectedAppt.price], ["Status", selectedAppt.status], ["Note", selectedAppt.note]].map(([k, v]) => (
+              {[["Day", formatDate(selectedAppt.day)], ["Time", selectedAppt.time], ["Price", selectedAppt.price], ["Status", selectedAppt.status], ["Note", selectedAppt.note]].filter(([,v]) => v).map(([k, v]) => (
                 <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: k !== "Note" ? `1px solid ${C.border}` : "none" }}>
                   <span style={{ fontSize: 13, color: C.mid }}>{k}</span>
                   <span style={{ fontSize: 13, fontWeight: 500, color: k === "Price" ? C.gold : k === "Status" ? (selectedAppt.status === "confirmed" ? C.green : C.yellow) : C.text }}>{v}</span>
@@ -661,14 +679,18 @@ function Schedule({ navigate }) {
     load();
   }, []);
 
-  const todayAppts = appts.filter(a => a.day === "Today");
-  const upcomingAppts = appts.filter(a => a.day !== "Today");
+  const _dn2 = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const _mn2 = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const _now2 = new Date();
+  const _ts2 = `${_dn2[_now2.getDay()]} ${_mn2[_now2.getMonth()]} ${_now2.getDate()}`;
+  const todayAppts = appts.filter(a => a.day === _ts2 || a.day === "Today");
+  const upcomingAppts = appts.filter(a => a.day !== _ts2 && a.day !== "Today");
   const totalRevenue = appts.filter(a => a.status === "confirmed").reduce((s, a) => s + (parseInt((a.price||"0").replace(/\D/g,""))||0), 0);
 
-  const ApptRow = ({ a, last }) => (
+  const ApptRow = ({ a, last, showDay }) => (
     <div onClick={() => setSelectedAppt(a)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: last ? "none" : `1px solid ${C.border}`, cursor: "pointer" }}>
       <div style={{ width: 42, height: 42, borderRadius: 13, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.accent, flexShrink: 0 }}>{a.client_avatar || a.client_name?.slice(0,2).toUpperCase()}</div>
-      <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{a.client_name}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{a.service} · {a.duration}</div></div>
+      <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{a.client_name}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{a.service} · {a.duration}{showDay ? ` · ${formatDate(a.day)}` : ""}</div></div>
       <div style={{ textAlign: "right" }}><div style={{ fontSize: 13, fontWeight: 600 }}>{a.time}</div><div style={{ fontSize: 12, color: C.gold, marginTop: 2, fontWeight: 600 }}>{a.price}</div></div>
     </div>
   );
@@ -700,7 +722,7 @@ function Schedule({ navigate }) {
               : <EmptyState label="today's" />}
             <SectionLabel>Upcoming</SectionLabel>
             {upcomingAppts.length > 0
-              ? <Card style={{ padding: "4px 16px" }}>{upcomingAppts.map((a, i) => <ApptRow key={a.id} a={a} last={i === upcomingAppts.length - 1} />)}</Card>
+              ? <Card style={{ padding: "4px 16px" }}>{upcomingAppts.map((a, i) => <ApptRow key={a.id} a={a} last={i === upcomingAppts.length - 1} showDay={true} />)}</Card>
               : <EmptyState label="upcoming" />}
           </>
         )}
@@ -714,7 +736,7 @@ function Schedule({ navigate }) {
               <div><div style={{ fontSize: 18, fontWeight: 700 }}>{selectedAppt.client_name}</div><div style={{ fontSize: 13, color: C.mid }}>{selectedAppt.service}</div></div>
             </div>
             <Card style={{ padding: 16, marginBottom: 16 }}>
-              {[["Day", selectedAppt.day], ["Time", selectedAppt.time], ["Duration", selectedAppt.duration], ["Price", selectedAppt.price], ["Status", selectedAppt.status], ["Note", selectedAppt.note]].filter(([,v]) => v).map(([k, v]) => (
+              {[["Day", formatDate(selectedAppt.day)], ["Time", selectedAppt.time], ["Duration", selectedAppt.duration], ["Price", selectedAppt.price], ["Phone", formatPhone(selectedAppt.client_phone)], ["Status", selectedAppt.status], ["Note", selectedAppt.note]].filter(([,v]) => v).map(([k, v]) => (
                 <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: k !== "Note" ? `1px solid ${C.border}` : "none" }}>
                   <span style={{ fontSize: 13, color: C.mid }}>{k}</span>
                   <span style={{ fontSize: 13, fontWeight: 500, color: k === "Price" ? C.gold : k === "Status" ? (selectedAppt.status === "confirmed" ? C.green : C.yellow) : C.text, textTransform: "capitalize" }}>{v}</span>
@@ -1008,7 +1030,7 @@ function Clients({ navigate }) {
         {activeTab === "notes" && <NoteTab client={selectedClient} onNoteUpdate={(note) => setSelectedClient(p => ({ ...p, note: note === "__CLEAR__" ? "" : (p.note ? p.note + "\n\n" : "") + note }))} />}
         {activeTab === "contact" && (
           <Card>
-            {[["📱", "Phone", selectedClient.phone], ["📸", "Instagram", selectedClient.instagram], ["📅", "Last visit", selectedClient.lastVisit]].map(([icon, label, val], i) => (
+            {[["📱", "Phone", formatPhone(selectedClient.phone)], ["📸", "Instagram", selectedClient.instagram], ["📅", "Last visit", selectedClient.lastVisit]].map(([icon, label, val], i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 2 ? `1px solid ${C.border}` : "none" }}>
                 <span style={{ fontSize: 18 }}>{icon}</span>
                 <div style={{ flex: 1 }}><div style={{ fontSize: 12, color: C.dim }}>{label}</div><div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{val || "—"}</div></div>
@@ -1084,7 +1106,7 @@ function Clients({ navigate }) {
                   </div>
                   {activeTab === "contact" && (
                     <div>
-                      {[["📱", "Phone", selectedClient.phone], ["📸", "Instagram", selectedClient.instagram], ["📅", "Last visit", selectedClient.lastVisit]].map(([icon, label, val], i) => (
+                      {[["📱", "Phone", formatPhone(selectedClient.phone)], ["📸", "Instagram", selectedClient.instagram], ["📅", "Last visit", selectedClient.lastVisit]].map(([icon, label, val], i) => (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: i < 2 ? `1px solid ${C.border}` : "none" }}>
                           <span style={{ fontSize: 16 }}>{icon}</span>
                           <div><div style={{ fontSize: 11, color: C.dim }}>{label}</div><div style={{ fontSize: 13, fontWeight: 600, marginTop: 1 }}>{val || "—"}</div></div>
@@ -1388,7 +1410,7 @@ function Payments({ navigate }) {
           {appointments.slice(0, showAllPayments ? appointments.length : 5).map((appt, i, arr) => (
             <div key={appt.id} onClick={() => setSelectedInvoice(appt)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
               <div style={{ width: 38, height: 38, borderRadius: 12, background: `${statusColor(appt.status)}18`, border: `1px solid ${statusColor(appt.status)}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{appt.status === "confirmed" || appt.status === "completed" ? "✓" : appt.status === "pending" ? "⏳" : "!"}</div>
-              <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600 }}>{appt.client_name}</div><div style={{ fontSize: 11, color: C.mid, marginTop: 2 }}>{appt.service} · {appt.day || appt.time}</div></div>
+              <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600 }}>{appt.client_name}</div><div style={{ fontSize: 11, color: C.mid, marginTop: 2 }}>{appt.service} · {formatDate(appt.day) || appt.time}</div></div>
               <div style={{ textAlign: "right" }}><div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{appt.price || "—"}</div><div style={{ fontSize: 10, color: statusColor(appt.status), marginTop: 3, fontWeight: 600, textTransform: "uppercase" }}>{statusLabel(appt.status)}</div></div>
             </div>
           ))}
@@ -1436,7 +1458,7 @@ function Payments({ navigate }) {
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 4 }}>{selectedInvoice.client_name}</div>
             <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>{selectedInvoice.service}</div>
             <Card style={{ padding: 16, marginBottom: 16 }}>
-              {[["Amount", selectedInvoice.price || "—"], ["Status", statusLabel(selectedInvoice.status)], ["Date", selectedInvoice.day || selectedInvoice.time || "—"], ["Duration", selectedInvoice.duration || "—"]].map(([k, v]) => (
+              {[["Amount", selectedInvoice.price || "—"], ["Status", statusLabel(selectedInvoice.status)], ["Date", formatDate(selectedInvoice.day) || selectedInvoice.time || "—"], ["Duration", selectedInvoice.duration || "—"]].map(([k, v]) => (
                 <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: k !== "Duration" ? `1px solid ${C.border}` : "none" }}>
                   <span style={{ fontSize: 13, color: C.mid }}>{k}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: k === "Amount" ? C.gold : k === "Status" ? statusColor(selectedInvoice.status) : C.text, textTransform: "capitalize" }}>{v}</span>
@@ -1508,7 +1530,9 @@ function Settings({ navigate }) {
     saveTimerRef.current = setTimeout(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const settings = { aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, tone, bufferTime, maxDaily, sunday, paymentDetails, displayName, profilePic };
+      const { data: existing } = await supabase.from("business_profiles").select("settings").eq("user_id", session.user.id).single();
+      const prev = existing?.settings || {};
+      const settings = { ...prev, aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, tone, bufferTime, maxDaily, sunday, paymentDetails };
       await supabase.from("business_profiles").upsert({ user_id: session.user.id, settings }, { onConflict: "user_id" });
       setAutoSaveMsg("Saved");
       setTimeout(() => setAutoSaveMsg(""), 1500);
@@ -1954,7 +1978,7 @@ function Notifications({ navigate }) {
         id: "appt_" + a.created_at,
         type: "booking",
         title: a.status === "cancelled" ? "Booking Cancelled" : "New Booking",
-        body: `${a.client_name} — ${a.service} on ${a.day} at ${a.time}${a.price ? " · " + a.price : ""}`,
+        body: `${a.client_name} — ${a.service} on ${formatDate(a.day)} at ${a.time}${a.price ? " · " + a.price : ""}`,
         read: a.status !== "pending",
         created_at: a.created_at,
       }));
@@ -4143,6 +4167,7 @@ Today: ${today} at ${time}.
 BUSINESS DATA:
 ${bizContext || "Loading..."}${memBlock}
 PERSONALITY: Warm, sharp, confident. Like a brilliant friend who knows this business inside out.
+IMPORTANT: When mentioning clients, ALWAYS use only their FIRST name (e.g. "Tasha" not "Tasha Monroe", "Kendra" not "Kendra Blake"). This feels more personal and natural.
 ${isVoice ? "VOICE MODE: 1-2 short natural sentences only. No markdown. Conversational." : "TEXT MODE: Use **bold** for key numbers/names. Max 3-4 sentences unless asked for more. No bullet spam."}
 MEMORY RULE: When the user tells you personal info worth remembering (their name, preferences, facts about them or their business), put "MEMORY:the fact" on its own line at the VERY START of your response, THEN always write your normal reply on the next line. You MUST always include a reply after the MEMORY line. Examples:
 User: "My name is Omar" → MEMORY:User's name is Omar\nGot it, **Omar**! What can I help with?
