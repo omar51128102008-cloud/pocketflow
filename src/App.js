@@ -239,7 +239,7 @@ function Login({ navigate }) {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 400, margin: "0 auto", width: "100%", position: "relative" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ width: 72, height: 72, borderRadius: 22, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, margin: "0 auto 16px", boxShadow: "0 0 60px rgba(139,92,246,0.35)", animation: "glowPulse 3s ease-in-out infinite" }}>✦</div>
-          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em" }}>Pocketflow</div>
+          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em" }}>Spool</div>
           <div style={{ fontSize: 14, color: C.mid, marginTop: 8, fontWeight: 400 }}>Your AI business assistant</div>
         </div>
         {resetMode ? (
@@ -330,7 +330,7 @@ function Onboarding({ navigate }) {
   if (done) return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
       <div style={{ width: 90, height: 90, borderRadius: 28, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, marginBottom: 28, boxShadow: `0 0 60px ${C.accentDark}44`, animation: "pop 0.5s cubic-bezier(0.34,1.56,0.64,1)" }}>✦</div>
-      <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 30, fontWeight: 800, marginBottom: 12, lineHeight: 1.2 }}>{bizName || "Your business"} is<br />live on Pocketflow.</div>
+      <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 30, fontWeight: 800, marginBottom: 12, lineHeight: 1.2 }}>{bizName || "Your business"} is<br />live on Spool.</div>
       <div style={{ fontSize: 15, color: C.mid, lineHeight: 1.6, marginBottom: 36 }}>Your AI assistant is running.<br />Sit back — we've got you.</div>
       <Card style={{ padding: "20px 24px", width: "100%", textAlign: "left", marginBottom: 28 }}>
         {["Monitoring your DMs", "Ready to book appointments", "Reminders armed and ready", "AI assistant online"].map((t, i) => (
@@ -480,7 +480,7 @@ function Onboarding({ navigate }) {
           <div className="fade-in">
             <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Step 5 of 5</div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Set up your<br />AI assistant</div>
-            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Choose what Pocketflow handles on its own.</div>
+            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Choose what Spool handles on its own.</div>
             {AI_PERMISSIONS.map(p => (
               <div key={p.id} onClick={() => setAiPerms(prev => prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id])} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: aiPerms.includes(p.id) ? C.accentSoft : C.surface, border: `1px solid ${aiPerms.includes(p.id) ? C.accent + "22" : C.border}`, borderRadius: 14, marginBottom: 10, cursor: "pointer" }}>
                 <div style={{ flex: 1, marginRight: 12 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{p.label}</div><div style={{ fontSize: 12, color: C.dim, marginTop: 3 }}>{p.sub}</div></div>
@@ -497,7 +497,7 @@ function Onboarding({ navigate }) {
       </div>
       <div style={{ padding: "16px 24px 36px", background: `linear-gradient(0deg,${C.bg} 80%,transparent)`, position: "sticky", bottom: 0, width: "100%", maxWidth: 640 }}>
         <BtnPrimary disabled={!canContinue()} onClick={() => step < totalSteps - 1 ? setStep(p => p + 1) : setDone(true)} style={{ width: "100%", padding: 16 }}>
-          {step === totalSteps - 1 ? "Launch Pocketflow 🚀" : "Continue"}
+          {step === totalSteps - 1 ? "Launch Spool 🚀" : "Continue"}
         </BtnPrimary>
         {step === 0 && <div style={{ textAlign: "center", fontSize: 12, color: C.dim, marginTop: 12 }}>Takes less than 3 minutes</div>}
       </div>
@@ -2789,7 +2789,7 @@ function Booking({ navigate }) {
             const end = new Date(start.getTime() + 60 * 60 * 1000);
             const fmt = d => d.toISOString().replace(/[-:]/g,"").split(".")[0] + "Z";
             const title = encodeURIComponent(`${selectedServices.map(s=>s.name).join(" + ")} at ${bizName}`);
-            const details = encodeURIComponent(`Appointment booked via Pocketflow\nDeposit paid: ${depositStr}\nContact: ${phone}`);
+            const details = encodeURIComponent(`Appointment booked via Spool\nDeposit paid: ${depositStr}\nContact: ${phone}`);
             const loc = encodeURIComponent(bizLocation || bizName);
             return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(start)}/${fmt(end)}&details=${details}&location=${loc}`;
           } catch { return null; }
@@ -2802,7 +2802,7 @@ function Booking({ navigate }) {
         ) : null;
       })()}
 
-      <div style={{ fontSize: 12, color: C.dim }}>Powered by <span style={{ color: C.accent, fontWeight: 700 }}>Pocketflow</span></div>
+      <div style={{ fontSize: 12, color: C.dim }}>Powered by <span style={{ color: C.accent, fontWeight: 700 }}>Spool</span></div>
     </div>
   );
 
@@ -4003,7 +4003,7 @@ function ShareLink({ navigate }) {
             </Card>
           ))}
         </div>
-        <div style={{ marginTop: 20, background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 16, padding: 14, fontSize: 13, color: C.mid, lineHeight: 1.7 }}>✦ Every business on Pocketflow gets their own unique link. When clients book through yours, appointments go straight to your dashboard.</div>
+        <div style={{ marginTop: 20, background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 16, padding: 14, fontSize: 13, color: C.mid, lineHeight: 1.7 }}>✦ Every business on Spool gets their own unique link. When clients book through yours, appointments go straight to your dashboard.</div>
       </div>
       <BottomNav active="home" navigate={navigate} />
     </div>
@@ -4294,7 +4294,7 @@ function AISidebarPanel({ navigate, isMobile }) {
     const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
     const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     const memBlock = memories.length > 0 ? `\nTHINGS YOU REMEMBER ABOUT THE USER:\n${memories.map(m => "- " + m).join("\n")}` : "";
-    return `You are ${aiName}, an AI business assistant inside Pocketflow.
+    return `You are ${aiName}, an AI business assistant inside Spool.
 Today: ${today} at ${time}.
 BUSINESS DATA:
 ${bizContext || "Loading..."}${memBlock}
@@ -4752,7 +4752,7 @@ export default function App() {
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800, marginBottom: 10 }}>Start your free trial</div>
             <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7, marginBottom: 24 }}>
               Get 14 days free — no credit card required.<br />
-              Unlock the full Pocketflow experience.
+              Unlock the full Spool experience.
             </div>
             <BtnPrimary onClick={() => navigate("subscription")} style={{ width: "100%", padding: 15, fontSize: 15, marginBottom: 12 }}>
               See Plans — from $19/mo

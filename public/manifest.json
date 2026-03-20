@@ -1,6 +1,6 @@
 {
-  "name": "Pocketflow",
-  "short_name": "Pocketflow",
+  "name": "Spool",
+  "short_name": "Spool",
   "description": "AI-powered booking & business management for beauty professionals",
   "start_url": "/pocketflow/",
   "display": "standalone",
