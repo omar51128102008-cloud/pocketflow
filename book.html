@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Book an Appointment · Pocketflow</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://js.stripe.com/v3/"></script>
   <style>
@@ -16,8 +16,8 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     ::-webkit-scrollbar { display: none; }
-    html, body { background: #06060a; font-family: 'Outfit', sans-serif; color: #f0eeff; min-height: 100vh; }
-    input, textarea { font-family: 'Outfit', sans-serif; color: #f1f0ff; }
+    html, body { background: #06060a; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; color: #f0eeff; min-height: 100vh; }
+    input, textarea { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; color: #f1f0ff; }
     input:focus, textarea:focus { outline: none; }
     input::placeholder, textarea::placeholder { color: #3d3d55; }
 
@@ -171,16 +171,17 @@ function toggleSvc(s) {
 
 async function loadBiz() {
   if (!BUSINESS_ID) { biz={name:'Invalid Link',location:'',userId:null}; render(); return; }
-  const [profileRes, servicesRes] = await Promise.all([
-    sb.from('business_profiles').select('biz_name,location,user_id,business_hours').eq('user_id',BUSINESS_ID).single(),
-    sb.from('services').select('*').eq('owner_id',BUSINESS_ID).neq('active',false).order('created_at',{ascending:true})
+  const [profileRes, servicesRes, reviewsRes] = await Promise.all([
+    sb.from('business_profiles').select('biz_name,location,user_id,business_hours,bio,phone,logo_url').eq('user_id',BUSINESS_ID).single(),
+    sb.from('services').select('*').eq('owner_id',BUSINESS_ID).neq('active',false).order('created_at',{ascending:true}),
+    sb.from('reviews').select('client_name,rating,text,service,created_at').eq('owner_id',BUSINESS_ID).order('created_at',{ascending:false}).limit(6),
   ]);
   if (profileRes.data) {
     let hrs = null;
     if (profileRes.data.business_hours) {
       try { hrs = typeof profileRes.data.business_hours === 'string' ? JSON.parse(profileRes.data.business_hours) : profileRes.data.business_hours; } catch(e) {}
     }
-    biz = { name: profileRes.data.biz_name||'Book an Appointment', location: profileRes.data.location||'', userId: profileRes.data.user_id, hours: hrs };
+    biz = { name: profileRes.data.biz_name||'Book an Appointment', location: profileRes.data.location||'', userId: profileRes.data.user_id, hours: hrs, bio: profileRes.data.bio||'', phone: profileRes.data.phone||'', logo: profileRes.data.logo_url||'' };
     document.title = `Book · ${biz.name}`;
   } else {
     biz = { name:'Business Not Found', location:'', userId:null, hours: null };
@@ -188,6 +189,8 @@ async function loadBiz() {
   if (servicesRes.data && servicesRes.data.length > 0) {
     S.services = servicesRes.data.map(s => ({ id: s.id, name: s.name, price: Number(s.price), duration: s.duration, icon: s.icon||'✨', desc: s.description||'' }));
   }
+  biz.reviews = reviewsRes.data || [];
+  biz.avgRating = biz.reviews.length > 0 ? (biz.reviews.reduce((s,r) => s + (r.rating||5), 0) / biz.reviews.length).toFixed(1) : null;
   render();
 }
 
@@ -399,7 +402,7 @@ function render() {
     <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px;width:100%">
       <div class="fade-in" style="max-width:520px;width:100%;text-align:center">
         <div style="width:90px;height:90px;border-radius:28px;background:${C.green}22;border:2px solid ${C.green}44;display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto 28px;animation:pop 0.5s cubic-bezier(0.34,1.56,0.64,1)">✓</div>
-        <div style="font-family:'Playfair Display',serif;font-size:34px;font-weight:800;margin-bottom:8px">You're booked!</div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:34px;font-weight:800;margin-bottom:8px">You're booked!</div>
         <div style="font-size:15px;color:${C.mid};line-height:2;margin-bottom:28px">
           ${S.selectedServices.map(s=>s.name).join(' + ')}<br/>
           ${S.selectedDate} at ${S.selectedTime}<br/>
@@ -429,7 +432,7 @@ function render() {
     <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px">
       <div style="text-align:center;max-width:360px">
         <div style="font-size:52px;margin-bottom:16px">🔗</div>
-        <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:800;margin-bottom:10px">Invalid Booking Link</div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:24px;font-weight:800;margin-bottom:10px">Invalid Booking Link</div>
         <div style="font-size:14px;color:${C.mid};line-height:1.7">This link doesn't include a business ID.<br/>Ask your stylist to share their correct booking link.</div>
       </div>
     </div>`;
@@ -447,10 +450,17 @@ function render() {
         ${S.step>0?`<button class="btn-ghost" id="backBtn" style="position:absolute;top:48px;left:16px">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Back
         </button>`:''}
-        <div style="width:76px;height:76px;border-radius:22px;background:linear-gradient(135deg,${C.accentDark},${C.accent});display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 14px;box-shadow:0 0 40px ${C.accentDark}55">✦</div>
-        <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:800;margin-bottom:4px">${biz.name||'<span style="color:'+C.dim+'">Loading...</span>'}</div>
-        ${biz.location?`<div style="font-size:13px;color:${C.mid};margin-bottom:4px">${biz.location}</div>`:''}
-        <div style="display:flex;gap:6px;margin-top:20px">
+        ${biz.logo
+          ? `<img src="${biz.logo}" alt="" style="width:76px;height:76px;border-radius:22px;object-fit:cover;margin:0 auto 14px;display:block;border:2px solid ${C.accent}44">`
+          : `<div style="width:76px;height:76px;border-radius:22px;background:linear-gradient(135deg,${C.accentDark},${C.accent});display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 14px;box-shadow:0 0 40px ${C.accentDark}55">✦</div>`}
+        <div style="font-size:26px;font-weight:800;margin-bottom:4px;font-family:'DM Sans',sans-serif">${biz.name||'<span style="color:'+C.dim+'">Loading...</span>'}</div>
+        ${biz.location?`<div style="font-size:13px;color:${C.mid};margin-bottom:4px">📍 ${biz.location}</div>`:''}
+        ${biz.avgRating?`<div style="display:inline-flex;align-items:center;gap:6px;background:${C.surface};border:1px solid ${C.border};border-radius:100px;padding:6px 14px;margin-top:8px;margin-bottom:4px">
+          <span style="color:#fbbf24;font-size:14px">★</span>
+          <span style="font-size:13px;font-weight:700">${biz.avgRating}</span>
+          <span style="font-size:11px;color:${C.dim}">(${biz.reviews.length} review${biz.reviews.length!==1?'s':''})</span>
+        </div>`:''}
+        <div style="display:flex;gap:6px;margin-top:16px">
           ${steps.map((s,i)=>`
             <div style="flex:1;text-align:center">
               <div class="step-bar" style="background:${i<=S.step?'linear-gradient(90deg,'+C.accentDark+','+C.accent+')':C.border};margin-bottom:5px"></div>
@@ -458,6 +468,20 @@ function render() {
             </div>`).join('')}
         </div>
       </div>
+      ${biz.bio && S.step === 0 ? `<div style="padding:0 24px 16px"><div style="font-size:13px;color:${C.mid};line-height:1.7;text-align:center">${biz.bio}</div></div>` : ''}
+      ${biz.reviews && biz.reviews.length > 0 && S.step === 0 ? `
+      <div class="desktop-summary" style="padding:0 24px 20px">
+        <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Client Reviews</div>
+        ${biz.reviews.slice(0,3).map(r => `
+          <div style="background:${C.surface};border:1px solid ${C.border};border-radius:14px;padding:12px 14px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:13px;font-weight:700">${(r.client_name||'Client').split(' ')[0]}</span>
+              <span style="font-size:12px;color:#fbbf24">${'★'.repeat(r.rating||5)}</span>
+            </div>
+            ${r.text?`<div style="font-size:12px;color:${C.mid};line-height:1.5">${r.text.slice(0,120)}${r.text.length>120?'...':''}</div>`:''}
+          </div>
+        `).join('')}
+      </div>` : ''}
 
       <!-- Desktop summary sidebar -->
       <div class="desktop-summary" style="padding:20px 24px;border-bottom:1px solid ${C.border}">
@@ -520,7 +544,7 @@ function renderCTA() {
 
 function renderStep() {
   if (S.step===0) return `
-    <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:800;margin-bottom:6px">What are you coming in for?</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px">What are you coming in for?</div>
     <div style="font-size:14px;color:${C.mid};margin-bottom:24px">Select one or more services</div>
     ${S.services.length===0 ? `
       <div style="text-align:center;padding:60px 20px;color:${C.dim}">
@@ -551,10 +575,23 @@ function renderStep() {
       <div style="background:${C.accentDark}18;border:1px solid ${C.accentDark}33;border-radius:14px;padding:14px 18px;margin-top:8px">
         <div style="font-size:13px;color:${C.mid};margin-bottom:6px">${S.selectedServices.map(s=>s.name).join(' + ')}</div>
         <div style="font-size:16px;font-weight:800;color:${C.gold}">Total: $${total()}+ &nbsp;·&nbsp; <span style="color:${C.green}">Deposit: $${deposit()}</span></div>
-      </div>`:''}`;
+      </div>`:''}
+    ${biz.reviews && biz.reviews.length > 0 ? `
+    <div style="margin-top:24px">
+      <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">What clients say</div>
+      ${biz.reviews.slice(0,3).map(r => `
+        <div style="background:${C.surface};border:1px solid ${C.border};border-radius:14px;padding:12px 14px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:13px;font-weight:700">${(r.client_name||'Client').split(' ')[0]}</span>
+            <span style="font-size:12px;color:#fbbf24">${'★'.repeat(r.rating||5)}</span>
+          </div>
+          ${r.text?`<div style="font-size:12px;color:${C.mid};line-height:1.5">${r.text.slice(0,120)}${r.text.length>120?'...':''}</div>`:''}
+        </div>
+      `).join('')}
+    </div>` : ''}`;
 
   if (S.step===1) return `
-    <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:800;margin-bottom:6px">When works for you?</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px">When works for you?</div>
     <div style="font-size:14px;color:${C.mid};margin-bottom:24px">${S.selectedServices.map(s=>s.name).join(' + ')}</div>
     <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">Available Dates</div>
     <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:16px;margin-bottom:28px">
@@ -587,7 +624,7 @@ function renderStep() {
       </div>`:''}`;
 
   if (S.step===2) return `
-    <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:800;margin-bottom:6px">Your details</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px">Your details</div>
     <div style="font-size:14px;color:${C.mid};margin-bottom:24px">Almost there — just a few details</div>
     <div class="card" style="padding:18px;margin-bottom:24px">
       ${[['Services',S.selectedServices.map(s=>s.name).join(', ')],['Date',S.selectedDate],['Time',S.selectedTime],['Total','$'+total()+'+']].map(([k,v],i,a)=>`
@@ -603,7 +640,7 @@ function renderStep() {
     <textarea class="input" id="f_note" placeholder="Notes — hair length, allergies, special requests..." rows="3" style="resize:none;margin-bottom:0">${S.note}</textarea>`;
 
   if (S.step===3) return `
-    <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:800;margin-bottom:6px">Secure your spot</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px">Secure your spot</div>
     <div style="font-size:14px;color:${C.mid};margin-bottom:24px">Pay a 30% deposit to confirm your booking</div>
     <div class="card" style="padding:18px;margin-bottom:24px">
       ${[['Services',S.selectedServices.map(s=>s.name).join(', ')],['Date & Time',S.selectedDate+' at '+S.selectedTime],['Total estimate','$'+total()+'+'],['Deposit due now','$'+deposit()]].map(([k,v],i,a)=>`
@@ -766,7 +803,7 @@ function renderManage() {
   }
 
   if (!manageAppt) {
-    app.innerHTML = `<div style="text-align:center;max-width:360px;padding:32px"><div style="font-size:52px;margin-bottom:16px">🔍</div><div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:800;margin-bottom:10px">Booking Not Found</div><div style="font-size:14px;color:${C.mid};line-height:1.7">We couldn't find a booking with this reference. It may have been cancelled or the link is incorrect.</div></div>`;
+    app.innerHTML = `<div style="text-align:center;max-width:360px;padding:32px"><div style="font-size:52px;margin-bottom:16px">🔍</div><div style="font-family:'DM Sans',sans-serif;font-size:24px;font-weight:800;margin-bottom:10px">Booking Not Found</div><div style="font-size:14px;color:${C.mid};line-height:1.7">We couldn't find a booking with this reference. It may have been cancelled or the link is incorrect.</div></div>`;
     return;
   }
 
@@ -801,7 +838,7 @@ function renderManage() {
   <div style="max-width:480px;width:100%;padding:32px" class="fade-in">
     <div style="text-align:center;margin-bottom:24px">
       <div style="width:70px;height:70px;border-radius:22px;background:${isCancelled ? C.red+'22' : C.accent+'22'};border:2px solid ${isCancelled ? C.red+'44' : C.accent+'44'};display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px">${isCancelled ? '✕' : '📅'}</div>
-      <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:800;margin-bottom:4px">Your Booking</div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:26px;font-weight:800;margin-bottom:4px">Your Booking</div>
       <div style="font-size:14px;color:${C.mid}">${biz.name || ''}${biz.location ? ' · '+biz.location : ''}</div>
     </div>
     <div class="card" style="padding:18px;margin-bottom:20px">
