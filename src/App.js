@@ -36,6 +36,36 @@ const GLOBAL_STYLES = `
   @keyframes blobMorph{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%}25%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%}50%{border-radius:50% 60% 30% 60%/30% 40% 70% 50%}75%{border-radius:40% 60% 50% 40%/70% 30% 50% 60%}}
   @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
   @keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(139,92,246,0.15)}50%{box-shadow:0 0 40px rgba(139,92,246,0.3)}}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  @keyframes scaleIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}
+  @keyframes slideRight{from{transform:translateX(-12px);opacity:0}to{transform:translateX(0);opacity:1}}
+  @keyframes glow{0%,100%{box-shadow:0 0 8px rgba(196,181,253,0.15)}50%{box-shadow:0 0 24px rgba(196,181,253,0.3)}}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:rgba(196,181,253,0.4) !important;box-shadow:0 0 0 3px rgba(139,92,246,0.1) !important;}
+  input::placeholder,textarea::placeholder{color:#4a4a66;}
+  input[type=range]{-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,0.06);}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#c4b5fd);cursor:pointer;box-shadow:0 0 12px rgba(139,92,246,0.4);}
+  select{appearance:none;}
+  button:active:not(:disabled){transform:scale(0.97);}
+  @media (min-width: 768px) {
+    .mobile-only { display: none !important; }
+    .desktop-screen { padding-top: 40px !important; padding-bottom: 40px !important; }
+    .desktop-screen > div:first-child { position: relative !important; top: auto !important; padding-top: 0 !important; }
+    .desktop-two-col { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 20px !important; align-items: start !important; }
+    .desktop-three-col { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 16px !important; }
+  }
+`;
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideUp{from{transform:translateY(100%);opacity:0.5}to{transform:translateY(0);opacity:1}}
+  @keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  @keyframes orbFloat{0%,100%{transform:translateY(0px) scale(1)}50%{transform:translateY(-6px) scale(1.03)}}
+  @keyframes orbSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes orbSpinRev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+  @keyframes orbPulse{0%,100%{transform:scale(1);opacity:0.7}50%{transform:scale(1.15);opacity:1}}
+  @keyframes wave1{0%,100%{d:path("M0,50 Q25,20 50,50 Q75,80 100,50")}50%{d:path("M0,50 Q25,80 50,50 Q75,20 100,50")}}
+  @keyframes blobMorph{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%}25%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%}50%{border-radius:50% 60% 30% 60%/30% 40% 70% 50%}75%{border-radius:40% 60% 50% 40%/70% 30% 50% 60%}}
+  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(139,92,246,0.15)}50%{box-shadow:0 0 40px rgba(139,92,246,0.3)}}
   input:focus,textarea:focus,select:focus{outline:none;border-color:rgba(180,156,255,0.4) !important;}
   input::placeholder,textarea::placeholder{color:#4a4a66;}
   input[type=range]{-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,0.06);}
@@ -61,7 +91,7 @@ const Toggle = ({ on, onToggle }) => (
 );
 
 const Card = ({ children, style, onClick }) => (
-  <div onClick={onClick} style={{ background: "rgba(14,14,22,0.6)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18, transition: "border-color 0.3s, box-shadow 0.3s", ...style }}>{children}</div>
+  <div onClick={onClick} style={{ background: "rgba(14,14,22,0.55)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, transition: "border-color 0.3s, box-shadow 0.3s, transform 0.2s", cursor: onClick ? "pointer" : undefined, ...style }} onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(196,181,253,0.15)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(139,92,246,0.06)"; }} onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.boxShadow = "none"; }}>{children}</div>
 );
 
 const SectionLabel = ({ children }) => (
@@ -82,7 +112,7 @@ function useDesktop() {
 }
 
 const BtnPrimary = ({ children, onClick, disabled, style }) => (
-  <button onClick={onClick} disabled={disabled} style={{ background: disabled ? "rgba(255,255,255,0.05)" : `linear-gradient(135deg,${C.accentDark},${C.accent})`, border: "none", borderRadius: 14, color: disabled ? C.dim : "#fff", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", fontWeight: 600, fontSize: 15, cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.3s", boxShadow: disabled ? "none" : "0 4px 24px rgba(139,92,246,0.3)", ...style }}>{children}</button>
+  <button onClick={onClick} disabled={disabled} style={{ background: disabled ? "rgba(255,255,255,0.05)" : `linear-gradient(135deg,${C.accentDark},${C.accent})`, border: "none", borderRadius: 14, color: disabled ? C.dim : "#fff", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", fontWeight: 600, fontSize: 15, cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.3s cubic-bezier(0.16,1,0.3,1)", boxShadow: disabled ? "none" : "0 4px 24px rgba(139,92,246,0.25)", ...style }} onMouseEnter={e => { if (!disabled) e.currentTarget.style.boxShadow = "0 6px 32px rgba(139,92,246,0.4)"; }} onMouseLeave={e => { if (!disabled) e.currentTarget.style.boxShadow = "0 4px 24px rgba(139,92,246,0.25)"; }}>{children}</button>
 );
 
 const BackBtn = ({ onBack }) => (
@@ -99,14 +129,18 @@ const BottomNav = ({ active, navigate }) => {
     { id: "clients", label: "Clients", d: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
   ];
   return (
-    <div className="mobile-only" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 400, background: "rgba(10,10,16,0.85)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", padding: "8px 0 22px", zIndex: 50 }}>
-      {items.map(t => (
-        <div key={t.id} onClick={() => navigate(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer", position: "relative" }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active === t.id ? C.accent : C.dim} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d={t.d}/></svg>
-          <div style={{ fontSize: 9, fontWeight: 600, color: active === t.id ? C.accent : C.dim, letterSpacing: 0.5, transition: "color 0.2s" }}>{t.label}</div>
-          {active === t.id && <div style={{ position: "absolute", top: -8, width: 24, height: 2, background: `linear-gradient(90deg,${C.accentDark},${C.accent})`, borderRadius: 2 }} />}
-        </div>
-      ))}
+    <div className="mobile-only" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 400, background: "rgba(6,6,10,0.92)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", padding: "10px 0 24px", zIndex: 50 }}>
+      {items.map(t => {
+        const isActive = active === t.id;
+        return (
+          <div key={t.id} onClick={() => navigate(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer", position: "relative", transition: "transform 0.2s" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: isActive ? `${C.accent}18` : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isActive ? C.accent : C.dim} strokeWidth={isActive ? "2" : "1.6"} strokeLinecap="round" strokeLinejoin="round" style={{ transition: "stroke 0.2s" }}><path d={t.d}/></svg>
+            </div>
+            <div style={{ fontSize: 9, fontWeight: isActive ? 700 : 500, color: isActive ? C.accent : C.dim, letterSpacing: 0.3, transition: "color 0.2s" }}>{t.label}</div>
+          </div>
+        );
+      })}
     </div>
   );
 };

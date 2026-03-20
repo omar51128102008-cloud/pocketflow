@@ -86,6 +86,7 @@ const sb = createClient(
 const BUSINESS_ID = new URLSearchParams(window.location.search).get('id');
 const MANAGE_REF = new URLSearchParams(window.location.search).get('manage');
 const REVIEW_REF = new URLSearchParams(window.location.search).get('review');
+const PORTAL = new URLSearchParams(window.location.search).get('portal');
 
 function genRef() {
   return 'PF' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -141,7 +142,7 @@ let S = {
   step:0, services: [],
   selectedServices:[], selectedDate:null, selectedTime:null, bookedTimes:[],
   name:'', phone:'', email:'', instagram:'', note:'', promoCode:'', promoResult:null, discount:0,
-  cardName:'',
+  cardName:'', recurring:false, recurFreq:'Every 4 weeks',
   booked:false, paying:false, error:'', bookingRef:'',
 };
 
@@ -418,6 +419,7 @@ function render() {
         <div style="font-size:13px;color:${C.mid};line-height:1.8;margin-bottom:20px">
           You'll receive a reminder 24 hours before your appointment ✨<br/>
           ${S.bookingRef ? `<a href="?manage=${S.bookingRef}" style="color:${C.accent};font-weight:600;text-decoration:none">Manage or cancel your booking</a><br/>` : ''}
+          <a href="?id=${BUSINESS_ID}&portal=true" style="color:${C.mid};font-weight:600;text-decoration:none">View all my appointments</a><br/>
           <span style="font-size:12px;color:${C.dim}">Ref: ${S.bookingRef || 'N/A'}</span>
         </div>
         ${buildGCalUrl() ? '<a href="'+buildGCalUrl()+'" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 0;border-radius:14px;background:'+C.surface+';border:1px solid '+C.border+';font-size:14px;font-weight:700;color:'+C.text+';text-decoration:none;margin-bottom:16px">📅 Add to Google Calendar</a>' : ''}
@@ -637,7 +639,22 @@ function renderStep() {
     <input class="input" id="f_phone"     type="tel" placeholder="Phone number *"     value="${S.phone}" />
     <input class="input" id="f_email"     type="email" placeholder="Email (for receipt, optional)" value="${S.email}" />
     <input class="input" id="f_instagram" placeholder="Instagram (optional)"          value="${S.instagram}" />
-    <textarea class="input" id="f_note" placeholder="Notes — hair length, allergies, special requests..." rows="3" style="resize:none;margin-bottom:0">${S.note}</textarea>`;
+    <textarea class="input" id="f_note" placeholder="Notes — hair length, allergies, special requests..." rows="3" style="resize:none;margin-bottom:16px">${S.note}</textarea>
+    <div class="card" style="padding:14px 16px;margin-bottom:0">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:14px;font-weight:700">Book recurring</div><div style="font-size:12px;color:${C.mid};margin-top:2px">Auto-rebook this service on a schedule</div></div>
+        <div id="recurToggle" style="width:46px;height:26px;border-radius:100px;background:${S.recurring ? 'linear-gradient(135deg,'+C.accentDark+','+C.accent+')' : 'rgba(255,255,255,0.08)'};position:relative;cursor:pointer;transition:background 0.3s;flex-shrink:0">
+          <div style="width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:3px;left:${S.recurring ? '23' : '3'}px;transition:left 0.3s;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>
+        </div>
+      </div>
+      ${S.recurring ? `
+        <div style="display:flex;gap:8px;margin-top:12px">
+          ${['Every 2 weeks','Every 3 weeks','Every 4 weeks','Every 6 weeks'].map(f => `
+            <div class="recur-freq" data-freq="${f}" style="flex:1;padding:9px 4px;border-radius:10px;background:${S.recurFreq === f ? C.accent+'22' : C.surface};border:1px solid ${S.recurFreq === f ? C.accent : C.border};text-align:center;font-size:10px;font-weight:600;color:${S.recurFreq === f ? C.accent : C.mid};cursor:pointer">${f.replace('Every ','')}</div>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>`;
 
   if (S.step===3) return `
     <div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px">Secure your spot</div>
@@ -726,6 +743,12 @@ function bindEvents() {
   // Step 2 — update state and refresh CTA so Continue button enables as you type
   [['f_name','name'],['f_phone','phone'],['f_email','email'],['f_instagram','instagram'],['f_note','note']].forEach(([id,key])=>{
     document.getElementById(id)?.addEventListener('input',e=>{ S[key]=e.target.value; refreshCTA(); });
+  });
+
+  // Recurring toggle
+  document.getElementById('recurToggle')?.addEventListener('click', () => set({ recurring: !S.recurring }));
+  document.querySelectorAll('.recur-freq').forEach(el => {
+    el.addEventListener('click', () => set({ recurFreq: el.dataset.freq }));
   });
 
   document.getElementById('f_cardName')?.addEventListener('input',e=>{
@@ -958,7 +981,124 @@ function renderReview() {
   document.getElementById('submitReviewBtn')?.addEventListener('click', submitReview);
 }
 
-if (REVIEW_REF) { loadReview(); } else if (MANAGE_REF) { loadManageBooking(); } else { loadBiz(); }
+// ── CLIENT PORTAL ──
+let portalPhone = '';
+let portalAppts = null;
+let portalLoading = false;
+let portalBizName = '';
+
+async function loadPortal() {
+  if (!BUSINESS_ID) return;
+  const { data: bp } = await sb.from('business_profiles').select('biz_name').eq('user_id', BUSINESS_ID).single();
+  portalBizName = bp?.biz_name || 'Business';
+  renderPortal();
+}
+
+async function searchPortalAppts() {
+  const phone = portalPhone.replace(/\D/g, '');
+  if (phone.length < 7) { alert('Please enter a valid phone number'); return; }
+  portalLoading = true;
+  renderPortal();
+
+  // Search by phone with various formats
+  const formats = [phone, '+' + phone, '+1' + phone, '(' + phone.slice(0,3) + ') ' + phone.slice(3,6) + '-' + phone.slice(6)];
+  let allAppts = [];
+  for (const fmt of formats) {
+    const { data } = await sb.from('appointments').select('*').eq('owner_id', BUSINESS_ID).eq('client_phone', fmt).order('created_at', { ascending: false });
+    if (data && data.length > 0) { allAppts = data; break; }
+  }
+  // Also try matching by name via clients table
+  if (allAppts.length === 0) {
+    for (const fmt of formats) {
+      const { data: clients } = await sb.from('clients').select('name').eq('owner_id', BUSINESS_ID).eq('phone', fmt).limit(1);
+      if (clients && clients[0]) {
+        const { data } = await sb.from('appointments').select('*').eq('owner_id', BUSINESS_ID).eq('client_name', clients[0].name).order('created_at', { ascending: false });
+        if (data) allAppts = data;
+        break;
+      }
+    }
+  }
+  portalAppts = allAppts;
+  portalLoading = false;
+  renderPortal();
+}
+
+function renderPortal() {
+  const app = document.getElementById('app');
+  app.style.display = 'flex';
+  app.style.alignItems = 'center';
+  app.style.justifyContent = 'center';
+  app.style.minHeight = '100vh';
+
+  if (portalAppts === null) {
+    // Phone entry screen
+    app.innerHTML = `
+    <div style="max-width:420px;width:100%;padding:32px;text-align:center" class="fade-in">
+      <div style="width:76px;height:76px;border-radius:22px;background:linear-gradient(135deg,${C.accentDark},${C.accent});display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 20px;box-shadow:0 0 40px ${C.accentDark}44">📅</div>
+      <div style="font-size:24px;font-weight:800;margin-bottom:6px">My Appointments</div>
+      <div style="font-size:14px;color:${C.mid};margin-bottom:28px;line-height:1.6">${portalBizName}<br/>Enter the phone number you booked with</div>
+      <input id="portalPhoneInput" type="tel" placeholder="(555) 123-4567" value="${portalPhone}" style="width:100%;background:${C.surface};border:1px solid ${C.border};border-radius:14px;padding:16px;font-size:16px;color:${C.text};font-family:'DM Sans',sans-serif;text-align:center;margin-bottom:16px;letter-spacing:1px" />
+      <button class="btn" id="portalSearchBtn" ${portalLoading ? 'disabled' : ''}>${portalLoading ? '<span class="spinner"></span> Searching...' : 'Find My Appointments'}</button>
+      <div style="margin-top:20px"><a href="?id=${BUSINESS_ID}" style="font-size:13px;color:${C.accent};text-decoration:none;font-weight:600">← Book a new appointment</a></div>
+    </div>`;
+    const inp = document.getElementById('portalPhoneInput');
+    inp?.addEventListener('input', e => { portalPhone = e.target.value; });
+    inp?.addEventListener('keydown', e => { if (e.key === 'Enter') searchPortalAppts(); });
+    document.getElementById('portalSearchBtn')?.addEventListener('click', searchPortalAppts);
+    return;
+  }
+
+  // Results screen
+  const upcoming = portalAppts.filter(a => a.status === 'confirmed' || a.status === 'pending');
+  const past = portalAppts.filter(a => a.status !== 'confirmed' && a.status !== 'pending');
+  const clientName = portalAppts[0]?.client_name || 'there';
+
+  app.innerHTML = `
+  <div style="max-width:520px;width:100%;padding:32px" class="fade-in">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:24px;font-weight:800;margin-bottom:4px">Hey, ${clientName.split(' ')[0]}!</div>
+      <div style="font-size:14px;color:${C.mid}">${portalBizName} · ${portalAppts.length} appointment${portalAppts.length !== 1 ? 's' : ''}</div>
+    </div>
+    ${upcoming.length > 0 ? `
+      <div style="font-size:11px;color:${C.accent};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Upcoming</div>
+      ${upcoming.map(a => `
+        <div class="card" style="padding:16px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-size:15px;font-weight:700">${a.service}</div>
+            <div style="font-size:12px;padding:4px 10px;border-radius:100px;background:${a.status==='confirmed'?C.green:C.yellow}22;color:${a.status==='confirmed'?C.green:C.yellow};font-weight:700;text-transform:capitalize">${a.status}</div>
+          </div>
+          <div style="display:flex;gap:16px;font-size:13px;color:${C.mid}">
+            <span>📅 ${a.day}</span><span>🕐 ${a.time}</span><span style="color:${C.gold};font-weight:700">${a.price}</span>
+          </div>
+          ${a.booking_ref ? `<div style="margin-top:10px;display:flex;gap:8px">
+            <a href="?manage=${a.booking_ref}" style="flex:1;text-align:center;padding:10px;border-radius:10px;background:${C.surface};border:1px solid ${C.border};font-size:12px;font-weight:600;color:${C.mid};text-decoration:none">Manage</a>
+            <a href="?review=${a.booking_ref}" style="flex:1;text-align:center;padding:10px;border-radius:10px;background:${C.accent}18;border:1px solid ${C.accent}33;font-size:12px;font-weight:600;color:${C.accent};text-decoration:none">Leave Review</a>
+          </div>` : ''}
+        </div>
+      `).join('')}
+    ` : '<div style="text-align:center;padding:20px;color:'+C.dim+';font-size:13px">No upcoming appointments</div>'}
+    ${past.length > 0 ? `
+      <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;margin-top:20px">Past</div>
+      ${past.slice(0,5).map(a => `
+        <div class="card" style="padding:14px 16px;margin-bottom:8px;opacity:0.7">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><div style="font-size:14px;font-weight:600">${a.service}</div><div style="font-size:12px;color:${C.dim};margin-top:2px">${a.day} · ${a.time}</div></div>
+            <div style="font-size:13px;font-weight:700;color:${a.status==='cancelled'?C.red:C.green};text-transform:capitalize">${a.status}</div>
+          </div>
+        </div>
+      `).join('')}
+    ` : ''}
+    <div style="text-align:center;margin-top:24px">
+      <a href="?id=${BUSINESS_ID}" class="btn" style="display:inline-block;text-decoration:none;padding:14px 32px">Book New Appointment</a>
+    </div>
+    <div style="text-align:center;margin-top:16px">
+      <span onclick="portalAppts=null;renderPortal()" style="font-size:12px;color:${C.dim};cursor:pointer">Search different number</span>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Pocketflow</span></div>
+  </div>`;
+}
+
+if (PORTAL && BUSINESS_ID) { loadPortal(); } else if (REVIEW_REF) { loadReview(); } else if (MANAGE_REF) { loadManageBooking(); } else { loadBiz(); }
 </script>
 </body>
 </html>
