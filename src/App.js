@@ -546,7 +546,27 @@ function Home({ navigate }) {
       const aiHandled = allMsgs.filter(m => m.handled).length;
       const clientCount = (clientsRes.data || []).length;
 
-      setStats({ weekRevenue, todayCount, aiHandled, clientCount });
+      // This week vs last week comparison
+      const nowMs = Date.now();
+      const oneWeek = 7 * 86400000;
+      const thisWeekAppts = allAppts.filter(a => a.status === "confirmed" && a.created_at && (nowMs - new Date(a.created_at).getTime()) < oneWeek);
+      const lastWeekAppts = allAppts.filter(a => a.status === "confirmed" && a.created_at && (nowMs - new Date(a.created_at).getTime()) >= oneWeek && (nowMs - new Date(a.created_at).getTime()) < oneWeek * 2);
+      const thisWeekRev = thisWeekAppts.reduce((s, a) => s + (parseInt((a.price||"0").replace(/\D/g,""))||0), 0);
+      const lastWeekRev = lastWeekAppts.reduce((s, a) => s + (parseInt((a.price||"0").replace(/\D/g,""))||0), 0);
+      const revChange = lastWeekRev > 0 ? Math.round(((thisWeekRev - lastWeekRev) / lastWeekRev) * 100) : thisWeekRev > 0 ? 100 : 0;
+
+      // Milestones
+      const totalRev = allAppts.filter(a => a.status === "confirmed").reduce((s, a) => s + (parseInt((a.price||"0").replace(/\D/g,""))||0), 0);
+      const totalAppts = allAppts.length;
+      const milestones = [];
+      if (clientCount >= 50 && clientCount < 55) milestones.push({ icon: "🎉", text: "50 clients! You're building something real." });
+      if (clientCount >= 100 && clientCount < 105) milestones.push({ icon: "🔥", text: "100 clients! Your business is on fire." });
+      if (totalRev >= 1000 && totalRev < 1100) milestones.push({ icon: "💰", text: "$1,000 earned! First milestone unlocked." });
+      if (totalRev >= 5000 && totalRev < 5200) milestones.push({ icon: "💎", text: "$5,000 earned! You're a pro." });
+      if (totalRev >= 10000 && totalRev < 10500) milestones.push({ icon: "🚀", text: "$10,000 earned! Incredible growth." });
+      if (totalAppts >= 100 && totalAppts < 105) milestones.push({ icon: "📅", text: "100 appointments! Consistency is key." });
+
+      setStats({ weekRevenue: thisWeekRev, todayCount, aiHandled, clientCount, revChange, milestones, lastWeekRev });
     };
     load();
   }, []);
@@ -592,6 +612,28 @@ function Home({ navigate }) {
           ))}
         </div>
       </div>
+
+      {/* Revenue comparison */}
+      {(stats.revChange !== 0 || stats.lastWeekRev > 0) && (
+        <div style={{ padding: "0 20px", marginBottom: 4 }}>
+          <div style={{ background: stats.revChange >= 0 ? `${C.green}12` : `${C.red}12`, border: `1px solid ${stats.revChange >= 0 ? C.green : C.red}33`, borderRadius: 14, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontSize: 13, color: C.text }}>{stats.revChange >= 0 ? "↑" : "↓"} <span style={{ fontWeight: 700, color: stats.revChange >= 0 ? C.green : C.red }}>{Math.abs(stats.revChange)}%</span> vs last week</div>
+            <div style={{ fontSize: 12, color: C.dim }}>Last week: ${stats.lastWeekRev || 0}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Milestones */}
+      {stats.milestones && stats.milestones.length > 0 && (
+        <div style={{ padding: "0 20px", marginBottom: 4 }}>
+          {stats.milestones.map((m, i) => (
+            <div key={i} style={{ background: `linear-gradient(135deg,${C.accentDark}18,${C.gold}12)`, border: `1px solid ${C.gold}33`, borderRadius: 14, padding: "14px 16px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, animation: "fadeUp 0.5s ease" }}>
+              <span style={{ fontSize: 24 }}>{m.icon}</span>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{m.text}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Two column on desktop */}
       <div style={{ padding: "0 20px" }}>
