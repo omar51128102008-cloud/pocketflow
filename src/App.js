@@ -16,6 +16,8 @@ const C = {
   text: "#f5f3ff", mid: "#9ca3af", dim: "#6b7280",
 };
 
+const SPOOL_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAFRElEQVR42u2aT0hUXxTH75/3en/mz1s8qYWLxBYFE9iiRYiGzSMsnTcEYYW0cGEiboN20aK1Qi2iEYn+QhBKiM5mVFRMSSTyD1otstFHMKOg6fx5M+Pc+1tcGEScCl/+5he/e5eHucz53HO+59xzZ2B5eTn4mxcCf/niAByAA3AADsABOAAH4AAcgANwgP8zAEJIEASE0KFuKbYE597btp1KpURR9Hq9+Xz+l1swxtvb29lsVpZlVVUJIU4cwF6v14n3yWTy5MmTzc3NHo9ncXFRURRK6c+939jYOH/+fFNTUy6Xi0ajkiT9fMthRQBCmMlkKisr+/v7dV0HANy9e7ezs/Po0aM7Ozv7f5kgxOPx1tbWBw8eQAht2w4EAh8/fnQSB+Tw+GtqanRdt22bEHL//v3bt2/H43FBEH7i/cOHDwEA6XRalmXDMFKplBMxHHwnpVRRlOnpadu2ZVmmlObz+WIMu70nhBBCZFkmhIyPjyuK4kQGB9cApVSSpNXV1cXFxWAwKAgCpZRSahiGbdtDQ0Mej4d5hjFeX1+/desW855FD0LY0dERDoe9Xm9pABiDqqofPnxYWloqxgAh3NraunHjxqNHj5ijEELm/bNnz3Rd/53CdVgAAABCiKZps7Oznz59Mk2TZQ4hhDEMDw+7XC6M8dOnTzVNo5RCCAkhbW1tL168OHbsWDG5/6t9IJFIIIRevXoFAHjy5Ikoivl8nukBANDV1aVp2tbWFoSQAUAIT5w4IQhCPp9nxlL2gVQqVVFREQwGdV3v7e1dXl5mcSjkUjabDYfD0Wg0GAwyvSKEamtrFUUZHBxUFMXhCR4cAEKYzWaPHz8eDoevXr167dq1ZDIZCoWi0WggECgw+P1+SmlPT8/8/Lxpmqz4UEqrq6tVVY1EIqyClQAAY7y5uXn9+vUrV67Yti2KYn19/fb29uPHjxkDxpjpwe/3I4S6u7sLDJRSQkh1dfXS0tLc3Nwv+/dhRYD5d/PmTVEUWYW5dOnSboZCHC5cuLCHIZfLCYLw+fPnkZERt9t94ErqtA98/fp1ZWXFNM2CcQ9DIQ4FhoWFBb/fr2maZVn37t2zbdtJJ/4DfWBqasqyLNM0WRowhkQisS8DhLC7u3tkZGR0dLSrq8uyLCf58wf6AKVU07T3799blhUIBAoM9fX1xRgAAL29vZZlsRt1Ka/ThSsdAGBiYiIej/8Og9/vz+Vy7969+8354dDnAZ/PZ5qm2+1+/fr12tpaY2Mj0zdjYHr49u2baZoFBsMw0ul0JBJxuVwla2Ssi1VVVQ0MDAQCgaamplgsFgqF1tbWGhoa9mg6FArtyzA+Pq6qain7QFtbW11dXTqdVhTl8uXLU1NTb968icViLJfY3eHixYszMzN9fX2sT2OMmceGYUxPT3/58sXJUHbw+sXu9JOTkwAASZLS6bQoiufOnXO73S9fvmxvb0cIYYwzmQxCyOfzeb3e/v7+lpaWnZ0djHE2mwUAnDlzhn2gBAMNIcTj8QwPD9+5cwchpChKIpEYHR09cuRIWVnZ8+fP29vbWZ35/v17JBKRJEnX9bdv37a0tCQSCVmWY7HY4OCgy+VyImXo8Jd6hNCPHz8Mw6iqqhobG5udnXW5XIQQlmBnz549derU5OTk6uoqG3wFQdjY2Dh9+rTP55uZmVlZWXH4MAGd/9Wg2DMJxjiZTGYyGVVVJUnabU+lUplMRlGU3faSAbA4IITYsLvHziaYPRotZi/BQFPQw74HWex0HZ46fxvlAByAA3AADsABOAAH4AAcgANwgP/C+gdWeFxl58OnPgAAAABJRU5ErkJggg==";
+
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -238,7 +240,7 @@ function Login({ navigate }) {
       <div style={{ position: "absolute", top: "-20%", left: "50%", transform: "translateX(-50%)", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 400, margin: "0 auto", width: "100%", position: "relative" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ width: 72, height: 72, borderRadius: 22, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, margin: "0 auto 16px", boxShadow: "0 0 60px rgba(139,92,246,0.35)", animation: "glowPulse 3s ease-in-out infinite" }}>✦</div>
+          <div style={{ width: 72, height: 72, borderRadius: 22, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, margin: "0 auto 16px", boxShadow: "0 0 60px rgba(139,92,246,0.35)", animation: "glowPulse 3s ease-in-out infinite", overflow: "hidden", padding: 14 }}><img src={SPOOL_LOGO} alt="Spool" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
           <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em" }}>Spool</div>
           <div style={{ fontSize: 14, color: C.mid, marginTop: 8, fontWeight: 400 }}>Your AI business assistant</div>
         </div>
@@ -329,7 +331,7 @@ function Onboarding({ navigate }) {
 
   if (done) return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
-      <div style={{ width: 90, height: 90, borderRadius: 28, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, marginBottom: 28, boxShadow: `0 0 60px ${C.accentDark}44`, animation: "pop 0.5s cubic-bezier(0.34,1.56,0.64,1)" }}>✦</div>
+      <div style={{ width: 90, height: 90, borderRadius: 28, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, marginBottom: 28, boxShadow: `0 0 60px ${C.accentDark}44`, animation: "pop 0.5s cubic-bezier(0.34,1.56,0.64,1)", overflow: "hidden", padding: 18 }}><img src={SPOOL_LOGO} alt="Spool" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
       <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 30, fontWeight: 800, marginBottom: 12, lineHeight: 1.2 }}>{bizName || "Your business"} is<br />live on Spool.</div>
       <div style={{ fontSize: 15, color: C.mid, lineHeight: 1.6, marginBottom: 36 }}>Your AI assistant is running.<br />Sit back — we've got you.</div>
       <Card style={{ padding: "20px 24px", width: "100%", textAlign: "left", marginBottom: 28 }}>
@@ -2814,7 +2816,7 @@ function Booking({ navigate }) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           </div>
         )}
-        <div style={{ width: 72, height: 72, borderRadius: 22, background: "linear-gradient(135deg," + C.accentDark + "," + C.accent + ")", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 14px", boxShadow: "0 0 40px " + C.accentDark + "55" }}>✦</div>
+        <div style={{ width: 72, height: 72, borderRadius: 22, background: "linear-gradient(135deg," + C.accentDark + "," + C.accent + ")", margin: "0 auto 14px", boxShadow: "0 0 40px " + C.accentDark + "55", overflow: "hidden", padding: 14 }}><img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
         <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{bizName}</div>
         <div style={{ fontSize: 13, color: C.mid, marginTop: 5 }}>{bizLocation || "Book an appointment"}</div>
       </div>
@@ -4056,7 +4058,7 @@ function Sidebar({ active, navigate }) {
           {logoUrl ? (
             <img src={logoUrl} alt="" style={{ width: 36, height: 36, borderRadius: 11, objectFit: "cover" }} />
           ) : (
-            <div style={{ width: 36, height: 36, borderRadius: 11, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, boxShadow: "0 0 20px rgba(139,92,246,0.25)" }}>✦</div>
+            <div style={{ width: 36, height: 36, borderRadius: 11, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, boxShadow: "0 0 20px rgba(139,92,246,0.25)", overflow: "hidden", padding: 6 }}><img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
           )}
           <div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 16, fontWeight: 800, color: C.text }}>{bizName}</div>
@@ -4748,7 +4750,7 @@ export default function App() {
       {needsPaywall && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, padding: "36px 28px", maxWidth: 400, width: "100%", textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>✦</div>
+            <div style={{ width: 72, height: 72, margin: "0 auto 16px" }}><img src={SPOOL_LOGO} alt="Spool" style={{ width: "100%", height: "100%" }} /></div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800, marginBottom: 10 }}>Start your free trial</div>
             <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7, marginBottom: 24 }}>
               Get 14 days free — no credit card required.<br />
