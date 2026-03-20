@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Book an Appointment · Pocketflow</title>
+  <title>Book an Appointment · Spool</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -259,7 +259,7 @@ function buildGCalUrl() {
     const end = new Date(start.getTime()+60*60*1000);
     const fmt = d=>d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
     const title = encodeURIComponent(S.selectedServices.map(s=>s.name).join(' + ')+' at '+biz.name);
-    const details = encodeURIComponent('Booked via Pocketflow\nDeposit paid: $'+deposit()+'\nPhone: '+S.phone);
+    const details = encodeURIComponent('Booked via Spool\nDeposit paid: $'+deposit()+'\nPhone: '+S.phone);
     const loc = encodeURIComponent(biz.location||biz.name);
     return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+title+'&dates='+fmt(start)+'/'+fmt(end)+'&details='+details+'&location='+loc;
   } catch(e) { return null; }
@@ -423,7 +423,7 @@ function render() {
           <span style="font-size:12px;color:${C.dim}">Ref: ${S.bookingRef || 'N/A'}</span>
         </div>
         ${buildGCalUrl() ? '<a href="'+buildGCalUrl()+'" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 0;border-radius:14px;background:'+C.surface+';border:1px solid '+C.border+';font-size:14px;font-weight:700;color:'+C.text+';text-decoration:none;margin-bottom:16px">📅 Add to Google Calendar</a>' : ''}
-        <div style="font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Pocketflow</span></div>
+        <div style="font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Spool</span></div>
       </div>
     </div>`;
     return;
@@ -534,7 +534,7 @@ function renderCTA() {
       : 'Continue to Payment';
     return `
       <button class="btn" id="nextBtn" ${!canNext()?'disabled':''} style="margin-bottom:8px">${label}</button>
-      <div style="text-align:center;font-size:11px;color:${C.dim}">🔒 Secure booking · Powered by <span style="color:${C.accent}">Pocketflow</span></div>`;
+      <div style="text-align:center;font-size:11px;color:${C.dim}">🔒 Secure booking · Powered by <span style="color:${C.accent}">Spool</span></div>`;
   }
   return `
     ${S.error?`<div style="background:${C.red}18;border:1px solid ${C.red}33;border-radius:12px;padding:10px 14px;font-size:13px;color:${C.red};margin-bottom:12px">${S.error}</div>`:''}
@@ -831,7 +831,7 @@ function renderManage() {
   }
 
   if (manageCancelled) {
-    app.innerHTML = `<div style="text-align:center;max-width:400px;padding:32px" class="fade-in"><div style="width:80px;height:80px;border-radius:24px;background:${C.red}22;border:2px solid ${C.red}44;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px">✕</div><div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:800;margin-bottom:8px">Booking Cancelled</div><div style="font-size:14px;color:${C.mid};line-height:1.7;margin-bottom:20px">Your appointment has been cancelled. If a deposit was paid, please contact ${biz.name || 'the business'} for refund details.</div>${biz.phone ? `<a href="tel:${biz.phone}" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 0;border-radius:14px;background:${C.accent}18;border:1px solid ${C.accent}33;font-size:14px;font-weight:700;color:${C.accent};text-decoration:none;margin-bottom:16px">📞 Call ${biz.name || 'Business'}</a>` : ''}<div style="font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Pocketflow</span></div></div>`;
+    app.innerHTML = `<div style="text-align:center;max-width:400px;padding:32px" class="fade-in"><div style="width:80px;height:80px;border-radius:24px;background:${C.red}22;border:2px solid ${C.red}44;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px">✕</div><div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:800;margin-bottom:8px">Booking Cancelled</div><div style="font-size:14px;color:${C.mid};line-height:1.7;margin-bottom:20px">Your appointment has been cancelled. If a deposit was paid, please contact ${biz.name || 'the business'} for refund details.</div>${biz.phone ? `<a href="tel:${biz.phone}" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 0;border-radius:14px;background:${C.accent}18;border:1px solid ${C.accent}33;font-size:14px;font-weight:700;color:${C.accent};text-decoration:none;margin-bottom:16px">📞 Call ${biz.name || 'Business'}</a>` : ''}<div style="font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Spool</span></div></div>`;
     return;
   }
 
@@ -887,7 +887,7 @@ function renderManage() {
       ${biz.location ? `<div style="font-size:13px;color:${C.mid};margin-bottom:8px">${biz.location}</div>` : ''}
       ${biz.phone ? `<a href="tel:${biz.phone}" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px 0;border-radius:12px;background:${C.accent}18;border:1px solid ${C.accent}33;font-size:14px;font-weight:700;color:${C.accent};text-decoration:none">📞 Call ${biz.phone}</a>` : ''}
     </div>` : ''}
-    <div style="text-align:center;margin-top:20px;font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Pocketflow</span></div>
+    <div style="text-align:center;margin-top:20px;font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Spool</span></div>
   </div>`;
 
   document.getElementById('cancelBookingBtn')?.addEventListener('click', () => {
@@ -1094,7 +1094,7 @@ function renderPortal() {
     <div style="text-align:center;margin-top:16px">
       <span onclick="portalAppts=null;renderPortal()" style="font-size:12px;color:${C.dim};cursor:pointer">Search different number</span>
     </div>
-    <div style="text-align:center;margin-top:16px;font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Pocketflow</span></div>
+    <div style="text-align:center;margin-top:16px;font-size:12px;color:${C.dim}">Powered by <span style="color:${C.accent};font-weight:700">Spool</span></div>
   </div>`;
 }
 
