@@ -24,7 +24,8 @@ const GLOBAL_STYLES = `
   ::-webkit-scrollbar{width:4px;}
   ::-webkit-scrollbar-track{background:transparent;}
   ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:4px;}
-  body{background:#06060a;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#f5f3ff;}
+  body{background:#06060a;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#f5f3ff;overflow-x:hidden;}
+  html{overflow-x:hidden;}
   .fade-in{animation:fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards;}
   @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
   @keyframes slideUp{from{transform:translateY(100%);opacity:0.5}to{transform:translateY(0);opacity:1}}
@@ -106,7 +107,7 @@ const BottomNav = ({ active, navigate }) => {
     { id: "clients", label: "Clients", d: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
   ];
   return (
-    <div className="mobile-only" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 400, background: "rgba(6,6,10,0.92)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", padding: "10px 0 24px", zIndex: 50 }}>
+    <div className="mobile-only" style={{ position: "fixed", bottom: 0, left: 0, width: "100%", background: "rgba(6,6,10,0.92)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", padding: "10px 0 24px", zIndex: 50 }}>
       {items.map(t => {
         const isActive = active === t.id;
         return (
@@ -185,6 +186,19 @@ function handlePhoneInput(val) {
   return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
 }
 
+// ── SPLASH ─────────────────────────────────────────────────────────────────────
+function Splash() {
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: C.bg }}>
+      <div style={{ width: 72, height: 72, borderRadius: 22, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20, boxShadow: "0 0 60px rgba(139,92,246,0.3)", animation: "glowPulse 2s ease-in-out infinite", overflow: "hidden", padding: 14 }}>
+        <img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+      </div>
+      <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 8 }}>spool</div>
+      <div style={{ width: 24, height: 24, border: "2px solid rgba(255,255,255,0.15)", borderTopColor: C.accent, borderRadius: "50%", animation: "orbSpin 0.8s linear infinite", marginTop: 16 }} />
+    </div>
+  );
+}
+
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
 function Login({ navigate }) {
   const [mode, setMode] = useState("login");
@@ -240,8 +254,8 @@ function Login({ navigate }) {
       <div style={{ position: "absolute", top: "-20%", left: "50%", transform: "translateX(-50%)", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 400, margin: "0 auto", width: "100%", position: "relative" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ width: 72, height: 72, borderRadius: 22, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, margin: "0 auto 16px", boxShadow: "0 0 60px rgba(139,92,246,0.35)", animation: "glowPulse 3s ease-in-out infinite", overflow: "hidden", padding: 14 }}><img src={SPOOL_LOGO} alt="Spool" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
-          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em" }}>Spool</div>
+          <div style={{ width: 72, height: 72, borderRadius: 22, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, margin: "0 auto 16px", boxShadow: "0 0 60px rgba(139,92,246,0.35)", animation: "glowPulse 3s ease-in-out infinite", overflow: "hidden", padding: 14 }}><img src={SPOOL_LOGO} alt="spool" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
+          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em" }}>spool</div>
           <div style={{ fontSize: 14, color: C.mid, marginTop: 8, fontWeight: 400 }}>Your AI business assistant</div>
         </div>
         {resetMode ? (
@@ -331,8 +345,8 @@ function Onboarding({ navigate }) {
 
   if (done) return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
-      <div style={{ width: 90, height: 90, borderRadius: 28, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, marginBottom: 28, boxShadow: `0 0 60px ${C.accentDark}44`, animation: "pop 0.5s cubic-bezier(0.34,1.56,0.64,1)", overflow: "hidden", padding: 18 }}><img src={SPOOL_LOGO} alt="Spool" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
-      <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 30, fontWeight: 800, marginBottom: 12, lineHeight: 1.2 }}>{bizName || "Your business"} is<br />live on Spool.</div>
+      <div style={{ width: 90, height: 90, borderRadius: 28, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, marginBottom: 28, boxShadow: `0 0 60px ${C.accentDark}44`, animation: "pop 0.5s cubic-bezier(0.34,1.56,0.64,1)", overflow: "hidden", padding: 18 }}><img src={SPOOL_LOGO} alt="spool" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
+      <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 30, fontWeight: 800, marginBottom: 12, lineHeight: 1.2 }}>{bizName || "Your business"} is<br />live on spool.</div>
       <div style={{ fontSize: 15, color: C.mid, lineHeight: 1.6, marginBottom: 36 }}>Your AI assistant is running.<br />Sit back — we've got you.</div>
       <Card style={{ padding: "20px 24px", width: "100%", textAlign: "left", marginBottom: 28 }}>
         {["Monitoring your DMs", "Ready to book appointments", "Reminders armed and ready", "AI assistant online"].map((t, i) => (
@@ -482,7 +496,7 @@ function Onboarding({ navigate }) {
           <div className="fade-in">
             <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Step 5 of 5</div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Set up your<br />AI assistant</div>
-            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Choose what Spool handles on its own.</div>
+            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Choose what spool handles on its own.</div>
             {AI_PERMISSIONS.map(p => (
               <div key={p.id} onClick={() => setAiPerms(prev => prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id])} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: aiPerms.includes(p.id) ? C.accentSoft : C.surface, border: `1px solid ${aiPerms.includes(p.id) ? C.accent + "22" : C.border}`, borderRadius: 14, marginBottom: 10, cursor: "pointer" }}>
                 <div style={{ flex: 1, marginRight: 12 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{p.label}</div><div style={{ fontSize: 12, color: C.dim, marginTop: 3 }}>{p.sub}</div></div>
@@ -499,7 +513,7 @@ function Onboarding({ navigate }) {
       </div>
       <div style={{ padding: "16px 24px 36px", background: `linear-gradient(0deg,${C.bg} 80%,transparent)`, position: "sticky", bottom: 0, width: "100%", maxWidth: 640 }}>
         <BtnPrimary disabled={!canContinue()} onClick={() => step < totalSteps - 1 ? setStep(p => p + 1) : setDone(true)} style={{ width: "100%", padding: 16 }}>
-          {step === totalSteps - 1 ? "Launch Spool 🚀" : "Continue"}
+          {step === totalSteps - 1 ? "Launch spool 🚀" : "Continue"}
         </BtnPrimary>
         {step === 0 && <div style={{ textAlign: "center", fontSize: 12, color: C.dim, marginTop: 12 }}>Takes less than 3 minutes</div>}
       </div>
@@ -606,18 +620,18 @@ function Home({ navigate }) {
         </div>
 
         {/* Stats row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 24 }}>
           {[
             { label: "Revenue", value: "$" + stats.weekRevenue, sub: "this week", color: C.gold, icon: "💰" },
             { label: "Appointments", value: String(stats.todayCount), sub: "today", color: C.text, icon: "📅" },
             { label: "AI handled", value: String(stats.aiHandled), sub: "messages", color: C.accent, icon: "✦" },
             { label: "Clients", value: String(stats.clientCount), sub: "total", color: C.green, icon: "👥" },
           ].map((s, i) => (
-            <Card key={i} style={{ padding: "16px", display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: `${s.color}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{s.icon}</div>
-              <div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
-                <div style={{ fontSize: 11, color: C.mid, marginTop: 1 }}>{s.label} <span style={{ color: C.dim }}>{s.sub}</span></div>
+            <Card key={i} style={{ padding: "14px", display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `${s.color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{s.icon}</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: 10, color: C.dim, marginTop: 1 }}>{s.label}</div>
               </div>
             </Card>
           ))}
@@ -727,9 +741,19 @@ function Home({ navigate }) {
 
         {/* Mobile-only grid */}
         <div className="mobile-only" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
-          {[{ icon: "✂️", label: "Services", screen: "services" }, { icon: "💳", label: "Payments", screen: "payments" }, { icon: "⚙️", label: "Settings", screen: "settings" }, { icon: "🎁", label: "Loyalty", screen: "loyalty" }, { icon: "📊", label: "Analytics", screen: "analytics" }, { icon: "📣", label: "Promotions", screen: "promotions" }, { icon: "👥", label: "Staff", screen: "staff" }, { icon: "⏳", label: "Waitlist", screen: "waitlist" }, { icon: "🔗", label: "Share Booking Link", screen: "sharelink" }].map(item => (
-            <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
-              <span style={{ fontSize: 22 }}>{item.icon}</span>
+          {[
+            { icon: "✂️", label: "Services", screen: "services", color: C.accent },
+            { icon: "💳", label: "Payments", screen: "payments", color: C.gold },
+            { icon: "⚙️", label: "Settings", screen: "settings", color: C.mid },
+            { icon: "🎁", label: "Loyalty", screen: "loyalty", color: "#f472b6" },
+            { icon: "📊", label: "Analytics", screen: "analytics", color: C.blue },
+            { icon: "📣", label: "Promotions", screen: "promotions", color: "#fb923c" },
+            { icon: "👥", label: "Staff", screen: "staff", color: C.green },
+            { icon: "⏳", label: "Waitlist", screen: "waitlist", color: C.yellow },
+            { icon: "🔗", label: "Share Link", screen: "sharelink", color: C.accent },
+          ].map(item => (
+            <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+              <div style={{ width: 38, height: 38, borderRadius: 12, background: `${item.color}15`, border: `1px solid ${item.color}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
               <span style={{ fontSize: 14, fontWeight: 600 }}>{item.label}</span>
             </Card>
           ))}
@@ -1630,6 +1654,12 @@ function Settings({ navigate }) {
   const [profilePic, setProfilePic] = useState("");
   const [profileSaved, setProfileSaved] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [showBugReport, setShowBugReport] = useState(false);
+  const [bugText, setBugText] = useState("");
+  const [bugCategory, setBugCategory] = useState("bug");
+  const [bugScreenshot, setBugScreenshot] = useState("");
+  const [bugSubmitting, setBugSubmitting] = useState(false);
+  const [bugSubmitted, setBugSubmitted] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -1832,7 +1862,7 @@ function Settings({ navigate }) {
           }
         </Card>
         <Card style={{ padding: 16, marginTop: 8 }}>
-          <div onClick={() => { const bug = prompt("Describe the bug or issue:"); if (bug && bug.trim()) { supabase.auth.getSession().then(({ data: { session } }) => { if (session) { supabase.from("bug_reports").insert([{ user_id: session.user.id, message: bug.trim() }]).then(() => {}); } }); alert("Thanks! Your bug report has been submitted."); } }} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+          <div onClick={() => setShowBugReport(true)} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: `${C.red}18`, border: `1px solid ${C.red}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🐛</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 600 }}>Report a Bug</div>
@@ -1844,6 +1874,77 @@ function Settings({ navigate }) {
         </div>{/* end col 2 */}
         </div>{/* end grid */}
       </div>
+
+      {/* Bug Report Modal */}
+      {showBugReport && (
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => { if (!bugSubmitting) { setShowBugReport(false); setBugSubmitted(false); } }}>
+          <div style={{ background: C.surfaceSolid, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 520, padding: "24px 20px 32px", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
+            {bugSubmitted ? (
+              <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <div style={{ fontSize: 48, marginBottom: 16, animation: "pop 0.5s cubic-bezier(0.34,1.56,0.64,1)" }}>✅</div>
+                <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Thanks for reporting!</div>
+                <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7, marginBottom: 24 }}>We take every report seriously and will look into this. You're helping make spool better for everyone.</div>
+                <BtnPrimary onClick={() => { setShowBugReport(false); setBugSubmitted(false); setBugText(""); setBugScreenshot(""); setBugCategory("bug"); }} style={{ width: "100%", padding: 14 }}>Close</BtnPrimary>
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Report an Issue</div>
+                <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>Help us improve spool — describe what went wrong</div>
+
+                <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Category</div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                  {[{ id: "bug", label: "🐛 Bug" }, { id: "ui", label: "🎨 UI Issue" }, { id: "feature", label: "💡 Suggestion" }, { id: "other", label: "💬 Other" }].map(c => (
+                    <div key={c.id} onClick={() => setBugCategory(c.id)} style={{ flex: 1, padding: "10px 6px", borderRadius: 12, background: bugCategory === c.id ? C.accentSoft : C.surface, border: `1px solid ${bugCategory === c.id ? C.accent : C.border}`, textAlign: "center", fontSize: 11, fontWeight: 600, color: bugCategory === c.id ? C.accent : C.mid, cursor: "pointer" }}>{c.label}</div>
+                  ))}
+                </div>
+
+                <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>What happened?</div>
+                <textarea value={bugText} onChange={e => setBugText(e.target.value)} placeholder="Describe the issue in detail... What were you doing? What did you expect to happen? What happened instead?" rows={4} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", resize: "none", marginBottom: 16 }} />
+
+                <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Screenshot <span style={{ fontWeight: 400 }}>(optional)</span></div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                  {bugScreenshot ? (
+                    <div style={{ position: "relative" }}>
+                      <img src={bugScreenshot} alt="" style={{ width: 80, height: 80, borderRadius: 12, objectFit: "cover", border: `1px solid ${C.border}` }} />
+                      <div onClick={() => setBugScreenshot("")} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: C.red, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", cursor: "pointer", fontWeight: 700 }}>×</div>
+                    </div>
+                  ) : (
+                    <label style={{ flex: 1, padding: "16px 14px", background: C.surface, border: `1px dashed ${C.borderHigh}`, borderRadius: 14, fontSize: 13, color: C.mid, cursor: "pointer", textAlign: "center", fontWeight: 600 }}>
+                      📷 Upload Screenshot
+                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async ev => { const compressed = await compressImage(ev.target.result, 400, 0.6); setBugScreenshot(compressed); }; reader.readAsDataURL(file); }} />
+                    </label>
+                  )}
+                </div>
+
+                <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Device Info <span style={{ fontWeight: 400 }}>(auto-detected)</span></div>
+                <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 14px", fontSize: 12, color: C.dim, marginBottom: 20, lineHeight: 1.6 }}>
+                  {navigator.userAgent.includes("Mobile") ? "📱 Mobile" : "💻 Desktop"} · {navigator.userAgent.includes("Chrome") ? "Chrome" : navigator.userAgent.includes("Safari") ? "Safari" : navigator.userAgent.includes("Firefox") ? "Firefox" : "Browser"} · {window.innerWidth}×{window.innerHeight}
+                </div>
+
+                <BtnPrimary disabled={!bugText.trim() || bugSubmitting} onClick={async () => {
+                  setBugSubmitting(true);
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session) {
+                      await supabase.from("bug_reports").insert([{
+                        user_id: session.user.id,
+                        message: bugText.trim(),
+                        category: bugCategory,
+                        screenshot: bugScreenshot || null,
+                        device_info: `${navigator.userAgent.includes("Mobile") ? "Mobile" : "Desktop"} ${window.innerWidth}x${window.innerHeight}`,
+                        page: screen,
+                      }]);
+                    }
+                  } catch {}
+                  setBugSubmitting(false);
+                  setBugSubmitted(true);
+                }} style={{ width: "100%", padding: 14 }}>{bugSubmitting ? "Submitting..." : "Submit Report"}</BtnPrimary>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2791,7 +2892,7 @@ function Booking({ navigate }) {
             const end = new Date(start.getTime() + 60 * 60 * 1000);
             const fmt = d => d.toISOString().replace(/[-:]/g,"").split(".")[0] + "Z";
             const title = encodeURIComponent(`${selectedServices.map(s=>s.name).join(" + ")} at ${bizName}`);
-            const details = encodeURIComponent(`Appointment booked via Spool\nDeposit paid: ${depositStr}\nContact: ${phone}`);
+            const details = encodeURIComponent(`Appointment booked via spool\nDeposit paid: ${depositStr}\nContact: ${phone}`);
             const loc = encodeURIComponent(bizLocation || bizName);
             return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(start)}/${fmt(end)}&details=${details}&location=${loc}`;
           } catch { return null; }
@@ -2804,7 +2905,7 @@ function Booking({ navigate }) {
         ) : null;
       })()}
 
-      <div style={{ fontSize: 12, color: C.dim }}>Powered by <span style={{ color: C.accent, fontWeight: 700 }}>Spool</span></div>
+      <div style={{ fontSize: 12, color: C.dim }}>Powered by <span style={{ color: C.accent, fontWeight: 700 }}>spool</span></div>
     </div>
   );
 
@@ -4005,7 +4106,7 @@ function ShareLink({ navigate }) {
             </Card>
           ))}
         </div>
-        <div style={{ marginTop: 20, background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 16, padding: 14, fontSize: 13, color: C.mid, lineHeight: 1.7 }}>✦ Every business on Spool gets their own unique link. When clients book through yours, appointments go straight to your dashboard.</div>
+        <div style={{ marginTop: 20, background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 16, padding: 14, fontSize: 13, color: C.mid, lineHeight: 1.7 }}>✦ Every business on spool gets their own unique link. When clients book through yours, appointments go straight to your dashboard.</div>
       </div>
       <BottomNav active="home" navigate={navigate} />
     </div>
@@ -4296,7 +4397,7 @@ function AISidebarPanel({ navigate, isMobile }) {
     const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
     const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     const memBlock = memories.length > 0 ? `\nTHINGS YOU REMEMBER ABOUT THE USER:\n${memories.map(m => "- " + m).join("\n")}` : "";
-    return `You are ${aiName}, an AI business assistant inside Spool.
+    return `You are ${aiName}, an AI business assistant inside spool.
 Today: ${today} at ${time}.
 BUSINESS DATA:
 ${bizContext || "Loading..."}${memBlock}
@@ -4606,7 +4707,7 @@ You remember this conversation — reference earlier messages when relevant.`;
 }
 
 export default function App() {
-  const [screen, setScreen] = useState("login");
+  const [screen, setScreen] = useState("splash");
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
   const screenHistoryRef = useRef([]);
 
@@ -4686,6 +4787,8 @@ export default function App() {
         } catch {
           setScreen("home");
         }
+      } else {
+        setScreen("login");
       }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -4721,10 +4824,10 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
-  const screens = { login: Login, onboarding: Onboarding, home: Home, schedule: Schedule, inbox: Inbox, clients: Clients, payments: Payments, settings: Settings, loyalty: Loyalty, notifications: Notifications, analytics: Analytics, promotions: Promotions, booking: Booking, staff: Staff, waitlist: Waitlist, profile: BusinessProfile, connections: ConnectedAccounts, subscription: Subscription, sharelink: ShareLink, services: Services };
+  const screens = { splash: Splash, login: Login, onboarding: Onboarding, home: Home, schedule: Schedule, inbox: Inbox, clients: Clients, payments: Payments, settings: Settings, loyalty: Loyalty, notifications: Notifications, analytics: Analytics, promotions: Promotions, booking: Booking, staff: Staff, waitlist: Waitlist, profile: BusinessProfile, connections: ConnectedAccounts, subscription: Subscription, sharelink: ShareLink, services: Services };
   const Screen = screens[screen] || Home;
 
-  const isAuthScreen = screen === "login" || screen === "onboarding" || screen === "booking";
+  const isAuthScreen = screen === "login" || screen === "onboarding" || screen === "booking" || screen === "splash";
   const showSidebar = isDesktop && !isAuthScreen;
 
   // Screens that are always free (no paywall)
@@ -4750,11 +4853,11 @@ export default function App() {
       {needsPaywall && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, padding: "36px 28px", maxWidth: 400, width: "100%", textAlign: "center" }}>
-            <div style={{ width: 72, height: 72, margin: "0 auto 16px" }}><img src={SPOOL_LOGO} alt="Spool" style={{ width: "100%", height: "100%" }} /></div>
+            <div style={{ width: 72, height: 72, margin: "0 auto 16px" }}><img src={SPOOL_LOGO} alt="spool" style={{ width: "100%", height: "100%" }} /></div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800, marginBottom: 10 }}>Start your free trial</div>
             <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7, marginBottom: 24 }}>
               Get 14 days free — no credit card required.<br />
-              Unlock the full Spool experience.
+              Unlock the full spool experience.
             </div>
             <BtnPrimary onClick={() => navigate("subscription")} style={{ width: "100%", padding: 15, fontSize: 15, marginBottom: 12 }}>
               See Plans — from $19/mo
@@ -4770,7 +4873,7 @@ export default function App() {
         marginRight: showAISidebar && !aiSidebarCollapsed ? 360 : 0,
         minHeight: "100vh",
       }}>
-        <div style={{ maxWidth: showSidebar ? "none" : isDesktop ? 720 : 400, margin: "0 auto", padding: showSidebar ? "0 24px" : isDesktop ? "0 24px" : "0" }}>
+        <div style={{ maxWidth: showSidebar ? "none" : isDesktop ? 720 : 480, margin: "0 auto", padding: showSidebar ? "0 24px" : isDesktop ? "0 24px" : "0", width: "100%", overflowX: "hidden" }}>
           <Screen navigate={navigate} />
         </div>
       </div>
