@@ -53,31 +53,6 @@ const GLOBAL_STYLES = `
     .desktop-two-col { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 20px !important; align-items: start !important; }
     .desktop-three-col { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 16px !important; }
   }
-`;
-  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes slideUp{from{transform:translateY(100%);opacity:0.5}to{transform:translateY(0);opacity:1}}
-  @keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-  @keyframes orbFloat{0%,100%{transform:translateY(0px) scale(1)}50%{transform:translateY(-6px) scale(1.03)}}
-  @keyframes orbSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-  @keyframes orbSpinRev{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
-  @keyframes orbPulse{0%,100%{transform:scale(1);opacity:0.7}50%{transform:scale(1.15);opacity:1}}
-  @keyframes wave1{0%,100%{d:path("M0,50 Q25,20 50,50 Q75,80 100,50")}50%{d:path("M0,50 Q25,80 50,50 Q75,20 100,50")}}
-  @keyframes blobMorph{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%}25%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%}50%{border-radius:50% 60% 30% 60%/30% 40% 70% 50%}75%{border-radius:40% 60% 50% 40%/70% 30% 50% 60%}}
-  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-  @keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(139,92,246,0.15)}50%{box-shadow:0 0 40px rgba(139,92,246,0.3)}}
-  input:focus,textarea:focus,select:focus{outline:none;border-color:rgba(180,156,255,0.4) !important;}
-  input::placeholder,textarea::placeholder{color:#4a4a66;}
-  input[type=range]{-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,0.06);}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#b49cff);cursor:pointer;box-shadow:0 0 12px rgba(139,92,246,0.4);}
-  select{appearance:none;}
-  @media (min-width: 768px) {
-    .mobile-only { display: none !important; }
-    .desktop-screen { padding-top: 40px !important; padding-bottom: 40px !important; }
-    .desktop-screen > div:first-child { position: relative !important; top: auto !important; padding-top: 0 !important; }
-    .desktop-two-col { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 20px !important; align-items: start !important; }
-    .desktop-three-col { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 16px !important; }
-  }
   @media (max-width: 767px) {
     .desktop-only { display: none !important; }
   }
