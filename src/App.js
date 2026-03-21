@@ -1775,14 +1775,6 @@ function Services({ navigate }) {
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 20, fontWeight: 800, marginBottom: 20 }}>{editingId ? "Edit Service" : "New Service"}</div>
 
-            {/* Icon picker */}
-            <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Icon</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-              {ICONS.map(ic => (
-                <div key={ic} onClick={() => setForm(p => ({ ...p, icon: ic }))} style={{ width: 38, height: 38, borderRadius: 10, background: form.icon === ic ? C.accentSoft : C.surfaceHigh, border: `1px solid ${form.icon === ic ? C.accent : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, cursor: "pointer" }}>{ic}</div>
-              ))}
-            </div>
-
             <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Service Name *</div>
             <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Consultation, Photoshoot, Haircut..." style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 14 }} />
 
@@ -1809,7 +1801,7 @@ function Services({ navigate }) {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                       model: "llama-3.1-8b-instant", max_tokens: 80,
-                      messages: [{ role: "system", content: "Write a one-sentence description for a beauty service. Keep it short, warm, and professional. No quotes. Just the description text." }, { role: "user", content: `Service: ${form.name}${form.price ? `, $${form.price}` : ""}${form.duration ? `, ${form.duration}` : ""}` }],
+                      messages: [{ role: "system", content: "Write a one-sentence description for a business service. Keep it short, warm, and professional. No quotes. Just the description text." }, { role: "user", content: `Service: ${form.name}${form.price ? `, $${form.price}` : ""}${form.duration ? `, ${form.duration}` : ""}` }],
                     }),
                   });
                   const data = await res.json();
