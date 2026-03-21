@@ -2903,7 +2903,26 @@ function Promotions({ navigate }) {
                 <div key={ch.id} onClick={() => setChannel(p => p.includes(ch.id) ? p.filter(x => x !== ch.id) : [...p, ch.id])} style={{ flex: 1, padding: "12px", borderRadius: 12, background: channel.includes(ch.id) ? C.accentSoft : C.surface, border: `1px solid ${channel.includes(ch.id) ? C.accent : C.border}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: channel.includes(ch.id) ? C.accent : C.mid, cursor: "pointer" }}>{ch.label}</div>
               ))}
             </div>
-            <BtnPrimary disabled={!promoTitle || !promoMsg || sending} onClick={handleSend} style={{ width: "100%", padding: 16 }}>{sending ? "Sending..." : "Send Promo 🚀"}</BtnPrimary>
+            {(promoTitle || promoMsg) && (
+              <Card style={{ padding: 16, marginBottom: 16 }}>
+                <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Preview</div>
+                {channel.includes("email") && (
+                  <div style={{ background: C.surfaceHigh, borderRadius: 12, padding: 14, marginBottom: channel.includes("sms") ? 10 : 0 }}>
+                    <div style={{ fontSize: 10, color: C.accent, fontWeight: 700, marginBottom: 6 }}>EMAIL</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{promoTitle || "Subject"}</div>
+                    <div style={{ fontSize: 13, color: C.mid, lineHeight: 1.5 }}>{promoMsg || "Message body"}</div>
+                  </div>
+                )}
+                {channel.includes("sms") && (
+                  <div style={{ background: C.surfaceHigh, borderRadius: 12, padding: 14 }}>
+                    <div style={{ fontSize: 10, color: C.green, fontWeight: 700, marginBottom: 6 }}>SMS</div>
+                    <div style={{ fontSize: 13, color: C.mid, lineHeight: 1.5, fontFamily: "monospace" }}>{promoTitle}{promoMsg ? "\n\n" + promoMsg : ""}{bookingUrl ? "\n\nBook now: " + bookingUrl : ""}</div>
+                    <div style={{ fontSize: 10, color: C.dim, marginTop: 6 }}>{((promoTitle || "") + (promoMsg || "") + (bookingUrl || "")).length}/160 characters</div>
+                  </div>
+                )}
+              </Card>
+            )}
+            <BtnPrimary disabled={!promoTitle || !promoMsg || sending} onClick={handleSend} style={{ width: "100%", padding: 16 }}>{sending ? "Sending..." : "Send Promo"}</BtnPrimary>
           </>
         )}
       </div>

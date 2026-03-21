@@ -153,6 +153,7 @@ let S = {
   selectedServices:[], selectedDate:null, selectedTime:null, bookedTimes:[],
   name:'', phone:'', email:'', instagram:'', note:'', promoCode:'', promoResult:null, discount:0,
   cardName:'', recurring:false, recurFreq:'Every 4 weeks',
+  selectedStaff: null,
   booked:false, paying:false, error:'', bookingRef:'',
 };
 
@@ -182,10 +183,11 @@ function toggleSvc(s) {
 
 async function loadBiz() {
   if (!BUSINESS_ID) { biz={name:'Invalid Link',location:'',userId:null}; render(); return; }
-  const [profileRes, servicesRes, reviewsRes] = await Promise.all([
+  const [profileRes, servicesRes, reviewsRes, staffRes] = await Promise.all([
     sb.from('business_profiles').select('biz_name,location,user_id,business_hours,bio,phone,logo_url,settings').eq('user_id',BUSINESS_ID).single(),
     sb.from('services').select('*').eq('owner_id',BUSINESS_ID).neq('active',false).order('created_at',{ascending:true}),
     sb.from('reviews').select('client_name,rating,text,service,created_at').eq('owner_id',BUSINESS_ID).order('created_at',{ascending:false}).limit(6),
+    sb.from('staff_members').select('id,name,role,avatar').eq('owner_id',BUSINESS_ID).eq('status','active').order('created_at',{ascending:true}),
   ]);
   if (profileRes.data) {
     let hrs = null;
@@ -207,6 +209,7 @@ async function loadBiz() {
   }
   biz.reviews = reviewsRes.data || [];
   biz.avgRating = biz.reviews.length > 0 ? (biz.reviews.reduce((s,r) => s + (r.rating||5), 0) / biz.reviews.length).toFixed(1) : null;
+  biz.staff = staffRes.data || [];
   render();
 }
 
@@ -333,6 +336,8 @@ async function handlePay() {
       owner_id: biz.userId,
       recurring: S.recurring || false,
       recur_freq: S.recurring ? S.recurFreq : null,
+      staff_id: S.selectedStaff || null,
+      staff_name: S.selectedStaff ? (biz.staff.find(s => String(s.id) === String(S.selectedStaff))?.name || null) : null,
     }]);
     if (apptErr) { set({ paying:false, error:'Booking saved payment but failed to save appointment: ' + apptErr.message }); return; }
 
@@ -604,6 +609,23 @@ function renderStep() {
         <div style="font-size:13px;color:${C.mid};margin-bottom:6px">${S.selectedServices.map(s=>s.name).join(' + ')}</div>
         <div style="font-size:16px;font-weight:800;color:${C.gold}">Total: $${total()}+ &nbsp;·&nbsp; <span style="color:${C.green}">Deposit: $${deposit()}</span></div>
       </div>`:''}
+    ${biz.staff && biz.staff.length > 1 ? `
+    <div style="margin-top:16px">
+      <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">Choose your stylist</div>
+      <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px">
+        <div class="service-card${!S.selectedStaff?' sel':''}" data-staff="any" style="min-width:80px;flex-shrink:0;flex-direction:column;padding:14px 12px;text-align:center;gap:6px">
+          <div style="font-size:13px;font-weight:700">Any</div>
+          <div style="font-size:10px;color:${C.mid}">No preference</div>
+        </div>
+        ${biz.staff.map(s => `
+          <div class="service-card${S.selectedStaff===s.id?' sel':''}" data-staff="${s.id}" style="min-width:80px;flex-shrink:0;flex-direction:column;padding:14px 12px;text-align:center;gap:6px">
+            <div style="width:36px;height:36px;border-radius:12px;background:${C.surfaceHigh};border:1px solid ${C.border};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${C.mid};margin:0 auto 4px">${s.avatar || s.name.slice(0,2).toUpperCase()}</div>
+            <div style="font-size:12px;font-weight:700">${s.name.split(' ')[0]}</div>
+            <div style="font-size:10px;color:${C.dim}">${s.role||''}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
     ${biz.reviews && biz.reviews.length > 0 ? `
     <div style="margin-top:24px">
       <div style="font-size:11px;color:${C.dim};font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px">What clients say</div>
@@ -745,6 +767,12 @@ function bindEvents() {
     el.addEventListener('click',()=>{
       const s=S.services.find(x=>String(x.id)===String(el.dataset.service));
       if(s) toggleSvc(s);
+    })
+  );
+  document.querySelectorAll('[data-staff]').forEach(el=>
+    el.addEventListener('click',()=>{
+      const val = el.dataset.staff;
+      set({ selectedStaff: val === 'any' ? null : val });
     })
   );
   document.querySelectorAll('[data-date]').forEach(el=>
