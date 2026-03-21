@@ -338,24 +338,33 @@ async function handlePay() {
 
     // Step 4: Add or update client record (best-effort)
     try {
-      const { data: existing } = await sb.from('clients')
-        .select('id, total_visits, total_spent')
-        .eq('owner_id', biz.userId)
-        .eq('phone', S.phone)
-        .limit(1);
-      if (existing && existing.length > 0) {
+      // Match by phone first, then by name
+      let existing = null;
+      const cleanPhone = S.phone.replace(/\D/g, '');
+      if (cleanPhone.length >= 7) {
+        const { data: byPhone } = await sb.from('clients').select('id, total_visits, total_spent').eq('owner_id', biz.userId).eq('phone', S.phone).limit(1);
+        if (byPhone && byPhone.length > 0) existing = byPhone[0];
+      }
+      if (!existing) {
+        const { data: byName } = await sb.from('clients').select('id, total_visits, total_spent').eq('owner_id', biz.userId).eq('name', S.name).limit(1);
+        if (byName && byName.length > 0) existing = byName[0];
+      }
+      if (existing) {
         await sb.from('clients').update({
-          name: S.name,
-          instagram: S.instagram,
-          email: S.email || undefined,
-          total_visits: (existing[0].total_visits || 0) + 1,
-          total_spent: (existing[0].total_spent || 0) + total(),
-        }).eq('id', existing[0].id);
+          name: S.name, phone: S.phone,
+          instagram: S.instagram, email: S.email || undefined,
+          total_visits: (existing.total_visits || 0) + 1,
+          total_spent: (existing.total_spent || 0) + total(),
+          last_visit: S.selectedDate,
+        }).eq('id', existing.id);
       } else {
         await sb.from('clients').insert([{
           name: S.name, phone: S.phone, instagram: S.instagram,
           email: S.email || undefined,
+          avatar: S.name.trim().split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(),
           total_visits: 1, total_spent: total(),
+          last_visit: S.selectedDate,
+          joined: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
           owner_id: biz.userId,
         }]);
       }

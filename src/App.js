@@ -42,6 +42,7 @@ const GLOBAL_STYLES = `
   @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
   @keyframes scaleIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}
   @keyframes slideRight{from{transform:translateX(-12px);opacity:0}to{transform:translateX(0);opacity:1}}
+  @keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
   @keyframes glow{0%,100%{box-shadow:0 0 8px rgba(196,181,253,0.15)}50%{box-shadow:0 0 24px rgba(196,181,253,0.3)}}
   input:focus,textarea:focus,select:focus{outline:none;border-color:rgba(196,181,253,0.4) !important;box-shadow:0 0 0 3px rgba(139,92,246,0.1) !important;}
   input::placeholder,textarea::placeholder{color:#4a4a66;}
@@ -946,7 +947,7 @@ function Schedule({ navigate, userRole, staffOwnerId }) {
       </div>
       <div style={{ padding: "0 20px" }}>
         {loading ? (
-          <div style={{ textAlign: "center", padding: 40, color: C.mid }}>Loading schedule...</div>
+          <div style={{ padding: "16px 0" }}>{[1,2,3].map(i => <div key={i} style={{ height: 68, background: C.surface, borderRadius: 18, marginBottom: 10, animation: "shimmer 1.5s infinite", backgroundImage: `linear-gradient(90deg,${C.surface},${C.surfaceHigh},${C.surface})`, backgroundSize: "200% 100%" }} />)}</div>
         ) : (
           <>
             <SectionLabel>Today</SectionLabel>
@@ -1086,7 +1087,7 @@ function Inbox({ navigate, userRole, staffOwnerId }) {
       </div>
       <div style={{ padding: "0 20px" }}>
         {loading ? (
-          <div style={{ textAlign: "center", padding: 40, color: C.mid }}>Loading messages...</div>
+          <div style={{ padding: "16px 0" }}>{[1,2,3].map(i => <div key={i} style={{ height: 68, background: C.surface, borderRadius: 18, marginBottom: 10, animation: "shimmer 1.5s infinite", backgroundImage: `linear-gradient(90deg,${C.surface},${C.surfaceHigh},${C.surface})`, backgroundSize: "200% 100%" }} />)}</div>
         ) : msgs.length === 0 ? (
           <Card style={{ padding: 32, textAlign: "center" }}>
             <div style={{ width: 56, height: 56, borderRadius: 18, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 22 }}>✉</div>
@@ -1343,7 +1344,7 @@ function Clients({ navigate, userRole, staffOwnerId }) {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." style={{ background: "none", border: "none", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", width: "100%" }} />
         </div>
         {loading ? (
-          <div style={{ textAlign: "center", padding: 40, color: C.mid }}>Loading clients...</div>
+          <div style={{ padding: "16px 0" }}>{[1,2,3].map(i => <div key={i} style={{ height: 68, background: C.surface, borderRadius: 18, marginBottom: 10, animation: "shimmer 1.5s infinite", backgroundImage: `linear-gradient(90deg,${C.surface},${C.surfaceHigh},${C.surface})`, backgroundSize: "200% 100%" }} />)}</div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: C.mid }}>No clients found</div>
         ) : <div style={{ background: "rgba(14,14,22,0.6)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, maxHeight: "calc(100vh - 220px)", overflowY: "auto" }}>{filtered.map((c, idx) => (
@@ -1436,11 +1437,12 @@ function Services({ navigate }) {
   const [saving, setSaving] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ name: "", price: "", duration: "", desc: "", icon: "✨", active: true });
+  const [form, setForm] = useState({ name: "", price: "", duration: "", desc: "", icon: "✦", active: true, category: "Hair" });
   const [generatingDesc, setGeneratingDesc] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [filterCat, setFilterCat] = useState("All");
 
-  const ICONS = ["✨","💫","🌟","💨","🌀","👑","💅","🪮","💆","🎨","🔥","💎","🌸","✂️","💜"];
+  const CATEGORIES = ["Hair", "Nails", "Skin", "Lashes", "Makeup", "Body", "Other"];
   const DURATIONS = ["30m","45m","1h","1.5h","2h","2.5h","3h","3.5h","4h","4.5h","5h","5.5h","6h"];
 
   useEffect(() => {
@@ -1455,19 +1457,19 @@ function Services({ navigate }) {
     load();
   }, []);
 
-  const resetForm = () => setForm({ name: "", price: "", duration: "", desc: "", icon: "✨", active: true });
+  const resetForm = () => setForm({ name: "", price: "", duration: "", desc: "", icon: "✦", active: true, category: "Hair" });
 
   const openAdd = () => { resetForm(); setEditingId(null); setShowAdd(true); };
-  const openEdit = (s) => { setForm({ name: s.name, price: String(s.price), duration: s.duration, desc: s.description || "", icon: s.icon || "✨", active: s.active !== false }); setEditingId(s.id); setShowAdd(true); };
+  const openEdit = (s) => { setForm({ name: s.name, price: String(s.price), duration: s.duration, desc: s.description || "", icon: s.icon || "✦", active: s.active !== false, category: s.category || "Hair" }); setEditingId(s.id); setShowAdd(true); };
 
   const saveService = async () => {
     if (!form.name.trim() || !form.price || !form.duration) return;
     setSaving(true);
     if (editingId) {
-      const { data } = await supabase.from("services").update({ name: form.name.trim(), price: parseFloat(form.price), duration: form.duration, description: form.desc.trim(), icon: form.icon, active: form.active }).eq("id", editingId).select().single();
+      const { data } = await supabase.from("services").update({ name: form.name.trim(), price: parseFloat(form.price), duration: form.duration, description: form.desc.trim(), icon: form.icon, active: form.active, category: form.category }).eq("id", editingId).select().single();
       if (data) setServices(p => p.map(s => s.id === editingId ? data : s));
     } else {
-      const { data } = await supabase.from("services").insert({ owner_id: userId, name: form.name.trim(), price: parseFloat(form.price), duration: form.duration, description: form.desc.trim(), icon: form.icon, active: form.active }).select().single();
+      const { data } = await supabase.from("services").insert({ owner_id: userId, name: form.name.trim(), price: parseFloat(form.price), duration: form.duration, description: form.desc.trim(), icon: form.icon, active: form.active, category: form.category }).select().single();
       if (data) setServices(p => [...p, data]);
     }
     setSaving(false);
@@ -1501,35 +1503,40 @@ function Services({ navigate }) {
 
       <div style={{ padding: "0 20px" }}>
         {loading ? (
-          <div style={{ textAlign: "center", padding: 60, color: C.dim, fontSize: 14 }}>Loading services...</div>
+          <div style={{ padding: "16px 0" }}>{[1,2,3].map(i => <div key={i} style={{ height: 76, background: C.surface, borderRadius: 18, marginBottom: 10, animation: "shimmer 1.5s infinite", backgroundImage: `linear-gradient(90deg,${C.surface},${C.surfaceHigh},${C.surface})`, backgroundSize: "200% 100%" }} />)}</div>
         ) : services.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px" }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>✂️</div>
+            <div style={{ width: 56, height: 56, borderRadius: 18, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 22, color: C.accent, fontWeight: 800 }}>✦</div>
             <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>No services yet</div>
             <div style={{ fontSize: 13, color: C.dim, marginBottom: 24 }}>Add your services so clients can book from your page</div>
             <BtnPrimary onClick={openAdd} style={{ padding: "12px 28px" }}>Add Your First Service</BtnPrimary>
           </div>
         ) : (
           <>
+            <div style={{ display: "flex", gap: 6, marginBottom: 14, overflowX: "auto", paddingBottom: 4 }}>
+              {["All", ...CATEGORIES].map(c => (
+                <div key={c} onClick={() => setFilterCat(c)} style={{ padding: "7px 14px", borderRadius: 10, background: filterCat === c ? C.accentSoft : C.surface, border: `1px solid ${filterCat === c ? C.accent : C.border}`, fontSize: 12, fontWeight: 600, color: filterCat === c ? C.accent : C.mid, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>{c}</div>
+              ))}
+            </div>
             <div style={{ fontSize: 12, color: C.dim, fontWeight: 600, marginBottom: 12 }}>{services.filter(s => s.active !== false).length} active · {services.filter(s => s.active === false).length} hidden</div>
-            {services.map((s, i) => (
+            {services.filter(s => filterCat === "All" || (s.category || "Hair") === filterCat).map((s, i) => (
               <Card key={s.id} style={{ padding: "16px", marginBottom: 10, opacity: s.active === false ? 0.5 : 1, transition: "opacity 0.2s" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 14, background: `linear-gradient(135deg,${C.accentDark}22,${C.accent}22)`, border: `1px solid ${C.accent}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{s.icon || "✨"}</div>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: `linear-gradient(135deg,${C.accentDark}22,${C.accent}22)`, border: `1px solid ${C.accent}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: C.accent, flexShrink: 0 }}>{(s.category || "H")[0]}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>{s.name}</div>
-                    {s.description && <div style={{ fontSize: 12, color: C.dim, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.description}</div>}
-                    <div style={{ display: "flex", gap: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700 }}>{s.name}</span>
+                      <span style={{ fontSize: 10, color: C.dim, background: C.surfaceHigh, borderRadius: 6, padding: "2px 6px" }}>{s.category || "Hair"}</span>
+                    </div>
+                    {s.description && <div style={{ fontSize: 12, color: C.dim, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.description}</div>}
+                    <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: C.accent }}>${s.price}</span>
                       <span style={{ fontSize: 13, color: C.mid }}>· {s.duration}</span>
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                    <div onClick={() => toggleActive(s)} style={{ width: 32, height: 32, borderRadius: 9, background: s.active !== false ? C.accentSoft : C.surfaceHigh, border: `1px solid ${s.active !== false ? C.accent : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13 }}>
-                      {s.active !== false ? "👁" : "🚫"}
-                    </div>
-                    <div onClick={() => openEdit(s)} style={{ width: 32, height: 32, borderRadius: 9, background: C.surfaceHigh, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13 }}>✏️</div>
-                    <div onClick={() => deleteService(s.id)} style={{ width: 32, height: 32, borderRadius: 9, background: "#f43f5e11", border: "1px solid #f43f5e22", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 13 }}>🗑️</div>
+                    <div onClick={() => openEdit(s)} style={{ width: 32, height: 32, borderRadius: 9, background: C.surfaceHigh, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 12, color: C.mid }}>✎</div>
+                    <div onClick={() => deleteService(s.id)} style={{ width: 32, height: 32, borderRadius: 9, background: `${C.red}11`, border: `1px solid ${C.red}22`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 12, color: C.red }}>✕</div>
                   </div>
                 </div>
               </Card>
@@ -1592,6 +1599,11 @@ function Services({ navigate }) {
               }} style={{ padding: "5px 10px", background: C.accentSoft, border: `1px solid ${C.accent}44`, borderRadius: 8, fontSize: 11, fontWeight: 700, color: C.accent, cursor: generatingDesc || !form.name.trim() ? "not-allowed" : "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", opacity: !form.name.trim() ? 0.4 : 1 }}>{generatingDesc ? "..." : "✦ AI"}</button>
             </div>
             <input value={form.desc} onChange={e => setForm(p => ({ ...p, desc: e.target.value }))} placeholder="Short description clients will see" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 14 }} />
+
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Category</div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+              {CATEGORIES.map(c => <div key={c} onClick={() => setForm(p => ({ ...p, category: c }))} style={{ padding: "8px 14px", borderRadius: 10, background: form.category === c ? C.accentSoft : C.surfaceHigh, border: `1px solid ${form.category === c ? C.accent : C.borderHigh}`, fontSize: 12, fontWeight: 600, color: form.category === c ? C.accent : C.mid, cursor: "pointer" }}>{c}</div>)}
+            </div>
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", marginBottom: 16, borderTop: `1px solid ${C.border}` }}>
               <div><div style={{ fontSize: 14, fontWeight: 600 }}>Show on booking page</div><div style={{ fontSize: 12, color: C.dim }}>Clients can book this service</div></div>
@@ -2627,7 +2639,7 @@ function Analytics({ navigate }) {
       </div>
       <div style={{ padding: "0 20px" }}>
         {loading ? (
-          <div style={{ textAlign: "center", padding: 60, color: C.dim }}>Loading analytics...</div>
+          <div style={{ padding: "16px 0" }}>{[1,2,3].map(i => <div key={i} style={{ height: 68, background: C.surface, borderRadius: 18, marginBottom: 10, animation: "shimmer 1.5s infinite", backgroundImage: `linear-gradient(90deg,${C.surface},${C.surfaceHigh},${C.surface})`, backgroundSize: "200% 100%" }} />)}</div>
         ) : (
           <>
             <div style={{ display: "flex", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 4, marginBottom: 20 }}>
@@ -5011,8 +5023,34 @@ export default function App() {
   const [screen, setScreen] = useState("splash");
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
   const screenHistoryRef = useRef([]);
-  const [userRole, setUserRole] = useState("owner"); // "owner" or "staff"
+  const [userRole, setUserRole] = useState("owner");
   const [staffOwnerId, setStaffOwnerId] = useState(null);
+  const [toasts, setToasts] = useState([]);
+  const lastApptCountRef = useRef(null);
+
+  const showToast = (msg, type = "info") => {
+    const id = Date.now();
+    setToasts(p => [...p, { id, msg, type }]);
+    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4000);
+  };
+
+  // Poll for new appointments every 30s and show toast
+  useEffect(() => {
+    const poll = setInterval(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const uid = session.user.id;
+      const { count } = await supabase.from("appointments").select("id", { count: "exact", head: true }).eq("owner_id", uid);
+      if (lastApptCountRef.current !== null && count > lastApptCountRef.current) {
+        const diff = count - lastApptCountRef.current;
+        showToast(`${diff} new booking${diff > 1 ? "s" : ""}!`, "booking");
+        // Play sound
+        try { new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGMcBj+a2teleS4OELI=").play(); } catch {}
+      }
+      lastApptCountRef.current = count;
+    }, 30000);
+    return () => clearInterval(poll);
+  }, []);
 
   // Handle browser back button
   useEffect(() => {
@@ -5163,6 +5201,15 @@ export default function App() {
   return (
     <div style={{ fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", background: C.bg, minHeight: "100vh", color: C.text }}>
       <style>{GLOBAL_STYLES}</style>
+      {/* Toast Notifications */}
+      <div style={{ position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 9999, display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 400, padding: "0 16px", pointerEvents: "none" }}>
+        {toasts.map(t => (
+          <div key={t.id} style={{ background: t.type === "booking" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : t.type === "error" ? C.red : C.surfaceSolid, border: `1px solid ${t.type === "booking" ? C.accent : t.type === "error" ? C.red : C.border}`, borderRadius: 16, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, animation: "slideDown 0.3s ease", boxShadow: "0 8px 32px rgba(0,0,0,0.4)", backdropFilter: "blur(20px)", pointerEvents: "auto" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, flexShrink: 0 }}>{t.type === "booking" ? "▣" : t.type === "error" ? "!" : "◉"}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>{t.msg}</div>
+          </div>
+        ))}
+      </div>
       {showSidebar && <Sidebar active={screen} navigate={navigate} userRole={userRole} staffOwnerId={staffOwnerId} />}
       {needsPaywall && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
