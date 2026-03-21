@@ -1700,7 +1700,7 @@ function Payments({ navigate }) {
 }
 
 // ── SETTINGS ───────────────────────────────────────────────────────────────────
-function Settings({ navigate, userRole }) {
+function Settings({ navigate, userRole, staffOwnerId }) {
   const isDesktop = useDesktop();
   const [aiReplies, setAiReplies] = useState(true);
   const [aiBookings, setAiBookings] = useState(true);
@@ -1734,7 +1734,8 @@ function Settings({ navigate, userRole }) {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase.from("business_profiles").select("ai_name,settings").eq("user_id", session.user.id).single();
+      const bizUid = (userRole === "staff" && staffOwnerId) ? staffOwnerId : session.user.id;
+      const { data } = await supabase.from("business_profiles").select("ai_name,settings").eq("user_id", bizUid).single();
       if (data?.ai_name) setAiName(data.ai_name);
       if (data?.settings) {
         const s = typeof data.settings === "string" ? JSON.parse(data.settings) : data.settings;
@@ -1752,6 +1753,11 @@ function Settings({ navigate, userRole }) {
         if (s.profilePic) setProfilePic(s.profilePic);
       }
       setSettingsLoaded(true);
+      // If staff, load their own name
+      if (userRole === "staff") {
+        const { data: sp } = await supabase.from("staff_profiles").select("name").eq("user_id", session.user.id).single();
+        if (sp?.name) setDisplayName(sp.name);
+      }
     };
     load();
   }, []);
@@ -1834,6 +1840,26 @@ function Settings({ navigate, userRole }) {
           </div>
         </Card>
         </>}
+        {userRole === "staff" && (
+          <>
+            <SectionLabel>My Profile</SectionLabel>
+            <Card style={{ padding: 16, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Display Name</div>
+              <input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Your name" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
+              {profileSaved
+                ? <div style={{ width: "100%", padding: 11, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Saved!</div>
+                : <BtnPrimary onClick={async () => {
+                    setSavingProfile(true);
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session) {
+                      await supabase.from("staff_profiles").update({ name: displayName }).eq("user_id", session.user.id);
+                    }
+                    setSavingProfile(false); setProfileSaved(true); setTimeout(() => setProfileSaved(false), 3000);
+                  }} disabled={savingProfile} style={{ width: "100%", padding: 11, fontSize: 13 }}>{savingProfile ? "Saving..." : "Save Name"}</BtnPrimary>
+              }
+            </Card>
+          </>
+        )}
         <SectionLabel>Account</SectionLabel>
         <Card>
           {[
@@ -3152,9 +3178,9 @@ function Booking({ navigate }) {
 
 
 // ── STAFF ──────────────────────────────────────────────────────────────────────
-function Staff({ navigate }) {
+function Staff({ navigate, userRole, staffOwnerId }) {
   const isDesktop = useDesktop();
-  const [view, setView] = useState("list"); // "list" | "member" | "groupchat"
+  const [view, setView] = useState("list");
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
@@ -3167,15 +3193,13 @@ function Staff({ navigate }) {
   const [staff, setStaff] = useState([]);
   const [aiName, setAiName] = useState("Aria");
   const [bizContext, setBizContext] = useState("");
-
-  // Group chat state
-  const [groupMessages, setGroupMessages] = useState(() => {
-    try { const s = localStorage.getItem("staff_group_chat"); return s ? JSON.parse(s) : []; } catch { return []; }
-  });
+  const [groupMessages, setGroupMessages] = useState([]);
   const [groupInput, setGroupInput] = useState("");
   const [aiTyping, setAiTyping] = useState(false);
   const chatEndRef = useRef(null);
-  const [ownerName, setOwnerName] = useState("You");
+  const [myName, setMyName] = useState("You");
+  const [myUserId, setMyUserId] = useState(null);
+  const [bizOwnerId, setBizOwnerId] = useState(null);
 
   const statusColor = s => s === "active" ? C.green : C.yellow;
 
@@ -3183,44 +3207,58 @@ function Staff({ navigate }) {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const uid = session.user.id;
+      const myId = session.user.id;
+      setMyUserId(myId);
+      const oid = (userRole === "staff" && staffOwnerId) ? staffOwnerId : myId;
+      setBizOwnerId(oid);
 
-      // Load staff from Supabase
-      const { data: staffData } = await supabase.from("staff_members").select("*").eq("owner_id", uid).order("created_at", { ascending: true });
+      // Load my name
+      if (userRole === "staff") {
+        const { data: sp } = await supabase.from("staff_profiles").select("name").eq("user_id", myId).single();
+        setMyName(sp?.name || session.user.email?.split("@")[0] || "You");
+      } else {
+        const { data: bp } = await supabase.from("business_profiles").select("settings").eq("user_id", myId).single();
+        setMyName(bp?.settings?.displayName || session.user.email?.split("@")[0] || "You");
+      }
+
+      const { data: staffData } = await supabase.from("staff_members").select("*").eq("owner_id", oid).order("created_at", { ascending: true });
       if (staffData && staffData.length > 0) {
-        setStaff(staffData.map(s => ({ id: s.id, name: s.name, role: s.role, avatar: s.avatar || s.name.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: s.phone || "", status: s.status || "active", appts: s.appts || 0, revenue: s.revenue || "$0", rating: s.rating || 5.0, services: s.services || [] })));
+        setStaff(staffData.map(s => ({ id: s.id, name: s.name, role: s.role, avatar: s.avatar || s.name.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: s.phone || "", status: s.status || "active", appts: 0, revenue: "$0", rating: 5.0, services: [] })));
       }
 
       const [profRes, apptRes, svcRes] = await Promise.all([
-        supabase.from("business_profiles").select("ai_name,biz_name,location").eq("user_id", uid).single(),
-        supabase.from("appointments").select("client_name,service,time,day,status,price").eq("owner_id", uid).order("created_at",{ascending:false}).limit(20),
-        supabase.from("services").select("name,price,duration").eq("owner_id", uid).eq("active",true).limit(10),
+        supabase.from("business_profiles").select("ai_name,biz_name,location").eq("user_id", oid).single(),
+        supabase.from("appointments").select("client_name,service,time,day,status,price").eq("owner_id", oid).order("created_at",{ascending:false}).limit(20),
+        supabase.from("services").select("name,price,duration").eq("owner_id", oid).eq("active",true).limit(10),
       ]);
-      const name = profRes.data?.ai_name || "Aria";
+      setAiName(profRes.data?.ai_name || "Aria");
       const biz = profRes.data?.biz_name || "your business";
-      setAiName(name);
-      setOwnerName(profRes.data?.biz_name ? biz.split(" ")[0] : "You");
-      const allAppts = apptRes.data || [];
-      const todayAppts = allAppts.filter(a => a.day === "Today");
       const services = (svcRes.data || []).map(s => `${s.name} ($${s.price})`).join(", ");
-      setBizContext(`Business: ${biz}\nServices: ${services}\nToday's appointments: ${todayAppts.map(a=>`${a.client_name} (${a.service} at ${a.time})`).join("; ") || "none"}\nTotal appointments on record: ${allAppts.length}`);
+      setBizContext(`Business: ${biz}\nServices: ${services}\nTotal appointments: ${(apptRes.data||[]).length}`);
+
+      // Load group chat from Supabase
+      const { data: msgs } = await supabase.from("group_messages").select("*").eq("owner_id", oid).order("created_at", { ascending: true }).limit(100);
+      if (msgs) setGroupMessages(msgs.map(m => ({ id: m.id, user_id: m.user_id, sender: m.sender_name, text: m.text, time: new Date(m.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}), isAI: m.is_ai })));
     };
     load();
-  }, []);
+  }, [userRole, staffOwnerId]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [groupMessages, aiTyping]);
 
-  useEffect(() => {
-    try { localStorage.setItem("staff_group_chat", JSON.stringify(groupMessages.slice(-100))); } catch {}
-  }, [groupMessages]);
-
   const sendGroupMessage = async () => {
     const text = groupInput.trim();
-    if (!text) return;
+    if (!text || !bizOwnerId) return;
     setGroupInput("");
-    const msg = { id: Date.now(), from: "owner", sender: ownerName, text, time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) };
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+
+    // Save to Supabase
+    const { data: inserted } = await supabase.from("group_messages").insert([{
+      owner_id: bizOwnerId, user_id: myUserId, sender_name: myName, text, is_ai: false,
+    }]).select().single();
+    const msg = { id: inserted?.id || Date.now(), user_id: myUserId, sender: myName, text, time: timeStr, isAI: false };
     setGroupMessages(p => [...p, msg]);
 
     // Check if @AI is mentioned
@@ -3236,7 +3274,7 @@ function Staff({ navigate }) {
             model: "llama-3.1-8b-instant", max_tokens: 200,
             messages: [
               { role: "system", content: `You are ${aiName}, an AI assistant in a beauty business staff group chat. Be concise, helpful, and friendly. Business context:\n${bizContext}\nAnswer questions from the staff about the business, schedule, clients, or anything they need. Keep replies short (2-3 sentences max). No navigation commands here.` },
-              ...groupMessages.slice(-10).map(m => ({ role: m.from === "ai" ? "assistant" : "user", content: m.text })),
+              ...groupMessages.slice(-10).map(m => ({ role: m.isAI ? "assistant" : "user", content: m.text })),
               { role: "user", content: question || text }
             ],
           }),
@@ -3244,10 +3282,11 @@ function Staff({ navigate }) {
         const data = await res.json();
         const reply = data.choices?.[0]?.message?.content || "Got it!";
         setAiTyping(false);
-        setGroupMessages(p => [...p, { id: Date.now()+1, from: "ai", sender: aiName, text: reply, time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) }]);
+        await supabase.from("group_messages").insert([{ owner_id: bizOwnerId, user_id: "ai", sender_name: aiName, text: reply, is_ai: true }]);
+        setGroupMessages(p => [...p, { id: Date.now()+1, user_id: "ai", sender: aiName, text: reply, time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}), isAI: true }]);
       } catch {
         setAiTyping(false);
-        setGroupMessages(p => [...p, { id: Date.now()+1, from: "ai", sender: aiName, text: "Connection issue, try again.", time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) }]);
+        setGroupMessages(p => [...p, { id: Date.now()+1, user_id: "ai", sender: aiName, text: "Connection issue, try again.", time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}), isAI: true }]);
       }
     }
   };
@@ -3277,18 +3316,28 @@ function Staff({ navigate }) {
             </div>
           )}
           {groupMessages.map((m, i) => {
-            const isOwner = m.from === "owner";
-            const isAI = m.from === "ai";
+            const isMe = m.user_id === myUserId;
+            const isAI = m.isAI;
+            const showName = !isMe && (i === 0 || groupMessages[i-1]?.user_id !== m.user_id);
+            const avatar = m.sender ? m.sender.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase() : "?";
+            const showAvatar = !isMe && (i === groupMessages.length - 1 || groupMessages[i+1]?.user_id !== m.user_id);
             return (
-              <div key={m.id || i} style={{ marginBottom:14 }}>
-                {!isOwner && <div style={{ fontSize:11, color:isAI?C.accent:C.mid, fontWeight:700, marginBottom:4, marginLeft:2 }}>{m.sender}</div>}
-                <div style={{ display:"flex", justifyContent:isOwner?"flex-end":"flex-start" }}>
-                  {isAI && <div style={{ width:28, height:28, borderRadius:9, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, flexShrink:0, marginRight:8, alignSelf:"flex-end" }}>✦</div>}
-                  <div style={{ maxWidth:"78%", padding:"10px 14px", borderRadius:isOwner?"18px 18px 4px 18px":"18px 18px 18px 4px", background:isOwner?`linear-gradient(135deg,${C.accentDark},${C.accent})`:isAI?C.surfaceHigh:C.surface, border:isOwner?"none":`1px solid ${isAI?C.accent+"33":C.border}`, fontSize:14, lineHeight:1.55, color:isOwner?"#fff":C.text }}>
-                    {/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(m.text) ? <img src={m.text} alt="" style={{ maxWidth:"100%", borderRadius:12, display:"block" }} /> : m.text.startsWith("http") && /\.(jpg|jpeg|png|gif|webp)/i.test(m.text) ? <img src={m.text} alt="" style={{ maxWidth:"100%", borderRadius:12, display:"block" }} /> : m.text}
+              <div key={m.id || i} style={{ display: "flex", flexDirection: isMe ? "row-reverse" : "row", gap: 8, marginBottom: groupMessages[i+1]?.user_id === m.user_id ? 2 : 12, alignItems: "flex-end" }}>
+                {!isMe && (
+                  <div style={{ width: 28, height: 28, flexShrink: 0, visibility: showAvatar ? "visible" : "hidden" }}>
+                    {isAI
+                      ? <div style={{ width: 28, height: 28, borderRadius: 14, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#fff", fontWeight: 800 }}>AI</div>
+                      : <div style={{ width: 28, height: 28, borderRadius: 14, background: C.surfaceHigh, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: C.mid }}>{avatar}</div>
+                    }
                   </div>
+                )}
+                <div style={{ maxWidth: "72%" }}>
+                  {showName && <div style={{ fontSize: 11, color: isAI ? C.accent : C.mid, fontWeight: 600, marginBottom: 3, marginLeft: 4 }}>{m.sender}</div>}
+                  <div style={{ padding: "10px 14px", borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: isMe ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : isAI ? "rgba(124,58,237,0.12)" : C.surface, border: isMe ? "none" : `1px solid ${isAI ? C.accent + "22" : C.border}`, fontSize: 14, lineHeight: 1.5, color: isMe ? "#fff" : C.text }}>
+                    {/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(m.text) ? <img src={m.text} alt="" style={{ maxWidth: "100%", borderRadius: 10, display: "block" }} /> : m.text}
+                  </div>
+                  {(i === groupMessages.length - 1 || groupMessages[i+1]?.user_id !== m.user_id) && <div style={{ fontSize: 10, color: C.dim, marginTop: 3, textAlign: isMe ? "right" : "left", marginLeft: 4 }}>{m.time}</div>}
                 </div>
-                <div style={{ fontSize:10, color:C.dim, marginTop:4, textAlign:isOwner?"right":"left" }}>{m.time}</div>
               </div>
             );
           })}
@@ -3306,7 +3355,7 @@ function Staff({ navigate }) {
         <div style={{ padding:"10px 14px 32px", borderTop:`1px solid ${C.border}`, flexShrink:0 }}>
           <div style={{ fontSize:11, color:C.dim, marginBottom:6, marginLeft:2 }}>Type <span style={{color:C.accent,fontWeight:700}}>@{aiName}</span> to ask the AI</div>
           <div style={{ display:"flex", gap:8, background:C.surface, border:`1px solid ${C.border}`, borderRadius:16, padding:"8px 8px 8px 14px", alignItems:"center" }}>
-            <div onClick={() => { const url = prompt("Paste image or GIF URL:"); if (url && url.trim()) { setGroupInput(""); const msg = { id: Date.now(), from: "owner", sender: ownerName, text: url.trim(), time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) }; setGroupMessages(p => [...p, msg]); } }} style={{ cursor:"pointer", fontSize:18, flexShrink:0 }}>📷</div>
+            <div onClick={async () => { const url = prompt("Paste image or GIF URL:"); if (url && url.trim()) { await supabase.from("group_messages").insert([{ owner_id: bizOwnerId, user_id: myUserId, sender_name: myName, text: url.trim(), is_ai: false }]); setGroupMessages(p => [...p, { id: Date.now(), user_id: myUserId, sender: myName, text: url.trim(), time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}), isAI: false }]); } }} style={{ cursor:"pointer", fontSize:18, flexShrink:0 }}>📷</div>
             <input
               value={groupInput}
               onChange={e => setGroupInput(e.target.value)}
