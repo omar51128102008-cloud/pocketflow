@@ -306,7 +306,7 @@ function Login({ navigate, setUserRole, setStaffOwnerId }) {
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ width: 72, height: 72, borderRadius: 22, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, margin: "0 auto 16px", boxShadow: "0 0 60px rgba(139,92,246,0.35)", animation: "glowPulse 3s ease-in-out infinite", overflow: "hidden", padding: 14 }}><img src={SPOOL_LOGO} alt="spool" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
           <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em" }}>spool</div>
-          <div style={{ fontSize: 14, color: C.mid, marginTop: 8, fontWeight: 400 }}>Your AI business assistant</div>
+          <div style={{ fontSize: 14, color: C.mid, marginTop: 8, fontWeight: 400 }}>AI-powered business management</div>
         </div>
         {resetMode ? (
           <>
@@ -351,7 +351,7 @@ function Login({ navigate, setUserRole, setStaffOwnerId }) {
 }
 
 // ── ONBOARDING ─────────────────────────────────────────────────────────────────
-const BUSINESS_TYPES = ["Hair Salon", "Barbershop", "Nail Salon", "Lash Tech", "Esthetician", "Massage Therapy", "Other"];
+const BUSINESS_TYPES = ["Hair & Beauty", "Barbershop", "Nail Studio", "Spa & Wellness", "Photography", "Fitness & Training", "Tutoring & Education", "Consulting", "Healthcare & Clinic", "Auto & Repair", "Cleaning Service", "Pet Care", "Freelance & Creative", "Food & Catering", "Real Estate", "Legal & Accounting", "Event Planning", "Other"];
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const PLATFORMS = [
   { id: "whatsapp", label: "WhatsApp", icon: "W", color: "#25D366" },
@@ -504,7 +504,7 @@ function Onboarding({ navigate }) {
             ))}
             <div style={{ background: C.surface, border: `1px dashed ${C.borderHigh}`, borderRadius: 14, padding: 14 }}>
               <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 10 }}>ADD SERVICE</div>
-              <input placeholder="Service name (e.g. Knotless Braids)" value={newService.name} onChange={e => setNewService(p => ({ ...p, name: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }} />
+              <input placeholder="Service name (e.g. Consultation, Photoshoot, Haircut...)" value={newService.name} onChange={e => setNewService(p => ({ ...p, name: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }} />
               <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                 <input placeholder="Price ($)" type="number" value={newService.price} onChange={e => setNewService(p => ({ ...p, price: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
                 <select value={newService.duration} onChange={e => setNewService(p => ({ ...p, duration: e.target.value }))} style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>
@@ -1293,20 +1293,61 @@ function Clients({ navigate, userRole, staffOwnerId }) {
           <span style={{ fontSize: 11, color: C.mid, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 100, padding: "3px 10px" }}>Since {selectedClient.joined}</span>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, padding: "16px 20px" }}>
-        {[{ label: "Visits", value: selectedClient.totalVisits }, { label: "Total spent", value: selectedClient.totalSpent }, { label: "Avg spend", value: selectedClient.avgSpend }].map((s, i) => (
-          <Card key={i} style={{ padding: "14px 10px", textAlign: "center" }}>
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: i === 0 ? 24 : 18, fontWeight: 800, color: i === 1 ? C.gold : C.text }}>{s.value}</div>
-            <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>{s.label}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, padding: "16px 20px" }}>
+        {[{ label: "Visits", value: selectedClient.totalVisits }, { label: "Paid", value: selectedClient.totalSpent }, { label: "Owed", value: "$" + (selectedClient.amount_owed || 0) }, { label: "Balance", value: "$" + ((selectedClient.total_spent || 0) - (selectedClient.amount_owed || 0)) }].map((s, i) => (
+          <Card key={i} style={{ padding: "12px 8px", textAlign: "center" }}>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 16, fontWeight: 800, color: i === 1 ? C.green : i === 2 ? C.red : i === 3 ? C.gold : C.text }}>{s.value}</div>
+            <div style={{ fontSize: 9, color: C.dim, marginTop: 3 }}>{s.label}</div>
           </Card>
         ))}
       </div>
-      <div style={{ display: "flex", padding: "0 20px", gap: 8, marginBottom: 20 }}>
-        {["history", "notes", "contact"].map(t => (
-          <div key={t} onClick={() => setActiveTab(t)} style={{ flex: 1, padding: "10px", borderRadius: 12, background: activeTab === t ? C.accentSoft : C.surface, border: `1px solid ${activeTab === t ? C.accent : C.border}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: activeTab === t ? C.accent : C.mid, cursor: "pointer", textTransform: "capitalize" }}>{t}</div>
+      <div style={{ display: "flex", padding: "0 20px", gap: 6, marginBottom: 20 }}>
+        {["history", "financials", "notes", "contact"].map(t => (
+          <div key={t} onClick={() => setActiveTab(t)} style={{ flex: 1, padding: "10px", borderRadius: 12, background: activeTab === t ? C.accentSoft : C.surface, border: `1px solid ${activeTab === t ? C.accent : C.border}`, textAlign: "center", fontSize: 12, fontWeight: 600, color: activeTab === t ? C.accent : C.mid, cursor: "pointer", textTransform: "capitalize" }}>{t}</div>
         ))}
       </div>
       <div style={{ padding: "0 20px" }}>
+        {activeTab === "financials" && (
+          <div>
+            <Card style={{ padding: 16, marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
+                <span style={{ fontSize: 13, color: C.mid }}>Total amount</span>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>${(selectedClient.total_amount || selectedClient.total_spent || 0)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
+                <span style={{ fontSize: 13, color: C.mid }}>Amount paid</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.green }}>${(selectedClient.amount_paid || selectedClient.total_spent || 0)}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0" }}>
+                <span style={{ fontSize: 13, color: C.mid }}>Amount owed</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: (selectedClient.amount_owed || 0) > 0 ? C.red : C.green }}>${(selectedClient.amount_owed || 0)}</span>
+              </div>
+            </Card>
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <button onClick={async () => {
+                const val = prompt("Enter payment amount received:");
+                if (!val || isNaN(val)) return;
+                const amount = parseFloat(val);
+                const newPaid = (selectedClient.amount_paid || selectedClient.total_spent || 0) + amount;
+                const newOwed = Math.max(0, (selectedClient.amount_owed || 0) - amount);
+                await supabase.from("clients").update({ amount_paid: newPaid, amount_owed: newOwed }).eq("id", selectedClient.id);
+                setSelectedClient(p => ({ ...p, amount_paid: newPaid, amount_owed: newOwed, total_spent: newPaid }));
+                setClients(p => p.map(c => c.id === selectedClient.id ? { ...c, amount_paid: newPaid, amount_owed: newOwed, total_spent: newPaid, totalSpent: "$" + newPaid } : c));
+              }} style={{ flex: 1, padding: 12, background: `${C.green}15`, border: `1px solid ${C.green}33`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.green, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>+ Add Payment</button>
+              <button onClick={async () => {
+                const val = prompt("Enter amount owed/charged:");
+                if (!val || isNaN(val)) return;
+                const amount = parseFloat(val);
+                const totalAmt = (selectedClient.total_amount || selectedClient.total_spent || 0) + amount;
+                const newOwed = (selectedClient.amount_owed || 0) + amount;
+                await supabase.from("clients").update({ total_amount: totalAmt, amount_owed: newOwed }).eq("id", selectedClient.id);
+                setSelectedClient(p => ({ ...p, total_amount: totalAmt, amount_owed: newOwed }));
+                setClients(p => p.map(c => c.id === selectedClient.id ? { ...c, total_amount: totalAmt, amount_owed: newOwed } : c));
+              }} style={{ flex: 1, padding: 12, background: `${C.red}12`, border: `1px solid ${C.red}33`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>+ Add Charge</button>
+            </div>
+            <div style={{ fontSize: 11, color: C.dim, textAlign: "center" }}>Tip: Tell the AI "update Mohammed's balance" and it can help manage financials</div>
+          </div>
+        )}
         {activeTab === "history" && (
           clientAppts.length === 0 ? (
             <Card style={{ padding: "32px 20px", textAlign: "center" }}>
@@ -1476,7 +1517,7 @@ function Services({ navigate }) {
   const [userId, setUserId] = useState(null);
   const [filterCat, setFilterCat] = useState("All");
 
-  const CATEGORIES = ["Hair", "Nails", "Skin", "Lashes", "Makeup", "Body", "Other"];
+  const CATEGORIES = ["Standard", "Premium", "Package", "Consultation", "Add-on", "Other"];
   const DURATIONS = ["30m","45m","1h","1.5h","2h","2.5h","3h","3.5h","4h","4.5h","5h","5.5h","6h"];
 
   useEffect(() => {
@@ -1597,7 +1638,7 @@ function Services({ navigate }) {
             </div>
 
             <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Service Name *</div>
-            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Knotless Braids" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 14 }} />
+            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Consultation, Photoshoot, Haircut..." style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 14 }} />
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
               <div>
@@ -1958,7 +1999,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
             {["friendly", "professional", "casual"].map(t => <div key={t} onClick={() => setTone(t)} style={{ flex: 1, padding: "11px 8px", borderRadius: 12, background: tone === t ? C.accentSoft : C.surfaceHigh, border: `1px solid ${tone === t ? C.accent : C.borderHigh}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: tone === t ? C.accent : C.mid, cursor: "pointer", textTransform: "capitalize" }}>{t}</div>)}
           </div>
           <div style={{ background: C.surfaceHigh, border: `1px solid ${C.borderHigh}`, borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.mid, lineHeight: 1.5 }}>
-            {tone === "friendly" ? '"Hey girl! 💕 I have a 2pm open this Saturday, does that work?"' : tone === "professional" ? '"Good afternoon. I have availability at 2:00 PM this Saturday."' : '"Yo! Saturday at 2 works? Let me know 🔥"'}
+            {tone === "friendly" ? '"Hey! I have a 2pm open this Saturday, does that work?"' : tone === "professional" ? '"Good afternoon. I have availability at 2:00 PM this Saturday."' : '"Saturday at 2 works? Let me know!"'}
           </div>
         </Card>
         </>}
@@ -2914,7 +2955,7 @@ function Promotions({ navigate }) {
                   body: JSON.stringify({
                     model: "llama-3.1-8b-instant", max_tokens: 250,
                     messages: [
-                      { role: "system", content: `You write short, engaging promotional messages for a beauty business called "${bizName}". Write a casual, warm promo message that includes a call to action. No subject line, just the message body. Keep it under 4 sentences. Include an emoji or two. End with "Book now: ${bookingUrl}"` },
+                      { role: "system", content: `You write short, engaging promotional messages for a business called "${bizName}". Write a casual, warm promo message that includes a call to action. No subject line, just the message body. Keep it under 4 sentences. Include an emoji or two. End with "Book now: ${bookingUrl}"` },
                       { role: "user", content: promoTitle ? `Write a promo about: ${promoTitle}` : "Write a general promotional message for open slots this week with a discount offer" },
                     ],
                   }),
@@ -3284,7 +3325,7 @@ function Booking({ navigate }) {
             <input placeholder="Your full name *" value={name} onChange={e => setName(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="(555) 123-4567" type="tel" value={phone} onChange={e => setPhone(handlePhoneInput(e.target.value))} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="Instagram handle (optional)" value={instagram} onChange={e => setInstagram(e.target.value)} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
-            <textarea placeholder="Notes — hair length, allergies, special requests..." value={note} onChange={e => setNote(e.target.value)} rows={3} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", resize: "none" }} />
+            <textarea placeholder="Notes — special requests, notes, preferences..." value={note} onChange={e => setNote(e.target.value)} rows={3} style={{ width: "100%", background: C.surface, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", resize: "none" }} />
           </div>
         )}
 
@@ -3462,7 +3503,7 @@ function Staff({ navigate, userRole, staffOwnerId }) {
           body: JSON.stringify({
             model: "llama-3.1-8b-instant", max_tokens: 200,
             messages: [
-              { role: "system", content: `You are ${aiName}, an AI assistant in a beauty business staff group chat. Be concise, helpful, and friendly. Business context:\n${bizContext}\nAnswer questions from the staff about the business, schedule, clients, or anything they need. Keep replies short (2-3 sentences max). No navigation commands here.` },
+              { role: "system", content: `You are ${aiName}, an AI assistant in a staff group chat. Be concise, helpful, and friendly. Business context:\n${bizContext}\nAnswer questions from the staff about the business, schedule, clients, or anything they need. Keep replies short (2-3 sentences max). No navigation commands here.` },
               ...groupMessages.slice(-10).map(m => ({ role: m.isAI ? "assistant" : "user", content: m.text })),
               { role: "user", content: question || text }
             ],
@@ -3623,9 +3664,9 @@ function Staff({ navigate, userRole, staffOwnerId }) {
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add Staff Member</div>
             <input placeholder="Full name" value={newName} onChange={e => setNewName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
-            <input placeholder="Role (e.g. Braider, Stylist)" value={newRole} onChange={e => setNewRole(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
+            <input placeholder="Role (e.g. Manager, Photographer, Stylist...)" value={newRole} onChange={e => setNewRole(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="(555) 123-4567" type="tel" value={newPhone} onChange={e => setNewPhone(handlePhoneInput(e.target.value))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }} />
-            <BtnPrimary disabled={!newName || !newRole} onClick={async () => { try { const { data: { session } } = await supabase.auth.getSession(); if (!session) return; const avatar = newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(); const row = { name: newName, role: newRole, avatar, phone: newPhone, status: "active", owner_id: session.user.id }; const { data, error } = await supabase.from("staff_members").insert([row]).select().single(); if (!error && data) { setStaff(p => [...p, { id: data.id, name: data.name, role: data.role, avatar, phone: data.phone || "", status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); } else { setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar, phone: newPhone, status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); } } catch(e) { setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar: newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: newPhone, status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); } setNewName(""); setNewRole(""); setNewPhone(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add Staff Member</BtnPrimary>
+            <BtnPrimary disabled={!newName || !newRole} onClick={async () => { try { const { data: { session } } = await supabase.auth.getSession(); if (!session) return; const oid = bizOwnerId || session.user.id; const avatar = newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(); const row = { name: newName, role: newRole, avatar, phone: newPhone, status: "active", owner_id: oid }; const { data, error } = await supabase.from("staff_members").insert([row]).select().single(); if (!error && data) { setStaff(p => [...p, { id: data.id, name: data.name, role: data.role, avatar, phone: data.phone || "", status: "active" }]); } else { console.error("Staff insert error:", error); setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar, phone: newPhone, status: "active" }]); } } catch(e) { console.error("Staff add error:", e); setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar: newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: newPhone, status: "active" }]); } setNewName(""); setNewRole(""); setNewPhone(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add Staff Member</BtnPrimary>
           </div>
         </div>
       )}
@@ -3651,11 +3692,7 @@ function Staff({ navigate, userRole, staffOwnerId }) {
                 <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Employee Name</div>
                 <input placeholder="e.g. Sarah" value={inviteName} onChange={e => setInviteName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 14 }} />
                 <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Role</div>
-                <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-                  {["Stylist", "Barber", "Nail Tech", "Lash Tech", "Manager", "Assistant"].map(r => (
-                    <div key={r} onClick={() => setInviteRole(r)} style={{ padding: "9px 14px", borderRadius: 100, background: inviteRole === r ? C.accentSoft : C.surface, border: `1px solid ${inviteRole === r ? C.accent : C.border}`, fontSize: 13, color: inviteRole === r ? C.accent : C.mid, cursor: "pointer", fontWeight: inviteRole === r ? 600 : 400 }}>{r}</div>
-                  ))}
-                </div>
+                <input placeholder="e.g. Photographer, Manager, Stylist..." value={inviteRole} onChange={e => setInviteRole(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }} />
                 <BtnPrimary disabled={!inviteName.trim()} onClick={async () => {
                   const code = "SP" + Math.random().toString(36).substring(2, 8).toUpperCase();
                   const { data: { session } } = await supabase.auth.getSession();
@@ -4365,7 +4402,7 @@ function Packages({ navigate }) {
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Create Package</div>
-            <input placeholder="Package name (e.g. Monthly Braids Bundle)" value={pName} onChange={e => setPName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
+            <input placeholder="Package name (e.g. Monthly Package, VIP Bundle...)" value={pName} onChange={e => setPName(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="Description (optional)" value={pDesc} onChange={e => setPDesc(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
               <div style={{ flex: 1 }}>
@@ -4634,7 +4671,7 @@ function AISidebarPanel({ navigate, isMobile }) {
       const [profRes, apptRes, clientRes, msgRes, svcRes, memRes] = await Promise.all([
         supabase.from("business_profiles").select("ai_name,biz_name,location").eq("user_id", bizUid).single(),
         supabase.from("appointments").select("client_name,service,time,day,status,price").eq("owner_id", bizUid).order("created_at", { ascending: false }).limit(30),
-        supabase.from("clients").select("name,total_visits,total_spent").eq("owner_id", bizUid).limit(8),
+        supabase.from("clients").select("name,total_visits,total_spent,amount_owed,amount_paid").eq("owner_id", bizUid).limit(20),
         supabase.from("messages").select("name,platform,preview,handled").eq("owner_id", bizUid).eq("handled", false).limit(10),
         supabase.from("services").select("name,price,duration").eq("owner_id", bizUid).eq("active", true).limit(10),
         supabase.from("ai_memories").select("fact").eq("owner_id", myId).order("created_at", { ascending: false }).limit(50),
@@ -4664,7 +4701,7 @@ function AISidebarPanel({ navigate, isMobile }) {
         `Total revenue: $${revenue.toLocaleString()} from ${confirmedAppts.length} confirmed appointments`,
         `Total appointments on record: ${allAppts.length}`,
         unhandled ? `Unread messages needing attention: ${unhandled}` : "No unread messages.",
-        (clientRes.data || []).length ? `Your clients: ${clientRes.data.map(c => `${c.name} (${c.total_visits} visits, $${c.total_spent})`).join("; ")}` : "No clients yet.",
+        (clientRes.data || []).length ? `Your clients: ${clientRes.data.map(c => `${c.name} (${c.total_visits} visits, $${c.total_spent} paid${c.amount_owed ? `, $${c.amount_owed} owed` : ""})`).join("; ")}` : "No clients yet.",
       ].filter(Boolean).join("\n");
       setBizContext(ctx);
       setAiName(name);
@@ -4763,7 +4800,7 @@ function AISidebarPanel({ navigate, isMobile }) {
     const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
     const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     const memBlock = memories.length > 0 ? `\n\nYOUR MEMORY (facts you've learned about this user):\n${memories.map(m => "- " + m).join("\n")}` : "";
-    return `You are ${aiName}, a personal AI business assistant built into spool — a booking and business management app for beauty professionals.
+    return `You are ${aiName}, a personal AI business assistant built into spool — a booking and business management app for small to medium businesses.
 
 CURRENT DATE & TIME: ${today}, ${time}
 
@@ -4771,13 +4808,22 @@ BUSINESS DATA:
 ${bizContext || "No data loaded yet."}${memBlock}
 
 YOUR PERSONALITY:
-- You're warm, confident, and genuinely helpful — like a smart business partner who happens to know everything about their schedule, clients, and finances
-- You're direct. No filler words. Every sentence should be useful
+- You're warm, confident, and genuinely helpful — like a smart business partner who knows everything about their schedule, clients, and finances
+- You're direct and precise. Every sentence should be useful. No filler
 - You use the user's first name naturally when you know it
 - When mentioning clients, use FIRST NAMES ONLY (e.g. "Tasha" not "Tasha Monroe")
-- You proactively suggest things: "Looks like you have a gap at 2 PM — want me to send a reminder to clients who haven't booked this month?"
-- You notice patterns: "Your Thursdays are always packed — have you considered raising prices for that day?"
-- You're honest when you don't know something
+- You proactively suggest things: "You have a gap at 2 PM — want me to send a reminder to clients who haven't booked this month?"
+- You notice patterns: "Thursdays are your busiest day — have you considered raising prices for peak times?"
+- You can do math: calculate totals, averages, remaining balances, profit margins
+- When asked about financials, be PRECISE with numbers from the data. Double-check your math
+- If a client has a balance or payment info, reference it accurately
+- You're honest when you don't know something — never make up data
+
+CRITICAL RULES:
+- NEVER hallucinate appointments, clients, or numbers that aren't in the data
+- If the data shows 5 appointments, say 5 — not "about 5" or "around 5"
+- If you don't have info about something, say "I don't have that data" — don't guess
+- When doing calculations, show your work briefly so the user can verify
 
 ${isVoice ? "VOICE MODE: Respond in 1-2 natural sentences. No markdown, no formatting, no asterisks. Sound like a real person talking." : "TEXT MODE: Use **bold** sparingly for key numbers and names. Keep responses 2-4 sentences unless the user asks for detail. Structure longer answers clearly but never use bullet lists unless asked."}
 
@@ -4787,7 +4833,7 @@ TOOLS YOU HAVE:
 
 MEMORY INSTRUCTIONS:
 - When the user shares personal or business info worth remembering, start your response with MEMORY:fact on its own line
-- Categories: name, preferences, goals, business details, client notes, personal facts
+- Categories: name, preferences, goals, business details, client notes, personal facts, financial info
 - Be specific: "User prefers to start work at 10 AM" not "User has a preference"
 - Only save genuinely useful facts, not every sentence
 - ALWAYS write your normal reply AFTER the MEMORY line
@@ -4802,12 +4848,14 @@ NAVIGATION INSTRUCTIONS:
 Both NAV: and MEMORY: are invisible to the user — they trigger actions in the app automatically. Never mention them.
 
 THINGS TO BE GREAT AT:
-- Answering "how's my business doing?" with real numbers from the data
+- Answering "how's my business doing?" with precise numbers from the data
+- Calculating financials: totals, remaining balances, profit, averages
 - Helping draft messages to clients
-- Suggesting pricing strategies based on what's working
+- Suggesting pricing and scheduling strategies
 - Noticing no-shows and suggesting follow-ups
 - Helping plan the week ahead based on the schedule
-- Answering questions about specific clients from the data`;
+- Answering questions about specific clients from the data
+- General business advice for small business owners`;
   };
 
   // Strips NAV: prefix, triggers navigation, returns clean display text
