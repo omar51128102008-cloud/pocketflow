@@ -200,11 +200,13 @@ function Splash() {
 }
 
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
-function Login({ navigate }) {
+function Login({ navigate, setUserRole, setStaffOwnerId }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [bizName, setBizName] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [joinMode, setJoinMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [resetMode, setResetMode] = useState(false);
@@ -216,15 +218,46 @@ function Login({ navigate }) {
     if (mode === "login") {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) { setError(error.message); setLoading(false); return; }
-      const { data: prof } = await supabase.from("business_profiles").select("biz_name").eq("user_id", data.user.id).single();
-      if (prof?.biz_name) navigate("home");
-      else navigate("onboarding");
+      // Check if staff
+      const { data: staffProf } = await supabase.from("staff_profiles").select("owner_id").eq("user_id", data.user.id).eq("status", "active").single();
+      if (staffProf) {
+        setUserRole("staff");
+        setStaffOwnerId(staffProf.owner_id);
+        navigate("home");
+      } else {
+        const { data: prof } = await supabase.from("business_profiles").select("biz_name").eq("user_id", data.user.id).single();
+        setUserRole("owner");
+        if (prof?.biz_name) navigate("home");
+        else navigate("onboarding");
+      }
     } else {
-      const { data, error } = await supabase.auth.signUp({
-        email, password
-      });
-      if (error) { setError(error.message); setLoading(false); return; }
-      navigate("onboarding");
+      // Signup
+      if (joinMode && inviteCode.trim()) {
+        // Staff signup with invite code
+        const { data: invite } = await supabase.from("team_invites").select("*").eq("code", inviteCode.trim().toUpperCase()).eq("status", "pending").single();
+        if (!invite) { setError("Invalid or expired invite code."); setLoading(false); return; }
+        const { data: signupData, error: signupErr } = await supabase.auth.signUp({ email, password });
+        if (signupErr) { setError(signupErr.message); setLoading(false); return; }
+        // Create staff profile
+        await supabase.from("staff_profiles").insert([{
+          user_id: signupData.user.id,
+          owner_id: invite.owner_id,
+          name: invite.name || email.split("@")[0],
+          role: invite.role || "Stylist",
+          status: "active",
+        }]);
+        // Mark invite as used
+        await supabase.from("team_invites").update({ status: "used", used_by: signupData.user.id }).eq("id", invite.id);
+        setUserRole("staff");
+        setStaffOwnerId(invite.owner_id);
+        navigate("home");
+      } else {
+        // Owner signup
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) { setError(error.message); setLoading(false); return; }
+        setUserRole("owner");
+        navigate("onboarding");
+      }
     }
     setLoading(false);
   };
@@ -275,7 +308,18 @@ function Login({ navigate }) {
               ))}
             </div>
             <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
-            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }} />
+            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: mode === "signup" ? 12 : 20 }} />
+            {mode === "signup" && (
+              <div style={{ marginBottom: 20 }}>
+                <div onClick={() => setJoinMode(!joinMode)} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: joinMode ? 12 : 0 }}>
+                  <div style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${joinMode ? C.accent : C.border}`, background: joinMode ? C.accent : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", transition: "all 0.2s" }}>{joinMode ? "✓" : ""}</div>
+                  <span style={{ fontSize: 13, color: C.mid }}>I have an invite code from my employer</span>
+                </div>
+                {joinMode && (
+                  <input placeholder="Enter invite code (e.g. SP7K2M)" value={inviteCode} onChange={e => setInviteCode(e.target.value.toUpperCase())} style={{ width: "100%", background: C.surface, border: `1px solid ${C.accent}44`, borderRadius: 14, padding: "14px 16px", fontSize: 16, color: C.accent, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", textAlign: "center", letterSpacing: 3, fontWeight: 700 }} />
+                )}
+              </div>
+            )}
             {error && <div style={{ background: "#f43f5e18", border: "1px solid #f43f5e33", borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
             {mode === "login" && <div style={{ textAlign: "right", marginBottom: 16, marginTop: -8 }}><span onClick={() => { setResetMode(true); setError(""); }} style={{ fontSize: 13, color: C.accent, cursor: "pointer" }}>Forgot password?</span></div>}
             <BtnPrimary onClick={handleAuth} disabled={loading || !email || !password} style={{ width: "100%", padding: 16 }}>
@@ -522,7 +566,7 @@ function Onboarding({ navigate }) {
 }
 
 // ── HOME ───────────────────────────────────────────────────────────────────────
-function Home({ navigate }) {
+function Home({ navigate, userRole }) {
   const [selectedAppt, setSelectedAppt] = useState(null);
   const [showAllAppts, setShowAllAppts] = useState(false);
   const [bizName, setBizName] = useState("");
@@ -622,11 +666,11 @@ function Home({ navigate }) {
         {/* Stats row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 24 }}>
           {[
-            { label: "Revenue", value: "$" + stats.weekRevenue, sub: "this week", color: C.gold, icon: "💰" },
+            { label: "Revenue", value: "$" + stats.weekRevenue, sub: "this week", color: C.gold, icon: "💰", ownerOnly: true },
             { label: "Appointments", value: String(stats.todayCount), sub: "today", color: C.text, icon: "📅" },
-            { label: "AI handled", value: String(stats.aiHandled), sub: "messages", color: C.accent, icon: "✦" },
+            { label: "AI handled", value: String(stats.aiHandled), sub: "messages", color: C.accent, icon: "✦", ownerOnly: true },
             { label: "Clients", value: String(stats.clientCount), sub: "total", color: C.green, icon: "👥" },
-          ].map((s, i) => (
+          ].filter(s => userRole === "owner" || !s.ownerOnly).map((s, i) => (
             <Card key={i} style={{ padding: "14px", display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: `${s.color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{s.icon}</div>
               <div style={{ minWidth: 0 }}>
@@ -639,7 +683,7 @@ function Home({ navigate }) {
       </div>
 
       {/* Revenue comparison */}
-      {(stats.revChange !== 0 || stats.lastWeekRev > 0) && (
+      {userRole === "owner" && (stats.revChange !== 0 || stats.lastWeekRev > 0) && (
         <div style={{ padding: "0 20px", marginBottom: 4 }}>
           <div style={{ background: stats.revChange >= 0 ? `${C.green}12` : `${C.red}12`, border: `1px solid ${stats.revChange >= 0 ? C.green : C.red}33`, borderRadius: 14, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ fontSize: 13, color: C.text }}>{stats.revChange >= 0 ? "↑" : "↓"} <span style={{ fontWeight: 700, color: stats.revChange >= 0 ? C.green : C.red }}>{Math.abs(stats.revChange)}%</span> vs last week</div>
@@ -649,7 +693,7 @@ function Home({ navigate }) {
       )}
 
       {/* Milestones */}
-      {stats.milestones && stats.milestones.length > 0 && (
+      {userRole === "owner" && stats.milestones && stats.milestones.length > 0 && (
         <div style={{ padding: "0 20px", marginBottom: 4 }}>
           {stats.milestones.map((m, i) => (
             <div key={i} style={{ background: `linear-gradient(135deg,${C.accentDark}18,${C.gold}12)`, border: `1px solid ${C.gold}33`, borderRadius: 14, padding: "14px 16px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12, animation: "fadeUp 0.5s ease" }}>
@@ -728,7 +772,7 @@ function Home({ navigate }) {
                   { icon: "💬", label: "View Inbox", screen: "inbox" },
                   { icon: "🔗", label: "Booking Link", screen: "sharelink" },
                   { icon: "👥", label: "Staff Chat", screen: "staff" },
-                ].map(item => (
+                ].filter(i => userRole === 'owner' || i.screen !== 'sharelink').map(item => (
                   <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                     <span style={{ fontSize: 20 }}>{item.icon}</span>
                     <span style={{ fontSize: 13, fontWeight: 600 }}>{item.label}</span>
@@ -742,16 +786,16 @@ function Home({ navigate }) {
         {/* Mobile-only grid */}
         <div className="mobile-only" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
           {[
-            { icon: "✂️", label: "Services", screen: "services", color: C.accent },
-            { icon: "💳", label: "Payments", screen: "payments", color: C.gold },
+            { icon: "✂️", label: "Services", screen: "services", color: C.accent, ownerOnly: true },
+            { icon: "💳", label: "Payments", screen: "payments", color: C.gold, ownerOnly: true },
             { icon: "⚙️", label: "Settings", screen: "settings", color: C.mid },
-            { icon: "🎁", label: "Loyalty", screen: "loyalty", color: "#f472b6" },
-            { icon: "📊", label: "Analytics", screen: "analytics", color: C.blue },
-            { icon: "📣", label: "Promotions", screen: "promotions", color: "#fb923c" },
+            { icon: "🎁", label: "Loyalty", screen: "loyalty", color: "#f472b6", ownerOnly: true },
+            { icon: "📊", label: "Analytics", screen: "analytics", color: C.blue, ownerOnly: true },
+            { icon: "📣", label: "Promotions", screen: "promotions", color: "#fb923c", ownerOnly: true },
             { icon: "👥", label: "Staff", screen: "staff", color: C.green },
-            { icon: "⏳", label: "Waitlist", screen: "waitlist", color: C.yellow },
-            { icon: "🔗", label: "Share Link", screen: "sharelink", color: C.accent },
-          ].map(item => (
+            { icon: "⏳", label: "Waitlist", screen: "waitlist", color: C.yellow, ownerOnly: true },
+            { icon: "🔗", label: "Share Link", screen: "sharelink", color: C.accent, ownerOnly: true },
+          ].filter(i => userRole === "owner" || !i.ownerOnly).map(item => (
             <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
               <div style={{ width: 38, height: 38, borderRadius: 12, background: `${item.color}15`, border: `1px solid ${item.color}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
               <span style={{ fontSize: 14, fontWeight: 600 }}>{item.label}</span>
@@ -1631,7 +1675,7 @@ function Payments({ navigate }) {
 }
 
 // ── SETTINGS ───────────────────────────────────────────────────────────────────
-function Settings({ navigate }) {
+function Settings({ navigate, userRole }) {
   const isDesktop = useDesktop();
   const [aiReplies, setAiReplies] = useState(true);
   const [aiBookings, setAiBookings] = useState(true);
@@ -1766,12 +1810,12 @@ function Settings({ navigate }) {
         <SectionLabel>Account</SectionLabel>
         <Card>
           {[
-            { icon: "✂️", label: "Services", sub: "Manage your services & prices", screen: "services" },
-            { icon: "👤", label: "Business Profile", sub: "Edit your business info", screen: "profile" },
-            { icon: "🔗", label: "Connected Accounts", sub: "WhatsApp, Instagram, Google", screen: "connections" },
-            { icon: "💳", label: "Subscription", sub: "Pro Plan · $29/mo", screen: "subscription" },
-          ].map(({ icon, label, sub, screen }, i) => (
-            <div key={i} onClick={() => navigate(screen)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 3 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
+            { icon: "✂️", label: "Services", sub: "Manage your services & prices", screen: "services", ownerOnly: true },
+            { icon: "👤", label: "Business Profile", sub: "Edit your business info", screen: "profile", ownerOnly: true },
+            { icon: "🔗", label: "Connected Accounts", sub: "WhatsApp, Instagram, Google", screen: "connections", ownerOnly: true },
+            { icon: "💳", label: "Subscription", sub: "Pro Plan · $29/mo", screen: "subscription", ownerOnly: true },
+          ].filter(i => userRole === "owner" || !i.ownerOnly).map(({ icon, label, sub, screen }, i, arr) => (
+            <div key={i} onClick={() => navigate(screen)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
               <span style={{ fontSize: 20 }}>{icon}</span>
               <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{label}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{sub}</div></div>
               <span style={{ fontSize: 12, color: C.mid }}>›</span>
@@ -3086,6 +3130,10 @@ function Staff({ navigate }) {
   const [view, setView] = useState("list"); // "list" | "member" | "groupchat"
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteName, setInviteName] = useState("");
+  const [inviteRole, setInviteRole] = useState("Stylist");
+  const [generatedCode, setGeneratedCode] = useState("");
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
   const [newPhone, setNewPhone] = useState("");
@@ -3261,6 +3309,7 @@ function Staff({ navigate }) {
               👥 <span>Group Chat</span>
               {groupMessages.length > 0 && <div style={{ width:7, height:7, borderRadius:"50%", background:C.accent }} />}
             </div>
+            <div onClick={() => setShowInvite(true)} style={{ padding:"9px 14px", background: C.accentSoft, border:`1px solid ${C.accent}44`, borderRadius:12, fontSize:13, fontWeight:600, cursor:"pointer", color: C.accent }}>🔗 Invite</div>
             <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "9px 16px", fontSize: 13 }}>+ Add</BtnPrimary>
           </div>
         </div>
@@ -3312,6 +3361,45 @@ function Staff({ navigate }) {
             <input placeholder="Role (e.g. Braider, Stylist)" value={newRole} onChange={e => setNewRole(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="(555) 123-4567" type="tel" value={newPhone} onChange={e => setNewPhone(handlePhoneInput(e.target.value))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }} />
             <BtnPrimary disabled={!newName || !newRole} onClick={async () => { try { const { data: { session } } = await supabase.auth.getSession(); if (!session) return; const avatar = newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(); const row = { name: newName, role: newRole, avatar, phone: newPhone, status: "active", owner_id: session.user.id }; const { data, error } = await supabase.from("staff_members").insert([row]).select().single(); if (!error && data) { setStaff(p => [...p, { id: data.id, name: data.name, role: data.role, avatar, phone: data.phone || "", status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); } else { setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar, phone: newPhone, status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); } } catch(e) { setStaff(p => [...p, { id: Date.now(), name: newName, role: newRole, avatar: newName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase(), phone: newPhone, status: "active", appts: 0, revenue: "$0", rating: 5.0, services: [] }]); } setNewName(""); setNewRole(""); setNewPhone(""); setShowAdd(false); }} style={{ width: "100%", padding: 14 }}>Add Staff Member</BtnPrimary>
+          </div>
+        </div>
+      )}
+
+      {/* Invite to App Modal */}
+      {showInvite && (
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => { setShowInvite(false); setGeneratedCode(""); setInviteName(""); }}>
+          <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 440, padding: "24px 20px 32px" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
+            {generatedCode ? (
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+                <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Invite Ready!</div>
+                <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>Share this code with your employee. They'll use it when signing up.</div>
+                <div style={{ background: C.surface, border: `2px dashed ${C.accent}`, borderRadius: 16, padding: "20px", fontSize: 32, fontWeight: 800, letterSpacing: 6, color: C.accent, marginBottom: 16 }}>{generatedCode}</div>
+                <BtnPrimary onClick={() => { navigator.clipboard?.writeText(generatedCode); }} style={{ width: "100%", padding: 14, marginBottom: 10 }}>Copy Code</BtnPrimary>
+                <button onClick={() => { setShowInvite(false); setGeneratedCode(""); setInviteName(""); }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.border}`, borderRadius: 14, color: C.mid, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Done</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Invite Employee</div>
+                <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>Generate a code for your team member to join spool</div>
+                <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Employee Name</div>
+                <input placeholder="e.g. Sarah" value={inviteName} onChange={e => setInviteName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 14 }} />
+                <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Role</div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+                  {["Stylist", "Barber", "Nail Tech", "Lash Tech", "Manager", "Assistant"].map(r => (
+                    <div key={r} onClick={() => setInviteRole(r)} style={{ padding: "9px 14px", borderRadius: 100, background: inviteRole === r ? C.accentSoft : C.surface, border: `1px solid ${inviteRole === r ? C.accent : C.border}`, fontSize: 13, color: inviteRole === r ? C.accent : C.mid, cursor: "pointer", fontWeight: inviteRole === r ? 600 : 400 }}>{r}</div>
+                  ))}
+                </div>
+                <BtnPrimary disabled={!inviteName.trim()} onClick={async () => {
+                  const code = "SP" + Math.random().toString(36).substring(2, 8).toUpperCase();
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) return;
+                  await supabase.from("team_invites").insert([{ owner_id: session.user.id, code, name: inviteName.trim(), role: inviteRole, status: "pending" }]);
+                  setGeneratedCode(code);
+                }} style={{ width: "100%", padding: 14 }}>Generate Invite Code</BtnPrimary>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -4710,6 +4798,8 @@ export default function App() {
   const [screen, setScreen] = useState("splash");
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
   const screenHistoryRef = useRef([]);
+  const [userRole, setUserRole] = useState("owner"); // "owner" or "staff"
+  const [staffOwnerId, setStaffOwnerId] = useState(null);
 
   // Handle browser back button
   useEffect(() => {
@@ -4781,8 +4871,17 @@ export default function App() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
         try {
+          // Check if user is staff first
+          const { data: staffProf } = await supabase.from("staff_profiles").select("owner_id,role,status").eq("user_id", session.user.id).eq("status", "active").single();
+          if (staffProf) {
+            setUserRole("staff");
+            setStaffOwnerId(staffProf.owner_id);
+            setScreen("home");
+            return;
+          }
+          // Otherwise check if owner
           const { data } = await supabase.from("business_profiles").select("biz_name").eq("user_id", session.user.id).single();
-          if (data?.biz_name) setScreen("home");
+          if (data?.biz_name) { setUserRole("owner"); setScreen("home"); }
           else setScreen("onboarding");
         } catch {
           setScreen("home");
@@ -4817,7 +4916,9 @@ export default function App() {
     checkSub();
   }, [screen]); // re-check on every screen change
 
+  const STAFF_ALLOWED = ["home", "schedule", "inbox", "clients", "staff", "settings", "notifications"];
   const navigate = (s) => {
+    if (userRole === "staff" && !STAFF_ALLOWED.includes(s)) return;
     screenHistoryRef.current.push(s);
     window.history.pushState({ screen: s }, "", "");
     setScreen(s);
@@ -4874,7 +4975,7 @@ export default function App() {
         minHeight: "100vh",
       }}>
         <div style={{ maxWidth: showSidebar ? "none" : isDesktop ? 720 : 480, margin: "0 auto", padding: showSidebar ? "0 24px" : isDesktop ? "0 24px" : "0", width: "100%", overflowX: "hidden" }}>
-          <Screen navigate={navigate} />
+          <Screen navigate={navigate} userRole={userRole} staffOwnerId={staffOwnerId} setUserRole={setUserRole} setStaffOwnerId={setStaffOwnerId} />
         </div>
       </div>
       {showAISidebar && <AISidebarPanel navigate={navigate} />}
