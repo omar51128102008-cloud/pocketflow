@@ -4,11 +4,14 @@ self.addEventListener("push", function(event) {
   const title = data.title || "spool";
   const options = {
     body: data.body || "You have a new notification",
-    icon: "/pocketflow/logo192.png",
-    badge: "/pocketflow/logo192.png",
+    icon: data.icon || "/pocketflow/notification-icon.png",
+    badge: data.badge || "/pocketflow/notification-icon.png",
+    image: data.image || undefined,
     vibrate: [200, 100, 200],
     data: { url: data.url || "/" },
     actions: data.actions || [],
+    tag: data.tag || "spool-notification",
+    renotify: true,
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });
