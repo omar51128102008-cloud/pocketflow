@@ -869,6 +869,8 @@ function Schedule({ navigate, userRole, staffOwnerId }) {
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reminderSent, setReminderSent] = useState(null);
+  const [search, setSearch] = useState("");
+  const [dateFilter, setDateFilter] = useState("all");
 
   useEffect(() => {
     const load = async () => {
@@ -886,8 +888,24 @@ function Schedule({ navigate, userRole, staffOwnerId }) {
   const _mn2 = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const _now2 = new Date();
   const _ts2 = `${_dn2[_now2.getDay()]} ${_mn2[_now2.getMonth()]} ${_now2.getDate()}`;
-  const todayAppts = appts.filter(a => a.day === _ts2 || a.day === "Today");
-  const upcomingAppts = appts.filter(a => a.day !== _ts2 && a.day !== "Today");
+
+  // Generate next 7 day strings for date picker
+  const dayChips = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() + i);
+    return { label: i === 0 ? "Today" : i === 1 ? "Tomorrow" : _dn2[d.getDay()], full: `${_dn2[d.getDay()]} ${_mn2[d.getMonth()]} ${d.getDate()}`, day: d.getDate() };
+  });
+
+  const filtered = appts.filter(a => {
+    if (search && !a.client_name?.toLowerCase().includes(search.toLowerCase()) && !a.service?.toLowerCase().includes(search.toLowerCase())) return false;
+    if (dateFilter !== "all") {
+      if (dateFilter === "today") return a.day === _ts2 || a.day === "Today";
+      return a.day === dateFilter;
+    }
+    return true;
+  });
+
+  const todayAppts = filtered.filter(a => a.day === _ts2 || a.day === "Today");
+  const upcomingAppts = filtered.filter(a => a.day !== _ts2 && a.day !== "Today");
   const totalRevenue = appts.filter(a => a.status === "confirmed").reduce((s, a) => s + (parseInt((a.price||"0").replace(/\D/g,""))||0), 0);
 
   const ApptRow = ({ a, last, showDay }) => (
@@ -914,6 +932,17 @@ function Schedule({ navigate, userRole, staffOwnerId }) {
           <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Schedule</div>
         </div>
         <div style={{ fontSize: 13, color: C.mid }}>{appts.length} appointments · ${totalRevenue} confirmed</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "10px 14px" }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or service..." style={{ background: "none", border: "none", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", width: "100%", outline: "none" }} />
+          {search && <div onClick={() => setSearch("")} style={{ fontSize: 16, color: C.dim, cursor: "pointer", flexShrink: 0 }}>×</div>}
+        </div>
+        <div style={{ display: "flex", gap: 6, marginTop: 10, overflowX: "auto", paddingBottom: 4 }}>
+          <div onClick={() => setDateFilter("all")} style={{ padding: "7px 14px", borderRadius: 10, background: dateFilter === "all" ? C.accentSoft : C.surface, border: `1px solid ${dateFilter === "all" ? C.accent : C.border}`, fontSize: 12, fontWeight: 600, color: dateFilter === "all" ? C.accent : C.mid, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>All</div>
+          {dayChips.map(dc => (
+            <div key={dc.full} onClick={() => setDateFilter(dc.label === "Today" ? "today" : dc.full)} style={{ padding: "7px 14px", borderRadius: 10, background: (dateFilter === "today" && dc.label === "Today") || dateFilter === dc.full ? C.accentSoft : C.surface, border: `1px solid ${(dateFilter === "today" && dc.label === "Today") || dateFilter === dc.full ? C.accent : C.border}`, fontSize: 12, fontWeight: 600, color: (dateFilter === "today" && dc.label === "Today") || dateFilter === dc.full ? C.accent : C.mid, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>{dc.label}</div>
+          ))}
+        </div>
       </div>
       <div style={{ padding: "0 20px" }}>
         {loading ? (
@@ -1756,6 +1785,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
   const [sunday, setSunday] = useState(false);
   const [paymentInputOpen, setPaymentInputOpen] = useState({});
   const [paymentDetails, setPaymentDetails] = useState({});
+  const [depositPct, setDepositPct] = useState("30");
   const [aiName, setAiName] = useState("Aria");
   const [aiNameSaved, setAiNameSaved] = useState(false);
   const [savingName, setSavingName] = useState(false);
@@ -1792,6 +1822,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
         if (s.maxDaily) setMaxDaily(s.maxDaily);
         if (s.sunday !== undefined) setSunday(s.sunday);
         if (s.paymentDetails) setPaymentDetails(s.paymentDetails);
+        if (s.depositPct) setDepositPct(String(s.depositPct));
         if (s.displayName) setDisplayName(s.displayName);
         if (s.profilePic) setProfilePic(s.profilePic);
       }
@@ -1816,13 +1847,13 @@ function Settings({ navigate, userRole, staffOwnerId }) {
       if (!session) return;
       const { data: existing } = await supabase.from("business_profiles").select("settings").eq("user_id", session.user.id).single();
       const prev = existing?.settings || {};
-      const settings = { ...prev, aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, tone, bufferTime, maxDaily, sunday, paymentDetails };
+      const settings = { ...prev, aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, tone, bufferTime, maxDaily, sunday, paymentDetails, depositPct: parseInt(depositPct) || 30 };
       await supabase.from("business_profiles").upsert({ user_id: session.user.id, settings }, { onConflict: "user_id" });
       setAutoSaveMsg("Saved");
       setTimeout(() => setAutoSaveMsg(""), 1500);
     }, 800);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
-  }, [aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, tone, bufferTime, maxDaily, sunday, paymentDetails, settingsLoaded]);
+  }, [aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, tone, bufferTime, maxDaily, sunday, paymentDetails, depositPct, settingsLoaded]);
 
   const saveAiName = async () => {
     if (!aiName.trim()) return;
@@ -1969,6 +2000,15 @@ function Settings({ navigate, userRole, staffOwnerId }) {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px" }}>
             <div style={{ fontSize: 14, fontWeight: 600 }}>Accept Sunday bookings</div>
             <Toggle on={sunday} onToggle={() => setSunday(p => !p)} />
+          </div>
+          <div style={{ padding: "14px 16px", borderTop: `1px solid ${C.border}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>Deposit percentage</div>
+              <span style={{ fontSize: 20, fontWeight: 800, color: C.gold }}>{depositPct}%</span>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {["15","20","25","30","50"].map(v => <div key={v} onClick={() => setDepositPct(v)} style={{ flex: 1, padding: "9px", borderRadius: 10, background: depositPct === v ? C.accentSoft : C.surfaceHigh, border: `1px solid ${depositPct === v ? C.accent : C.borderHigh}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: depositPct === v ? C.accent : C.mid, cursor: "pointer" }}>{v}%</div>)}
+            </div>
           </div>
         </Card>
         <SectionLabel>Payment Setup</SectionLabel>
@@ -3317,6 +3357,19 @@ function Staff({ navigate, userRole, staffOwnerId }) {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [groupMessages, aiTyping]);
+
+  // Auto-refresh group chat every 5s when viewing
+  useEffect(() => {
+    if (view !== "groupchat" || !bizOwnerId) return;
+    const poll = setInterval(async () => {
+      const { data: msgs } = await supabase.from("group_messages").select("*").eq("owner_id", bizOwnerId).order("created_at", { ascending: true }).limit(100);
+      if (msgs) {
+        const mapped = msgs.map(m => ({ id: m.id, user_id: m.user_id, sender: m.sender_name, text: m.text, time: new Date(m.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}), isAI: m.is_ai }));
+        setGroupMessages(prev => prev.length !== mapped.length ? mapped : prev);
+      }
+    }, 5000);
+    return () => clearInterval(poll);
+  }, [view, bizOwnerId]);
 
   const sendGroupMessage = async () => {
     const text = groupInput.trim();
