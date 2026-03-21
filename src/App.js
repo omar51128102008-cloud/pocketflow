@@ -5437,13 +5437,34 @@ export default function App() {
   // Request notification permission on first load
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
-      setTimeout(() => Notification.requestPermission(), 3000);
+      setTimeout(() => Notification.requestPermission().then(p => { if (p === "granted") subscribePush(); }), 3000);
+    } else if ("Notification" in window && Notification.permission === "granted") {
+      subscribePush();
     }
     // Register service worker
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/pocketflow/sw-notify.js").catch(() => {});
     }
   }, []);
+
+  const subscribePush = async () => {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: "BGq4JjwOYIGz2gmofZnpK5ZRdCVaZJRcmgVRw16R8bj0zqruNGoGsuakmrRYgbdBpgRvrscLph2bTJ4aShHUK9A",
+      });
+      // Save subscription to server
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        fetch("https://pocketflow-proxy-production.up.railway.app/save-push-sub", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ owner_id: session.user.id, subscription: sub.toJSON() }),
+        }).catch(() => {});
+      }
+    } catch {}
+  };
 
   const showToast = (msg, type = "info") => {
     const id = Date.now();
