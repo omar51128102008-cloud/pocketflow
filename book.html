@@ -121,7 +121,7 @@ const DATES = getAvailableDates();
 let biz = { name:'', location:'', userId: null, hours: null };
 
 function generateTimesFromHours(hours, dayStr) {
-  if (!hours) return ['9:00 AM','10:30 AM','12:00 PM','1:30 PM','3:00 PM','4:30 PM','6:00 PM'];
+  if (!hours) return ['9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM','1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM','4:00 PM','4:30 PM','5:00 PM','5:30 PM','6:00 PM'];
   const dayMap = { Sun:'sun', Mon:'mon', Tue:'tue', Wed:'wed', Thu:'thu', Fri:'fri', Sat:'sat' };
   const dayKey = dayMap[dayStr.split(' ')[0]];
   if (!dayKey || !hours[dayKey] || hours[dayKey].off) return [];
@@ -130,8 +130,17 @@ function generateTimesFromHours(hours, dayStr) {
   if (!openParts[0] || !closeParts[0]) return [];
   const openMin = parseInt(openParts[0]) * 60 + parseInt(openParts[1] || 0);
   const closeMin = parseInt(closeParts[0]) * 60 + parseInt(closeParts[1] || 0);
+  // Calculate total service duration in minutes
+  let svcMins = 60; // default 1h
+  if (S.selectedServices.length > 0) {
+    svcMins = S.selectedServices.reduce((sum, s) => {
+      const dur = s.duration || '1h';
+      const hMatch = dur.match(/(\d+\.?\d*)h/); const mMatch = dur.match(/(\d+)m/);
+      return sum + (hMatch ? parseFloat(hMatch[1]) * 60 : 0) + (mMatch ? parseInt(mMatch[1]) : 0);
+    }, 0) || 60;
+  }
   const slots = [];
-  for (let m = openMin; m < closeMin; m += 90) {
+  for (let m = openMin; m + svcMins <= closeMin; m += 30) {
     let h = Math.floor(m / 60); const min = m % 60;
     const ampm = h >= 12 ? 'PM' : 'AM';
     if (h > 12) h -= 12; if (h === 0) h = 12;
@@ -149,7 +158,7 @@ let S = {
 
 const rawTotal = () => S.selectedServices.reduce((a,x)=>a+x.price,0);
 const total   = () => Math.max(0, rawTotal() - S.discount);
-const deposit = () => Math.round(total()*0.3);
+const deposit = () => Math.round(total() * (biz.depositPct || 30) / 100);
 const canNext = () => {
   if (S.step===0) return S.selectedServices.length>0;
   if (S.step===1) return S.selectedDate && S.selectedTime;
@@ -174,7 +183,7 @@ function toggleSvc(s) {
 async function loadBiz() {
   if (!BUSINESS_ID) { biz={name:'Invalid Link',location:'',userId:null}; render(); return; }
   const [profileRes, servicesRes, reviewsRes] = await Promise.all([
-    sb.from('business_profiles').select('biz_name,location,user_id,business_hours,bio,phone,logo_url').eq('user_id',BUSINESS_ID).single(),
+    sb.from('business_profiles').select('biz_name,location,user_id,business_hours,bio,phone,logo_url,settings').eq('user_id',BUSINESS_ID).single(),
     sb.from('services').select('*').eq('owner_id',BUSINESS_ID).neq('active',false).order('created_at',{ascending:true}),
     sb.from('reviews').select('client_name,rating,text,service,created_at').eq('owner_id',BUSINESS_ID).order('created_at',{ascending:false}).limit(6),
   ]);
@@ -184,6 +193,11 @@ async function loadBiz() {
       try { hrs = typeof profileRes.data.business_hours === 'string' ? JSON.parse(profileRes.data.business_hours) : profileRes.data.business_hours; } catch(e) {}
     }
     biz = { name: profileRes.data.biz_name||'Book an Appointment', location: profileRes.data.location||'', userId: profileRes.data.user_id, hours: hrs, bio: profileRes.data.bio||'', phone: profileRes.data.phone||'', logo: profileRes.data.logo_url||'' };
+    // Load deposit % from settings
+    try {
+      const settings = profileRes.data.settings ? (typeof profileRes.data.settings === 'string' ? JSON.parse(profileRes.data.settings) : profileRes.data.settings) : {};
+      biz.depositPct = settings.depositPct || 30;
+    } catch { biz.depositPct = 30; }
     document.title = `Book · ${biz.name}`;
   } else {
     biz = { name:'Business Not Found', location:'', userId:null, hours: null };
@@ -317,6 +331,8 @@ async function handlePay() {
       note: S.note,
       day: S.selectedDate,
       owner_id: biz.userId,
+      recurring: S.recurring || false,
+      recur_freq: S.recurring ? S.recurFreq : null,
     }]);
     if (apptErr) { set({ paying:false, error:'Booking saved payment but failed to save appointment: ' + apptErr.message }); return; }
 
@@ -659,7 +675,7 @@ function renderStep() {
 
   if (S.step===3) return `
     <div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px">Secure your spot</div>
-    <div style="font-size:14px;color:${C.mid};margin-bottom:24px">Pay a 30% deposit to confirm your booking</div>
+    <div style="font-size:14px;color:${C.mid};margin-bottom:24px">Pay a ${biz.depositPct || 30}% deposit to confirm your booking</div>
     <div class="card" style="padding:18px;margin-bottom:24px">
       ${[['Services',S.selectedServices.map(s=>s.name).join(', ')],['Date & Time',S.selectedDate+' at '+S.selectedTime],['Total estimate','$'+total()+'+'],['Deposit due now','$'+deposit()]].map(([k,v],i,a)=>`
         <div style="display:flex;justify-content:space-between;padding:9px 0;${i<a.length-1?'border-bottom:1px solid '+C.border:''}gap:12px">
