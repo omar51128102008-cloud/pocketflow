@@ -1,7 +1,7 @@
 {
   "name": "spool",
   "short_name": "spool",
-  "description": "AI-powered booking & business management for beauty professionals",
+  "description": "AI-powered booking & business management for small businesses",
   "start_url": "/pocketflow/",
   "display": "standalone",
   "background_color": "#06060a",
