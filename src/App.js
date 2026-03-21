@@ -204,11 +204,13 @@ function handlePhoneInput(val) {
 function Splash() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: C.bg }}>
-      <div style={{ width: 72, height: 72, borderRadius: 22, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20, boxShadow: "0 0 60px rgba(139,92,246,0.3)", animation: "glowPulse 2s ease-in-out infinite", overflow: "hidden", padding: 14 }}>
-        <img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+      <div style={{ position: "relative", marginBottom: 28 }}>
+        <div style={{ position: "absolute", inset: -20, borderRadius: "50%", background: `radial-gradient(circle, rgba(139,92,246,0.35) 0%, rgba(139,92,246,0.08) 50%, transparent 70%)`, animation: "glowPulse 2s ease-in-out infinite", filter: "blur(12px)" }} />
+        <div style={{ position: "relative", width: 80, height: 80, borderRadius: 24, overflow: "hidden" }}>
+          <img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 24 }} />
+        </div>
       </div>
-      <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 8 }}>spool</div>
-      <div style={{ width: 24, height: 24, border: "2px solid rgba(255,255,255,0.15)", borderTopColor: C.accent, borderRadius: "50%", animation: "orbSpin 0.8s linear infinite", marginTop: 16 }} />
+      <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", opacity: 0.9 }}>spool</div>
     </div>
   );
 }
@@ -4807,10 +4809,8 @@ async function addToGoogleCalendar({ ownerId, service, date, time, clientName, b
       body: JSON.stringify({ owner_id: ownerId, service, date, time, client_name: clientName, biz_name: bizName, biz_location: bizLocation, deposit, phone }),
     });
     const data = await res.json();
-    console.log("🗓 Google Calendar sync:", data.ok ? "✅ success" : "❌ " + data.reason);
     return data.ok;
   } catch (e) {
-    console.log("Google Calendar sync failed:", e);
     return false;
   }
 }
@@ -5250,7 +5250,6 @@ THINGS TO BE GREAT AT:
       });
       const data = await res.json();
       const raw = data.choices?.[0]?.message?.content || "Got it.";
-      console.log("🤖 AI raw (voice):", raw);
       const { text: reply } = handleNavIntent(raw);
       setChatHistory(p => [...(p || []), { role: "assistant", text: reply, time: new Date() }]);
       setVoiceLoading(false);
@@ -5284,7 +5283,6 @@ THINGS TO BE GREAT AT:
       });
       const data = await res.json();
       const raw = data.choices?.[0]?.message?.content || "On it.";
-      console.log("🤖 AI raw (chat):", raw);
       const { text: reply } = handleNavIntent(raw);
       setChatHistory(p => [...p, { role: "assistant", text: reply, time: new Date() }]);
     } catch {
