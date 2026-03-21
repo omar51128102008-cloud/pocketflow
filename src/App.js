@@ -282,7 +282,7 @@ function Login({ navigate, setUserRole, setStaffOwnerId }) {
     if (!email) { setError("Enter your email first"); return; }
     setError(""); setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + "/pocketflow"
+      redirectTo: window.location.origin + window.location.pathname
     });
     setLoading(false);
     if (error) setError(error.message);
@@ -344,7 +344,7 @@ function Login({ navigate, setUserRole, setStaffOwnerId }) {
           </>
         )}
       </div>
-      <div style={{ textAlign: "center", fontSize: 12, color: C.dim, marginTop: 24 }}>By continuing you agree to our <span style={{ color: C.accent }}>Terms</span> & <span style={{ color: C.accent }}>Privacy Policy</span></div>
+      <div style={{ textAlign: "center", fontSize: 12, color: C.dim, marginTop: 24 }}>By continuing you agree to our <span onClick={() => alert("Terms of Service will be available at launch.")} style={{ color: C.accent, cursor: "pointer" }}>Terms</span> & <span onClick={() => alert("Privacy Policy will be available at launch.")} style={{ color: C.accent, cursor: "pointer" }}>Privacy Policy</span></div>
     </div>
   );
 }
@@ -593,10 +593,16 @@ function Home({ navigate, userRole, staffOwnerId }) {
   const h = new Date().getHours();
   const greetText = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 
-  const activity = [
-    { icon: "◆", text: "AI is ready to handle your messages and bookings", time: "Now" },
-    { icon: "◆", text: "Booking page is live — share your link with clients", time: "" },
-  ];
+  const activity = (() => {
+    const items = [];
+    const recent = appts.filter(a => a.status === "confirmed").slice(0, 2);
+    if (recent.length > 0) items.push({ text: `${recent[0].client_name || "Client"} booked ${recent[0].service}`, time: recent[0].time || "" });
+    if (recent.length > 1) items.push({ text: `${recent[1].client_name || "Client"} booked ${recent[1].service}`, time: recent[1].time || "" });
+    const cancelled = appts.filter(a => a.status === "cancelled").slice(0, 1);
+    if (cancelled.length > 0) items.push({ text: `${cancelled[0].client_name || "Client"} cancelled ${cancelled[0].service}`, time: "" });
+    if (items.length === 0) items.push({ text: "No recent activity yet — share your booking link to get started", time: "" });
+    return items;
+  })();
 
   useEffect(() => {
     const load = async () => {
@@ -626,9 +632,6 @@ function Home({ navigate, userRole, staffOwnerId }) {
       setAppts(allAppts);
       setMsgs(allMsgs);
 
-      const weekRevenue = allAppts
-        .filter(a => a.status === "confirmed")
-        .reduce((s, a) => s + (parseInt((a.price||"0").replace(/\D/g,""))||0), 0);
       const _dn = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
       const _mn = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       const _now = new Date();
@@ -677,7 +680,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
           <div>
             <div style={{ fontSize: 12, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, fontWeight: 500 }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.2 }}>{greetText},<br /><span style={{ background: `linear-gradient(135deg,${C.accent},#e0b3ff)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{userName || "there"}</span> ✦</div>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.2 }}>{greetText},<br /><span style={{ background: `linear-gradient(135deg,${C.accent},#e0b3ff)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{userName || "there"}</span></div>
           </div>
           <div style={{ position: "relative", cursor: "pointer" }} onClick={() => navigate("notifications")}>
             <div style={{ width: 44, height: 44, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700 }}>⊕</div>
@@ -736,7 +739,12 @@ function Home({ navigate, userRole, staffOwnerId }) {
               <span style={{ fontSize: 11, color: C.accent, fontWeight: 600, cursor: "pointer" }} onClick={() => navigate("schedule")}>See all →</span>
             </div>
             <Card style={{ padding: "4px 16px", marginBottom: 16 }}>
-              {todayAppts.slice(0, showAllAppts ? todayAppts.length : 3).map((a, i, arr) => (
+              {todayAppts.length === 0 ? (
+                <div style={{ padding: "20px 0", textAlign: "center" }}>
+                  <div style={{ fontSize: 13, color: C.dim, marginBottom: 4 }}>No appointments today</div>
+                  <div style={{ fontSize: 12, color: C.accent, cursor: "pointer" }} onClick={() => navigate("sharelink")}>Share your booking link →</div>
+                </div>
+              ) : todayAppts.slice(0, showAllAppts ? todayAppts.length : 3).map((a, i, arr) => (
                 <div key={a.id} onClick={() => setSelectedAppt(a)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
                   <div style={{ width: 40, height: 40, borderRadius: 12, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.accent, flexShrink: 0 }}>{a.avatar}</div>
                   <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{a.name}</div><div style={{ fontSize: 12, color: C.mid }}>{a.service}</div></div>
@@ -778,7 +786,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
               </div>
               {activity.map((a, i) => (
                 <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "9px 0", borderBottom: i < activity.length - 1 ? `1px solid ${C.border}` : "none" }}>
-                  <span style={{ color: C.accent, fontSize: 10, marginTop: 2, flexShrink: 0 }}>{a.icon}</span>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.accent, marginTop: 6, flexShrink: 0 }} />
                   <span style={{ fontSize: 13, color: C.mid, flex: 1 }}>{a.text}</span>
                   <span style={{ fontSize: 10, color: C.dim, flexShrink: 0 }}>{a.time}</span>
                 </div>
@@ -892,8 +900,9 @@ function Schedule({ navigate, userRole, staffOwnerId }) {
 
   const EmptyState = ({ label }) => (
     <Card style={{ padding: 24, textAlign: "center" }}>
-      <div style={{ fontSize: 28, fontWeight: 800, color: C.dim, marginBottom: 8 }}>—</div>
-      <div style={{ fontSize: 13, color: C.mid }}>No {label} appointments</div>
+      <div style={{ width: 44, height: 44, borderRadius: 14, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 16, color: C.accent, fontWeight: 800 }}>▣</div>
+      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>No {label} appointments</div>
+      <div style={{ fontSize: 12, color: C.dim }}>Share your booking link to start filling your schedule</div>
     </Card>
   );
 
@@ -967,14 +976,15 @@ Price: ${a.price || ""}`);
                 );
               } catch { return null; }
             })()}
-            {reminderSent
+            {reminderSent === "sent"
               ? <div style={{ padding: 13, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Reminder sent!</div>
-              : <div style={{ display: "flex", gap: 10 }}>
-                  <button onClick={() => { if (confirm(`Cancel this appointment and let ${selectedAppt.client_name} rebook?\n\nThis will mark the appointment as cancelled.`)) { supabase.from("appointments").update({ status: "cancelled" }).eq("id", selectedAppt.id).then(() => { setAppts(p => p.map(a => a.id === selectedAppt.id ? { ...a, status: "cancelled" } : a)); setSelectedAppt(null); }); } }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Reschedule</button>
+              : reminderSent === "sending"
+              ? <div style={{ padding: 13, background: C.accentSoft, borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.accent, textAlign: "center" }}>Sending reminder...</div>
+              : selectedAppt.status === "cancelled"
+              ? <div style={{ padding: 13, background: `${C.red}12`, border: `1px solid ${C.red}33`, borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.red, textAlign: "center" }}>This appointment was cancelled</div>
+              : <>
                   <BtnPrimary onClick={async () => {
-                    const msg = `Hi ${selectedAppt.client_name}! Just a reminder about your ${selectedAppt.service} appointment on ${formatDate(selectedAppt.day)} at ${selectedAppt.time}. See you then! 😊`;
-                    if (!confirm(`Send this reminder?\n\n"${msg}"`)) return;
-                    setReminderSent(true);
+                    setReminderSent("sending");
                     try {
                       await fetch("https://pocketflow-proxy-production.up.railway.app/send-reminder", {
                         method: "POST", headers: { "Content-Type": "application/json" },
@@ -988,8 +998,22 @@ Price: ${a.price || ""}`);
                         }),
                       });
                     } catch {}
-                  }} style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
-                </div>}
+                    setReminderSent("sent");
+                  }} style={{ width: "100%", padding: 13, marginBottom: 8 }}>Send Reminder</BtnPrimary>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={async () => {
+                      await supabase.from("appointments").update({ status: "cancelled" }).eq("id", selectedAppt.id);
+                      setAppts(p => p.map(a => a.id === selectedAppt.id ? { ...a, status: "cancelled" } : a));
+                      setSelectedAppt(null);
+                    }} style={{ flex: 1, padding: 12, background: "transparent", border: `1px solid ${C.red}44`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Cancel Appointment</button>
+                    <button onClick={async () => {
+                      if (!window.confirm("Permanently delete this appointment?")) return;
+                      await supabase.from("appointments").delete().eq("id", selectedAppt.id);
+                      setAppts(p => p.filter(a => a.id !== selectedAppt.id));
+                      setSelectedAppt(null);
+                    }} style={{ padding: "12px 16px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.dim, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Delete</button>
+                  </div>
+                </>}
           </div>
         </div>
       )}
@@ -1036,9 +1060,10 @@ function Inbox({ navigate, userRole, staffOwnerId }) {
           <div style={{ textAlign: "center", padding: 40, color: C.mid }}>Loading messages...</div>
         ) : msgs.length === 0 ? (
           <Card style={{ padding: 32, textAlign: "center" }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>💬</div>
-            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No messages yet</div>
-            <div style={{ fontSize: 13, color: C.mid }}>When clients message you via WhatsApp or Instagram, they'll appear here.</div>
+            <div style={{ width: 56, height: 56, borderRadius: 18, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 22 }}>✉</div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Inbox</div>
+            <div style={{ fontSize: 13, color: C.mid, lineHeight: 1.7 }}>Messages from clients will appear here.<br/>Connect WhatsApp or Instagram in Settings to start receiving messages automatically.</div>
+            <BtnPrimary onClick={() => navigate("connections")} style={{ padding: "10px 24px", fontSize: 13, marginTop: 16 }}>Connect Accounts</BtnPrimary>
           </Card>
         ) : (
           <>
@@ -1237,14 +1262,32 @@ function Clients({ navigate, userRole, staffOwnerId }) {
         )}
         {activeTab === "notes" && <NoteTab client={selectedClient} onNoteUpdate={(note) => setSelectedClient(p => ({ ...p, note: note === "__CLEAR__" ? "" : (p.note ? p.note + "\n\n" : "") + note }))} />}
         {activeTab === "contact" && (
-          <Card>
-            {[["📱", "Phone", formatPhone(selectedClient.phone)], ["📸", "Instagram", selectedClient.instagram], ["📅", "Last visit", selectedClient.lastVisit]].map(([icon, label, val], i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 2 ? `1px solid ${C.border}` : "none" }}>
-                <span style={{ fontSize: 18 }}>{icon}</span>
-                <div style={{ flex: 1 }}><div style={{ fontSize: 12, color: C.dim }}>{label}</div><div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{val || "—"}</div></div>
-              </div>
-            ))}
-          </Card>
+          <div>
+            <Card>
+              {[["Phone", formatPhone(selectedClient.phone)], ["Instagram", selectedClient.instagram], ["Last visit", selectedClient.lastVisit]].map(([label, val], i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < 2 ? `1px solid ${C.border}` : "none" }}>
+                  <div style={{ flex: 1 }}><div style={{ fontSize: 12, color: C.dim }}>{label}</div><div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{val || "—"}</div></div>
+                </div>
+              ))}
+            </Card>
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button onClick={() => {
+                const newName = prompt("Edit name:", selectedClient.name);
+                if (newName && newName.trim()) {
+                  supabase.from("clients").update({ name: newName.trim() }).eq("id", selectedClient.id).then(() => {
+                    setSelectedClient(p => ({ ...p, name: newName.trim() }));
+                    setClients(p => p.map(c => c.id === selectedClient.id ? { ...c, name: newName.trim() } : c));
+                  });
+                }
+              }} style={{ flex: 1, padding: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.text, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Edit Client</button>
+              <button onClick={async () => {
+                if (!window.confirm(`Delete ${selectedClient.name}? This cannot be undone.`)) return;
+                await supabase.from("clients").delete().eq("id", selectedClient.id);
+                setClients(p => p.filter(c => c.id !== selectedClient.id));
+                setSelectedClient(null);
+              }} style={{ padding: "12px 16px", background: "transparent", border: `1px solid ${C.red}44`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Delete</button>
+            </div>
+          </div>
         )}
       </div>
       <BottomNav active="clients" navigate={navigate} />
@@ -1763,8 +1806,10 @@ function Settings({ navigate, userRole, staffOwnerId }) {
   }, []);
 
   // Auto-save settings when anything changes (debounced)
+  const initialLoadDone = useRef(false);
   useEffect(() => {
     if (!settingsLoaded) return;
+    if (!initialLoadDone.current) { initialLoadDone.current = true; return; }
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -1875,8 +1920,34 @@ function Settings({ navigate, userRole, staffOwnerId }) {
             </div>
           ))}
         </Card>
-        <div style={{ textAlign: "center", padding: "20px 0" }}>
-          <span onClick={async () => { await supabase.auth.signOut(); navigate("login"); }} style={{ fontSize: 13, color: C.red, fontWeight: 600, cursor: "pointer" }}>Sign Out</span>
+        <div style={{ padding: "16px 0" }}>
+          <button onClick={async () => {
+            const newPass = prompt("Enter new password (min 6 characters):");
+            if (!newPass || newPass.length < 6) { if (newPass) alert("Password must be at least 6 characters."); return; }
+            const { error } = await supabase.auth.updateUser({ password: newPass });
+            if (error) alert("Error: " + error.message);
+            else alert("Password updated!");
+          }} style={{ width: "100%", padding: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.text, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }}>Change Password</button>
+          <button onClick={async () => { await supabase.auth.signOut(); navigate("login"); }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }}>Sign Out</button>
+          {userRole === "owner" && <button onClick={async () => {
+            if (!window.confirm("Are you sure you want to delete your account? ALL your data will be permanently lost.")) return;
+            if (!window.confirm("This is your last chance. Type 'DELETE' below to confirm.")) return;
+            const typed = prompt("Type DELETE to confirm:");
+            if (typed !== "DELETE") return;
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+            const uid = session.user.id;
+            await Promise.all([
+              supabase.from("appointments").delete().eq("owner_id", uid),
+              supabase.from("clients").delete().eq("owner_id", uid),
+              supabase.from("services").delete().eq("owner_id", uid),
+              supabase.from("business_profiles").delete().eq("user_id", uid),
+              supabase.from("staff_members").delete().eq("owner_id", uid),
+              supabase.from("ai_memories").delete().eq("owner_id", uid),
+            ]);
+            await supabase.auth.signOut();
+            navigate("login");
+          }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.red}33`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Delete Account</button>}
         </div>
         </div>{/* end col 1 */}
         {userRole === "owner" && <div>{/* col 2 */}
@@ -2245,7 +2316,7 @@ function Loyalty({ navigate }) {
         <div>{/* col 2: automated messages */}
         <SectionLabel>Automated Messages</SectionLabel>
         <Card style={{ marginBottom: 8 }}>
-          {[["🎂","Birthday message","Sent on their birthday",birthdayOn,setBirthdayOn],["🔁","Rebook reminder","After 21 days with no appointment",rebookOn,setRebookOn],["⭐","Review request","After every completed appointment",reviewOn,setReviewOn],["💔","Win-back campaign","Re-engage clients gone 45+ days",winbackOn,setWinbackOn]].map(([icon,label,sub,val,set],i)=>(
+          {[["🎂","Birthday message","Coming soon",birthdayOn,setBirthdayOn],["🔁","Rebook reminder","Coming soon",rebookOn,setRebookOn],["⭐","Review request","Active via cron",reviewOn,setReviewOn],["💔","Win-back campaign","Coming soon",winbackOn,setWinbackOn]].map(([icon,label,sub,val,set],i)=>(
             <div key={i} style={{ display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderBottom:i<3?`1px solid ${C.border}`:"none" }}>
               <span style={{ fontSize:20 }}>{icon}</span>
               <div style={{ flex:1 }}><div style={{ fontSize:14,fontWeight:600 }}>{label}</div><div style={{ fontSize:12,color:C.mid,marginTop:2 }}>{sub}</div></div>
@@ -2341,7 +2412,7 @@ function Notifications({ navigate }) {
     setNotifs(prev => prev.map(n => ({ ...n, read: true })));
   };
 
-  const iconFor = (type) => ({ booking: "📅", payment: "💰", ai: "✦", alert: "⚠️", review: "⭐" })[type] || "🔔";
+  const iconFor = (type) => ({ booking: "▣", payment: "⬡", ai: "✦", alert: "!", review: "★" })[type] || "◉";
   const timeAgo = (ts) => {
     const diff = Date.now() - new Date(ts).getTime();
     const m = Math.floor(diff / 60000);

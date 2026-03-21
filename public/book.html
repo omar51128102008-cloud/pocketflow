@@ -317,6 +317,8 @@ async function handlePay() {
       note: S.note,
       day: S.selectedDate,
       owner_id: biz.userId,
+      recurring: S.recurring || false,
+      recur_freq: S.recurring ? S.recurFreq : null,
     }]);
     if (apptErr) { set({ paying:false, error:'Booking saved payment but failed to save appointment: ' + apptErr.message }); return; }
 
