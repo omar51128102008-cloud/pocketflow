@@ -134,6 +134,19 @@ const IG = () => (
   </svg>
 );
 
+
+function useOwnerId(userRole, staffOwnerId) {
+  const [oid, setOid] = useState(null);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      if (userRole === "staff" && staffOwnerId) setOid(staffOwnerId);
+      else setOid(session.user.id);
+    });
+  }, [userRole, staffOwnerId]);
+  return oid;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function timeAgo(ts) {
   if (!ts) return "";
@@ -342,8 +355,8 @@ const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const PLATFORMS = [
   { id: "whatsapp", label: "WhatsApp", icon: "W", color: "#25D366" },
   { id: "instagram", label: "Instagram", icon: "IG", color: "#E1306C" },
-  { id: "google", label: "Google Calendar", icon: "▦", color: "#4285F4" },
-  { id: "facebook", label: "Facebook", icon: "⊞", color: "#1877F2" },
+  { id: "google", label: "Google Calendar", icon: "▣", color: "#4285F4" },
+  { id: "facebook", label: "Facebook", icon: "⊡", color: "#1877F2" },
 ];
 const AI_PERMISSIONS = [
   { id: "reply_dms", label: "Reply to DMs automatically", sub: "AI responds to inquiries 24/7" },
@@ -599,8 +612,14 @@ function Home({ navigate, userRole, staffOwnerId }) {
       ]);
 
       setBizName(profRes.data?.biz_name || session.user.user_metadata?.business_name || "");
-      const dn = profRes.data?.settings?.displayName;
-      setUserName(dn || session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "");
+      if (userRole === "staff" && staffOwnerId) {
+        // Staff: get their own name from staff_profiles
+        const { data: sp } = await supabase.from("staff_profiles").select("name").eq("user_id", session.user.id).single();
+        setUserName(sp?.name || session.user.email?.split("@")[0] || "");
+      } else {
+        const dn = profRes.data?.settings?.displayName;
+        setUserName(dn || session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "");
+      }
 
       const allAppts = apptsRes.data || [];
       const allMsgs = msgsRes.data || [];
@@ -633,10 +652,10 @@ function Home({ navigate, userRole, staffOwnerId }) {
       const milestones = [];
       if (clientCount >= 50 && clientCount < 55) milestones.push({ icon: "🎉", text: "50 clients! You're building something real." });
       if (clientCount >= 100 && clientCount < 105) milestones.push({ icon: "🔥", text: "100 clients! Your business is on fire." });
-      if (totalRev >= 1000 && totalRev < 1100) milestones.push({ icon: "$", text: "$1,000 earned! First milestone unlocked." });
+      if (totalRev >= 1000 && totalRev < 1100) milestones.push({ icon: "⬡", text: "$1,000 earned! First milestone unlocked." });
       if (totalRev >= 5000 && totalRev < 5200) milestones.push({ icon: "💎", text: "$5,000 earned! You're a pro." });
       if (totalRev >= 10000 && totalRev < 10500) milestones.push({ icon: "🚀", text: "$10,000 earned! Incredible growth." });
-      if (totalAppts >= 100 && totalAppts < 105) milestones.push({ icon: "▦", text: "100 appointments! Consistency is key." });
+      if (totalAppts >= 100 && totalAppts < 105) milestones.push({ icon: "▣", text: "100 appointments! Consistency is key." });
 
       setStats({ weekRevenue: thisWeekRev, todayCount, aiHandled, clientCount, revChange, milestones, lastWeekRev });
     };
@@ -661,7 +680,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.2 }}>{greetText},<br /><span style={{ background: `linear-gradient(135deg,${C.accent},#e0b3ff)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{userName || "there"}</span> ✦</div>
           </div>
           <div style={{ position: "relative", cursor: "pointer" }} onClick={() => navigate("notifications")}>
-            <div style={{ width: 44, height: 44, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800 }}>⊕</div>
+            <div style={{ width: 44, height: 44, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700 }}>⊕</div>
             {unread.length > 0 && <div style={{ position: "absolute", top: -4, right: -4, width: 20, height: 20, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", border: `2px solid ${C.bg}`, boxShadow: "0 0 12px rgba(139,92,246,0.4)" }}>{unread.length}</div>}
           </div>
         </div>
@@ -669,10 +688,10 @@ function Home({ navigate, userRole, staffOwnerId }) {
         {/* Stats row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 24 }}>
           {[
-            { label: "Revenue", value: "$" + stats.weekRevenue, sub: "this week", color: C.gold, icon: "$", ownerOnly: true },
-            { label: "Appointments", value: String(stats.todayCount), sub: "today", color: C.text, icon: "▦" },
+            { label: "Revenue", value: "$" + stats.weekRevenue, sub: "this week", color: C.gold, icon: "⬡", ownerOnly: true },
+            { label: "Appointments", value: String(stats.todayCount), sub: "today", color: C.text, icon: "▣" },
             { label: "AI handled", value: String(stats.aiHandled), sub: "messages", color: C.accent, icon: "✦", ownerOnly: true },
-            { label: "Clients", value: String(stats.clientCount), sub: "total", color: C.green, icon: "⊞" },
+            { label: "Clients", value: String(stats.clientCount), sub: "total", color: C.green, icon: "⊡" },
           ].filter(s => userRole === "owner" || !s.ownerOnly).map((s, i) => (
             <Card key={i} style={{ padding: "14px", display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: `${s.color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{s.icon}</div>
@@ -771,10 +790,10 @@ function Home({ navigate, userRole, staffOwnerId }) {
               <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Quick Actions</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {[
-                  { icon: "+", label: "New Appointment", screen: "schedule" },
-                  { icon: "◇", label: "View Inbox", screen: "inbox" },
-                  { icon: "↗", label: "Booking Link", screen: "sharelink" },
-                  { icon: "⊞", label: "Staff Chat", screen: "staff" },
+                  { icon: "＋", label: "New Appointment", screen: "schedule" },
+                  { icon: "✉", label: "View Inbox", screen: "inbox" },
+                  { icon: "⤴", label: "Booking Link", screen: "sharelink" },
+                  { icon: "⊡", label: "Staff Chat", screen: "staff" },
                 ].filter(i => userRole === 'owner' || i.screen !== 'sharelink').map(item => (
                   <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                     <span style={{ fontSize: 20 }}>{item.icon}</span>
@@ -789,15 +808,15 @@ function Home({ navigate, userRole, staffOwnerId }) {
         {/* Mobile-only grid */}
         <div className="mobile-only" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
           {[
-            { icon: "S", label: "Services", screen: "services", color: C.accent, ownerOnly: true },
-            { icon: "P", label: "Payments", screen: "payments", color: C.gold, ownerOnly: true },
-            { icon: "⛭", label: "Settings", screen: "settings", color: C.mid },
-            { icon: "♡", label: "Loyalty", screen: "loyalty", color: "#f472b6", ownerOnly: true },
-            { icon: "◈", label: "Analytics", screen: "analytics", color: C.blue, ownerOnly: true },
-            { icon: "◉", label: "Promotions", screen: "promotions", color: "#fb923c", ownerOnly: true },
-            { icon: "⊞", label: "Staff", screen: "staff", color: C.green },
-            { icon: "◔", label: "Waitlist", screen: "waitlist", color: C.yellow, ownerOnly: true },
-            { icon: "↗", label: "Share Link", screen: "sharelink", color: C.accent, ownerOnly: true },
+            { icon: "✦", label: "Services", screen: "services", color: C.accent, ownerOnly: true },
+            { icon: "⬡", label: "Payments", screen: "payments", color: C.gold, ownerOnly: true },
+            { icon: "⚙", label: "Settings", screen: "settings", color: C.mid },
+            { icon: "♥", label: "Loyalty", screen: "loyalty", color: "#f472b6", ownerOnly: true },
+            { icon: "⟐", label: "Analytics", screen: "analytics", color: C.blue, ownerOnly: true },
+            { icon: "⊛", label: "Promotions", screen: "promotions", color: "#fb923c", ownerOnly: true },
+            { icon: "⊡", label: "Staff", screen: "staff", color: C.green },
+            { icon: "◷", label: "Waitlist", screen: "waitlist", color: C.yellow, ownerOnly: true },
+            { icon: "⤴", label: "Share Link", screen: "sharelink", color: C.accent, ownerOnly: true },
           ].filter(i => userRole === "owner" || !i.ownerOnly).map(item => (
             <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
               <div style={{ width: 38, height: 38, borderRadius: 12, background: `${item.color}15`, border: `1px solid ${item.color}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
@@ -837,7 +856,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
 }
 
 // ── SCHEDULE ───────────────────────────────────────────────────────────────────
-function Schedule({ navigate }) {
+function Schedule({ navigate, userRole, staffOwnerId }) {
   const [selectedAppt, setSelectedAppt] = useState(null);
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -847,7 +866,8 @@ function Schedule({ navigate }) {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase.from("appointments").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: false });
+      const oid = (userRole === "staff" && staffOwnerId) ? staffOwnerId : session.user.id;
+      const { data } = await supabase.from("appointments").select("*").eq("owner_id", oid).order("created_at", { ascending: false });
       setAppts(data || []);
       setLoading(false);
     };
@@ -979,7 +999,7 @@ Price: ${a.price || ""}`);
 }
 
 // ── INBOX ──────────────────────────────────────────────────────────────────────
-function Inbox({ navigate }) {
+function Inbox({ navigate, userRole, staffOwnerId }) {
   const [msgs, setMsgs] = useState([]);
   const [loading, setLoading] = useState(true);
   const unread = msgs.filter(m => m.unread);
@@ -988,7 +1008,8 @@ function Inbox({ navigate }) {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase.from("messages").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: false });
+      const oid = (userRole === "staff" && staffOwnerId) ? staffOwnerId : session.user.id;
+      const { data } = await supabase.from("messages").select("*").eq("owner_id", oid).order("created_at", { ascending: false });
       setMsgs(data || []);
       setLoading(false);
     };
@@ -1106,7 +1127,7 @@ function NoteTab({ client, onNoteUpdate }) {
 }
 
 // ── CLIENTS ────────────────────────────────────────────────────────────────────
-function Clients({ navigate }) {
+function Clients({ navigate, userRole, staffOwnerId }) {
   const isDesktop = useDesktop();
   const [selectedClient, setSelectedClient] = useState(null);
   const [activeTab, setActiveTab] = useState("history");
@@ -1124,7 +1145,8 @@ function Clients({ navigate }) {
     const loadClients = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { setLoading(false); return; }
-      const { data, error } = await supabase.from("clients").select("*").eq("owner_id", session.user.id).order("created_at", { ascending: false });
+      const oid = (userRole === "staff" && staffOwnerId) ? staffOwnerId : session.user.id;
+      const { data, error } = await supabase.from("clients").select("*").eq("owner_id", oid).order("created_at", { ascending: false });
       if (!error && data) {
         setClients(data.map(c => ({
           ...c,
@@ -1149,7 +1171,7 @@ function Clients({ navigate }) {
       name: newName, phone: newPhone, instagram: newInstagram,
       avatar, total_visits: 0, total_spent: 0,
       joined: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
-      owner_id: session.user.id,
+      owner_id: (userRole === "staff" && staffOwnerId) ? staffOwnerId : session.user.id,
     }]).select();
     if (!error && data) {
       setClients(p => [{ ...data[0], totalVisits: 0, totalSpent: "$0", avgSpend: "$0", lastVisit: "N/A" }, ...p]);
@@ -1165,7 +1187,7 @@ function Clients({ navigate }) {
     setActiveTab("history");
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
-    const { data } = await supabase.from("appointments").select("service,day,time,price,status,created_at").eq("owner_id", session.user.id).eq("client_name", c.name).order("created_at", { ascending: false }).limit(20);
+    const { data } = await supabase.from("appointments").select("service,day,time,price,status,created_at").eq("owner_id", (userRole === "staff" && staffOwnerId) ? staffOwnerId : session.user.id).eq("client_name", c.name).order("created_at", { ascending: false }).limit(20);
     setClientAppts(data || []);
   };
 
@@ -1773,6 +1795,7 @@ function Settings({ navigate, userRole }) {
       <div style={{ padding: "0 20px" }}>
         <div style={{ display: isDesktop ? "grid" : "block", gridTemplateColumns: isDesktop ? "1fr 1fr" : undefined, gap: isDesktop ? 24 : undefined, alignItems: "start" }}>
         <div>
+        {userRole === "owner" && <>
         <Card style={{ padding: 16, marginBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
             <div style={{ width: 44, height: 44, borderRadius: 13, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>✦</div>
@@ -1810,13 +1833,14 @@ function Settings({ navigate, userRole }) {
             {tone === "friendly" ? '"Hey girl! 💕 I have a 2pm open this Saturday, does that work?"' : tone === "professional" ? '"Good afternoon. I have availability at 2:00 PM this Saturday."' : '"Yo! Saturday at 2 works? Let me know 🔥"'}
           </div>
         </Card>
+        </>}
         <SectionLabel>Account</SectionLabel>
         <Card>
           {[
-            { icon: "S", label: "Services", sub: "Manage your services & prices", screen: "services", ownerOnly: true },
-            { icon: "◎", label: "Business Profile", sub: "Edit your business info", screen: "profile", ownerOnly: true },
-            { icon: "↗", label: "Connected Accounts", sub: "WhatsApp, Instagram, Google", screen: "connections", ownerOnly: true },
-            { icon: "◈", label: "Subscription", sub: "Pro Plan · $29/mo", screen: "subscription", ownerOnly: true },
+            { icon: "✦", label: "Services", sub: "Manage your services & prices", screen: "services", ownerOnly: true },
+            { icon: "◉", label: "Business Profile", sub: "Edit your business info", screen: "profile", ownerOnly: true },
+            { icon: "⤴", label: "Connected Accounts", sub: "WhatsApp, Instagram, Google", screen: "connections", ownerOnly: true },
+            { icon: "⟐", label: "Subscription", sub: "Pro Plan · $29/mo", screen: "subscription", ownerOnly: true },
           ].filter(i => userRole === "owner" || !i.ownerOnly).map(({ icon, label, sub, screen }, i, arr) => (
             <div key={i} onClick={() => navigate(screen)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
               <span style={{ fontSize: 20 }}>{icon}</span>
@@ -1829,7 +1853,7 @@ function Settings({ navigate, userRole }) {
           <span onClick={async () => { await supabase.auth.signOut(); navigate("login"); }} style={{ fontSize: 13, color: C.red, fontWeight: 600, cursor: "pointer" }}>Sign Out</span>
         </div>
         </div>{/* end col 1 */}
-        <div>{/* col 2 */}
+        {userRole === "owner" && <div>{/* col 2 */}
         <SectionLabel>Booking Rules</SectionLabel>
         <Card style={{ marginBottom: 8 }}>
           <div style={{ padding: "14px 16px", borderBottom: `1px solid ${C.border}` }}>
@@ -1853,7 +1877,7 @@ function Settings({ navigate, userRole }) {
         <SectionLabel>Payment Setup</SectionLabel>
         <Card style={{ marginBottom: 8 }}>
           {[
-            { icon: "◈", label: "Stripe", sub: "Accept card payments from clients", connected: true },
+            { icon: "⟐", label: "Stripe", sub: "Accept card payments from clients", connected: true },
             { icon: "🅿️", label: "PayPal", sub: "Your PayPal email or link", connected: false, placeholder: "PayPal email or paypal.me/link" },
             { icon: "💵", label: "Cash App", sub: "Your $Cashtag", connected: false, placeholder: "e.g. $YourCashtag" },
             { icon: "💱", label: "Zelle", sub: "Your Zelle phone or email", connected: false, placeholder: "Phone number or email" },
@@ -1918,7 +1942,7 @@ function Settings({ navigate, userRole }) {
             <span style={{ fontSize: 12, color: C.mid }}>›</span>
           </div>
         </Card>
-        </div>{/* end col 2 */}
+        </div>}{/* end col 2 */}
         </div>{/* end grid */}
       </div>
 
@@ -3309,7 +3333,7 @@ function Staff({ navigate }) {
           </div>
           <div style={{ display:"flex", gap:8 }}>
             <div onClick={() => setView("groupchat")} style={{ padding:"9px 14px", background:C.surface, border:`1px solid ${C.border}`, borderRadius:12, fontSize:13, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
-              ⊞ <span>Group Chat</span>
+              ⊡ <span>Group Chat</span>
               {groupMessages.length > 0 && <div style={{ width:7, height:7, borderRadius:"50%", background:C.accent }} />}
             </div>
             <div onClick={() => setShowInvite(true)} style={{ padding:"9px 14px", background: C.accentSoft, border:`1px solid ${C.accent}44`, borderRadius:12, fontSize:13, fontWeight:600, cursor:"pointer", color: C.accent }}>🔗 Invite</div>
@@ -3733,7 +3757,7 @@ function ConnectedAccounts({ navigate }) {
           {[
             { icon: "W", label: "WhatsApp Business", sub: "Auto-reply to client messages", color: "#25D366" },
             { icon: "📸", label: "Instagram DMs", sub: "Reply to DMs automatically", color: "#E1306C" },
-            { icon: "⊞", label: "Facebook Messenger", sub: "Handle Facebook inquiries", color: "#1877F2" },
+            { icon: "⊡", label: "Facebook Messenger", sub: "Handle Facebook inquiries", color: "#1877F2" },
           ].map((a, i, arr) => (
             <div key={a.label} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px", borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : "none", opacity: 0.5 }}>
               <div style={{ width: 44, height: 44, borderRadius: 14, background: a.color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{a.icon}</div>
@@ -4205,7 +4229,7 @@ function ShareLink({ navigate }) {
 }
 
 // ── SIDEBAR (desktop only) ─────────────────────────────────────────────────────
-function Sidebar({ active, navigate }) {
+function Sidebar({ active, navigate, userRole, staffOwnerId }) {
   const [bizName, setBizName] = useState("My Business");
   const [userName, setUserName] = useState("");
   const [initials, setInitials] = useState("MB");
@@ -4216,31 +4240,38 @@ function Sidebar({ active, navigate }) {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase.from("business_profiles").select("biz_name,logo_url,settings").eq("user_id", session.user.id).single();
-      const name = data?.biz_name || session.user.user_metadata?.business_name || "My Business";
+      const bizUid = (userRole === "staff" && staffOwnerId) ? staffOwnerId : session.user.id;
+      const { data } = await supabase.from("business_profiles").select("biz_name,logo_url,settings").eq("user_id", bizUid).single();
+      const name = data?.biz_name || "My Business";
       setBizName(name);
-      setUserName(data?.settings?.displayName || session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "");
       setInitials(name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase());
       if (data?.logo_url) setLogoUrl(data.logo_url);
-      if (data?.settings?.profilePic) setProfilePic(data.settings.profilePic);
+      if (userRole === "staff") {
+        const { data: sp } = await supabase.from("staff_profiles").select("name").eq("user_id", session.user.id).single();
+        setUserName(sp?.name || session.user.email?.split("@")[0] || "");
+        if (data?.settings?.profilePic) setProfilePic(data.settings.profilePic);
+      } else {
+        setUserName(data?.settings?.displayName || session.user.email?.split("@")[0] || "");
+        if (data?.settings?.profilePic) setProfilePic(data.settings.profilePic);
+      }
     };
     load();
-  }, []);
+  }, [userRole, staffOwnerId]);
   const mainNav = [
-    { id: "home", icon: "🏠", label: "Home" },
-    { id: "schedule", icon: "▦", label: "Schedule" },
-    { id: "inbox", icon: "✉️", label: "Inbox" },
-    { id: "clients", icon: "👤", label: "Clients" },
+    { id: "home", icon: "⌂", label: "Home" },
+    { id: "schedule", icon: "▣", label: "Schedule" },
+    { id: "inbox", icon: "✉", label: "Inbox" },
+    { id: "clients", icon: "◎", label: "Clients" },
   ];
   const secondaryNav = [
-    { id: "services", icon: "S", label: "Services" },
-    { id: "payments", icon: "P", label: "Payments" },
-    { id: "analytics", icon: "◈", label: "Analytics" },
-    { id: "promotions", icon: "◉", label: "Promotions" },
-    { id: "loyalty", icon: "♡", label: "Loyalty" },
-    { id: "staff", icon: "⊞", label: "Staff" },
-    { id: "waitlist", icon: "◔", label: "Waitlist" },
-  ];
+    { id: "services", icon: "✦", label: "Services", ownerOnly: true },
+    { id: "payments", icon: "⬡", label: "Payments", ownerOnly: true },
+    { id: "analytics", icon: "⟐", label: "Analytics", ownerOnly: true },
+    { id: "promotions", icon: "⊛", label: "Promotions", ownerOnly: true },
+    { id: "loyalty", icon: "♥", label: "Loyalty", ownerOnly: true },
+    { id: "staff", icon: "⊡", label: "Staff" },
+    { id: "waitlist", icon: "◷", label: "Waitlist", ownerOnly: true },
+  ].filter(i => userRole === "owner" || !i.ownerOnly);
 
   return (
     <div style={{ width: 240, background: "rgba(10,10,16,0.9)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderRight: "1px solid rgba(255,255,255,0.06)", height: "100vh", position: "fixed", left: 0, top: 0, display: "flex", flexDirection: "column", padding: "24px 0", zIndex: 100 }}>
@@ -4270,7 +4301,7 @@ function Sidebar({ active, navigate }) {
           </div>
         ))}
 
-        <div style={{ fontSize: 10, color: C.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", padding: "0 8px", marginBottom: 8, marginTop: 20 }}>Manage</div>
+        {secondaryNav.length > 0 && <div style={{ fontSize: 10, color: C.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", padding: "0 8px", marginBottom: 8, marginTop: 20 }}>Manage</div>}
         {secondaryNav.map(item => (
           <div key={item.id} onClick={() => navigate(item.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, background: active === item.id ? C.accentSoft : "transparent", border: `1px solid ${active === item.id ? C.accent + "33" : "transparent"}`, cursor: "pointer", marginBottom: 4, transition: "all 0.2s" }}>
             <span style={{ fontSize: 14 }}>{item.icon}</span>
@@ -4325,6 +4356,7 @@ function AISidebarPanel({ navigate, isMobile }) {
   const [bizContext, setBizContext] = useState("");
   const [memories, setMemories] = useState([]);
   const [ownerId, setOwnerId] = useState(null);
+  const [myUserId, setMyUserId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [orbScale, setOrbScale] = useState(1);
@@ -4354,15 +4386,20 @@ function AISidebarPanel({ navigate, isMobile }) {
     const load = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const uid = session.user.id;
-      setOwnerId(uid);
+      const myId = session.user.id;
+      // For staff, load business data from owner but memories from own user
+      let bizUid = myId;
+      const { data: sp } = await supabase.from("staff_profiles").select("owner_id").eq("user_id", myId).eq("status", "active").single();
+      if (sp) bizUid = sp.owner_id;
+      setOwnerId(bizUid);
+      setMyUserId(myId);
       const [profRes, apptRes, clientRes, msgRes, svcRes, memRes] = await Promise.all([
-        supabase.from("business_profiles").select("ai_name,biz_name,location").eq("user_id", uid).single(),
-        supabase.from("appointments").select("client_name,service,time,day,status,price").eq("owner_id", uid).order("created_at", { ascending: false }).limit(30),
-        supabase.from("clients").select("name,total_visits,total_spent").eq("owner_id", uid).limit(8),
-        supabase.from("messages").select("name,platform,preview,handled").eq("owner_id", uid).eq("handled", false).limit(10),
-        supabase.from("services").select("name,price,duration").eq("owner_id", uid).eq("active", true).limit(10),
-        supabase.from("ai_memories").select("fact").eq("owner_id", uid).order("created_at", { ascending: false }).limit(50),
+        supabase.from("business_profiles").select("ai_name,biz_name,location").eq("user_id", bizUid).single(),
+        supabase.from("appointments").select("client_name,service,time,day,status,price").eq("owner_id", bizUid).order("created_at", { ascending: false }).limit(30),
+        supabase.from("clients").select("name,total_visits,total_spent").eq("owner_id", bizUid).limit(8),
+        supabase.from("messages").select("name,platform,preview,handled").eq("owner_id", bizUid).eq("handled", false).limit(10),
+        supabase.from("services").select("name,price,duration").eq("owner_id", bizUid).eq("active", true).limit(10),
+        supabase.from("ai_memories").select("fact").eq("owner_id", myId).order("created_at", { ascending: false }).limit(50),
       ]);
       if (memRes.data) setMemories(memRes.data.map(m => m.fact));
       const name = profRes.data?.ai_name || "Aria";
@@ -4538,15 +4575,15 @@ You remember this conversation — reference earlier messages when relevant.`;
 
           // Delete old conflicting memories from Supabase, then insert new
           if (matchedKey) {
-            supabase.from("ai_memories").select("id,fact").eq("owner_id", ownerId).then(({ data }) => {
+            supabase.from("ai_memories").select("id,fact").eq("owner_id", myUserId || ownerId).then(({ data }) => {
               if (data) {
                 const old = data.filter(d => d.fact.toLowerCase().includes(matchedKey));
                 old.forEach(o => supabase.from("ai_memories").delete().eq("id", o.id).then(() => {}));
               }
-              supabase.from("ai_memories").insert([{ owner_id: ownerId, fact }]).then(() => {});
+              supabase.from("ai_memories").insert([{ owner_id: myUserId || ownerId, fact }]).then(() => {});
             });
           } else {
-            supabase.from("ai_memories").insert([{ owner_id: ownerId, fact }]).then(() => {});
+            supabase.from("ai_memories").insert([{ owner_id: myUserId || ownerId, fact }]).then(() => {});
           }
         }
       });
@@ -4953,7 +4990,7 @@ export default function App() {
   return (
     <div style={{ fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", background: C.bg, minHeight: "100vh", color: C.text }}>
       <style>{GLOBAL_STYLES}</style>
-      {showSidebar && <Sidebar active={screen} navigate={navigate} />}
+      {showSidebar && <Sidebar active={screen} navigate={navigate} userRole={userRole} staffOwnerId={staffOwnerId} />}
       {needsPaywall && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, padding: "36px 28px", maxWidth: 400, width: "100%", textAlign: "center" }}>
