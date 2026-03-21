@@ -329,7 +329,7 @@ function Login({ navigate, setUserRole, setStaffOwnerId }) {
             {mode === "signup" && (
               <div style={{ marginBottom: 20 }}>
                 <div onClick={() => setJoinMode(!joinMode)} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: joinMode ? 12 : 0 }}>
-                  <div style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${joinMode ? C.accent : C.border}`, background: joinMode ? C.accent : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", transition: "all 0.2s" }}>{joinMode ? "✓" : ""}</div>
+                  <div style={{ width: 18, height: 18, borderRadius: 12, border: `2px solid ${joinMode ? C.accent : C.border}`, background: joinMode ? C.accent : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#fff", transition: "all 0.2s" }}>{joinMode ? "✓" : ""}</div>
                   <span style={{ fontSize: 13, color: C.mid }}>I have an invite code from my employer</span>
                 </div>
                 {joinMode && (
@@ -499,7 +499,7 @@ function Onboarding({ navigate }) {
             {services.map(s => (
               <div key={s.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "12px 16px", marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{s.name}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>${s.price} · {s.duration}</div></div>
-                <div onClick={() => setServices(p => p.filter(x => x.id !== s.id))} style={{ width: 28, height: 28, borderRadius: 8, background: "#f43f5e11", border: "1px solid #f43f5e22", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: C.red }}>×</div>
+                <div onClick={() => setServices(p => p.filter(x => x.id !== s.id))} style={{ width: 28, height: 28, borderRadius: 12, background: "#f43f5e11", border: "1px solid #f43f5e22", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: C.red }}>×</div>
               </div>
             ))}
             <div style={{ background: C.surface, border: `1px dashed ${C.borderHigh}`, borderRadius: 14, padding: 14 }}>
@@ -1540,7 +1540,7 @@ function Clients({ navigate, userRole, staffOwnerId }) {
                             {row.total ? `Total: $${row.total}` : ""}{row.paid ? ` · Paid: $${row.paid}` : ""}{row.owed ? ` · Owed: $${row.owed}` : ""}
                           </div>
                         </div>
-                        <div style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 8, background: match ? `${C.green}18` : similar ? `${C.gold}18` : C.accentSoft, color: match ? C.green : similar ? C.gold : C.accent }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 12, background: match ? `${C.green}18` : similar ? `${C.gold}18` : C.accentSoft, color: match ? C.green : similar ? C.gold : C.accent }}>
                           {match ? "✓ Matched" : similar ? "~ Similar" : "+ New"}
                         </div>
                       </div>
@@ -1747,7 +1747,7 @@ function Services({ navigate }) {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 700 }}>{s.name}</span>
-                      <span style={{ fontSize: 10, color: C.dim, background: C.surfaceHigh, borderRadius: 6, padding: "2px 6px" }}>{s.category || "Hair"}</span>
+                      <span style={{ fontSize: 10, color: C.dim, background: C.surfaceHigh, borderRadius: 10, padding: "2px 6px" }}>{s.category || "Hair"}</span>
                     </div>
                     {s.description && <div style={{ fontSize: 12, color: C.dim, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.description}</div>}
                     <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
@@ -1809,7 +1809,7 @@ function Services({ navigate }) {
                   if (desc) setForm(p => ({ ...p, desc }));
                 } catch {}
                 setGeneratingDesc(false);
-              }} style={{ padding: "5px 10px", background: C.accentSoft, border: `1px solid ${C.accent}44`, borderRadius: 8, fontSize: 11, fontWeight: 700, color: C.accent, cursor: generatingDesc || !form.name.trim() ? "not-allowed" : "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", opacity: !form.name.trim() ? 0.4 : 1 }}>{generatingDesc ? "..." : "✦ AI"}</button>
+              }} style={{ padding: "5px 10px", background: C.accentSoft, border: `1px solid ${C.accent}44`, borderRadius: 12, fontSize: 11, fontWeight: 700, color: C.accent, cursor: generatingDesc || !form.name.trim() ? "not-allowed" : "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", opacity: !form.name.trim() ? 0.4 : 1 }}>{generatingDesc ? "..." : "✦ AI"}</button>
             </div>
             <input value={form.desc} onChange={e => setForm(p => ({ ...p, desc: e.target.value }))} placeholder="Short description clients will see" style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 14 }} />
 
@@ -2511,7 +2511,7 @@ function Loyalty({ navigate }) {
               />
             </div>
             <div onClick={() => setNewCode(p => ({ ...p, firstOnly: !p.firstOnly }))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", cursor: "pointer", marginBottom: 14 }}>
-              <div style={{ width: 20, height: 20, borderRadius: 6, background: newCode.firstOnly ? C.accent : C.surfaceHigh, border: `1px solid ${newCode.firstOnly ? C.accent : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 20, height: 20, borderRadius: 10, background: newCode.firstOnly ? C.accent : C.surfaceHigh, border: `1px solid ${newCode.firstOnly ? C.accent : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 {newCode.firstOnly && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </div>
               <div>
@@ -2540,7 +2540,7 @@ function Loyalty({ navigate }) {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ background: C.accentSoft, border: `1px solid ${C.accent}33`, borderRadius: 10, padding: "5px 12px", fontSize: 13, fontWeight: 800, color: C.accent, letterSpacing: 1 }}>{c.code}</div>
-                  {c.first_time_only && <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, background: `${C.gold}18`, borderRadius: 6, padding: "3px 7px" }}>1ST ONLY</div>}
+                  {c.first_time_only && <div style={{ fontSize: 10, color: C.gold, fontWeight: 700, background: `${C.gold}18`, borderRadius: 10, padding: "3px 7px" }}>1ST ONLY</div>}
                 </div>
                 <Toggle on={c.active} onToggle={() => toggleCode(c.id, c.active)} />
               </div>
@@ -2717,7 +2717,7 @@ function Notifications({ navigate }) {
             {unread > 0 && <div style={{ background: `${C.accent}12`, border: `1px solid ${C.accent}22`, borderRadius: 14, padding: "12px 16px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 13, color: C.accent, fontWeight: 600 }}>{unread} unread</span><span onClick={markAllRead} style={{ fontSize: 12, color: C.mid, cursor: "pointer" }}>Mark all read</span></div>}
             {filtered.map(n => (
               <div key={n.id} style={{ background: C.surface, border: `1px solid ${n.read ? C.border : typeColor(n.type) + "33"}`, borderRadius: 16, padding: "14px 16px", marginBottom: 10, position: "relative", overflow: "hidden" }}>
-                {!n.read && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: typeColor(n.type), borderRadius: "3px 0 0 3px" }} />}
+                {!n.read && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: typeColor(n.type), borderRadius: "12px 0 0 12px" }} />}
                 <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <div style={{ width: 40, height: 40, borderRadius: 12, background: `${typeColor(n.type)}18`, border: `1px solid ${typeColor(n.type)}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{n.icon || iconFor(n.type)}</div>
                   <div style={{ flex: 1 }}>
@@ -2888,7 +2888,7 @@ function Analytics({ navigate }) {
                     {bars.map((b, i) => (
                       <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%" }}>
                         <div style={{ flex: 1, display: "flex", alignItems: "flex-end", width: "100%" }}>
-                          <div style={{ width: "100%", borderRadius: "6px 6px 0 0", background: b.revenue > 0 ? `linear-gradient(180deg,${C.accent},${C.accentDark})` : C.border, height: `${(b.revenue / maxBar) * 100}%`, minHeight: b.revenue > 0 ? 4 : 2, transition: "height 0.4s ease" }} />
+                          <div style={{ width: "100%", borderRadius: "8px 8px 0 0", background: b.revenue > 0 ? `linear-gradient(180deg,${C.accent},${C.accentDark})` : C.border, height: `${(b.revenue / maxBar) * 100}%`, minHeight: b.revenue > 0 ? 4 : 2, transition: "height 0.4s ease" }} />
                         </div>
                       </div>
                     ))}
@@ -3714,7 +3714,7 @@ function Staff({ navigate, userRole, staffOwnerId }) {
                         </div>
                         <audio src={m.text.replace("VOICE:", "")} preload="none" />
                       </div>
-                    ) : /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(m.text) || m.text.startsWith("data:image/") ? <img src={m.text} alt="" style={{ maxWidth: "100%", borderRadius: 10, display: "block" }} /> : m.text}
+                    ) : /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(m.text) || m.text.startsWith("data:image/") ? <img src={m.text} alt="" style={{ maxWidth: "100%", borderRadius: 14, display: "block" }} /> : m.text}
                   </div>
                   {(i === groupMessages.length - 1 || groupMessages[i+1]?.user_id !== m.user_id) && <div style={{ fontSize: 10, color: C.dim, marginTop: 3, textAlign: isMe ? "right" : "left", marginLeft: 4 }}>{m.time}</div>}
                 </div>
@@ -3773,7 +3773,7 @@ function Staff({ navigate, userRole, staffOwnerId }) {
                 mr.start();
                 setGcRecording(mr);
               } catch { alert("Microphone access denied"); }
-            }} style={{ cursor:"pointer", flexShrink:0, width: 28, height: 28, borderRadius: 8, background: gcRecording ? C.red : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            }} style={{ cursor:"pointer", flexShrink:0, width: 28, height: 28, borderRadius: 12, background: gcRecording ? C.red : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={gcRecording ? "#fff" : C.mid} strokeWidth="2.5" strokeLinecap="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
             </div>
             {gcRecording && <div style={{ fontSize: 12, color: C.red, fontWeight: 700, animation: "pulse 1s infinite" }}>Recording...</div>}
@@ -4089,12 +4089,12 @@ function BusinessProfile({ navigate }) {
                 <div key={day} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: i < 6 ? `1px solid ${C.border}` : "none" }}>
                   <div style={{ width: 70, fontSize: 13, fontWeight: 600, color: d.off ? C.dim : C.text }}>{label.slice(0,3)}</div>
                   <div onClick={() => { const h = {...hours}; h[day] = {...d, off: !d.off}; setHours(h); setSaved(false); }} style={{ width: 36, height: 20, borderRadius: 10, background: d.off ? C.border : C.green, cursor: "pointer", position: "relative", flexShrink: 0, transition: "background 0.2s" }}>
-                    <div style={{ width: 16, height: 16, borderRadius: 8, background: "#fff", position: "absolute", top: 2, left: d.off ? 2 : 18, transition: "left 0.2s" }} />
+                    <div style={{ width: 16, height: 16, borderRadius: 12, background: "#fff", position: "absolute", top: 2, left: d.off ? 2 : 18, transition: "left 0.2s" }} />
                   </div>
                   {d.off ? <div style={{ fontSize: 12, color: C.dim, fontStyle: "italic" }}>Closed</div> : <>
-                    <input value={d.open} onChange={e => { const h = {...hours}; h[day] = {...d, open: e.target.value}; setHours(h); setSaved(false); }} type="time" style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 8px", fontSize: 12, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
+                    <input value={d.open} onChange={e => { const h = {...hours}; h[day] = {...d, open: e.target.value}; setHours(h); setSaved(false); }} type="time" style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "6px 8px", fontSize: 12, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
                     <span style={{ fontSize: 11, color: C.dim }}>to</span>
-                    <input value={d.close} onChange={e => { const h = {...hours}; h[day] = {...d, close: e.target.value}; setHours(h); setSaved(false); }} type="time" style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 8px", fontSize: 12, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
+                    <input value={d.close} onChange={e => { const h = {...hours}; h[day] = {...d, close: e.target.value}; setHours(h); setSaved(false); }} type="time" style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "6px 8px", fontSize: 12, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
                   </>}
                 </div>
               );
@@ -5351,7 +5351,7 @@ THINGS TO BE GREAT AT:
         {(chatHistory||[]).map((m,i) => (
           <div key={i} style={{ display:"flex", justifyContent:m.role==="user"?"flex-end":"flex-start", marginBottom:10, alignItems:"flex-end", gap:6 }}>
             {m.role==="assistant" && <div style={{ width:22, height:22, borderRadius:7, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, flexShrink:0 }}>✦</div>}
-            <div style={{ maxWidth:"84%", padding:"9px 12px", borderRadius:m.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px", background:m.role==="user"?`linear-gradient(135deg,${C.accentDark},${C.accent})`:C.surfaceHigh, border:m.role==="user"?"none":`1px solid ${C.border}`, fontSize:13, lineHeight:1.55, color:C.text }}>
+            <div style={{ maxWidth:"84%", padding:"9px 12px", borderRadius:m.role==="user"?"16px 16px 4px 16px":"18px 18px 18px 4px", background:m.role==="user"?`linear-gradient(135deg,${C.accentDark},${C.accent})`:C.surfaceHigh, border:m.role==="user"?"none":`1px solid ${C.border}`, fontSize:13, lineHeight:1.55, color:C.text }}>
               {renderText(m.text)}
             </div>
           </div>
@@ -5359,7 +5359,7 @@ THINGS TO BE GREAT AT:
         {(loading || voiceLoading) && (
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
             <div style={{ width:22, height:22, borderRadius:7, background:`linear-gradient(135deg,${C.accentDark},${C.accent})`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9 }}>✦</div>
-            <div style={{ background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:"16px 16px 16px 4px", padding:"10px 14px", display:"flex", gap:4 }}>
+            <div style={{ background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:"18px 18px 18px 4px", padding:"10px 14px", display:"flex", gap:4 }}>
               {[0,1,2].map(d=><div key={d} style={{width:5,height:5,borderRadius:"50%",background:C.accent,animation:"pulse 1.2s infinite",animationDelay:`${d*0.2}s`}}/>)}
             </div>
           </div>
@@ -5655,7 +5655,7 @@ export default function App() {
       {needsPaywall && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, padding: "36px 28px", maxWidth: 400, width: "100%", textAlign: "center" }}>
-            <div style={{ width: 72, height: 72, margin: "0 auto 16px" }}><img src={SPOOL_LOGO} alt="spool" style={{ width: "100%", height: "100%" }} /></div>
+            <div style={{ width: 72, height: 72, margin: "0 auto 16px" }}><img src={SPOOL_LOGO} alt="spool" style={{ width: "100%", height: "100%", borderRadius: 14 }} /></div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800, marginBottom: 10 }}>Start your free trial</div>
             <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7, marginBottom: 24 }}>
               Get 14 days free — no credit card required.<br />
