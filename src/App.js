@@ -18,6 +18,36 @@ const C = {
 
 const SPOOL_LOGO = "data:image/png;base64,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";
 
+const LANGS = {
+  en: {
+    home: "Home", schedule: "Schedule", inbox: "Inbox", clients: "Clients", settings: "Settings",
+    services: "Services", payments: "Payments", analytics: "Analytics", promotions: "Promotions",
+    loyalty: "Loyalty", staff: "Staff", notifications: "Notifications", packages: "Packages",
+    waitlist: "Waitlist", goodMorning: "Good morning", hey: "Hey", goodEvening: "Good evening",
+    todaySchedule: "Today's Schedule", noAppts: "No appointments today", seeAll: "See all",
+    addClient: "Add Client", searchClients: "Search clients...", totalClients: "total clients",
+    addService: "Add Your First Service", newBooking: "New Booking", signOut: "Sign Out",
+    changePassword: "Change Password", deleteAccount: "Delete Account", import: "Import",
+    language: "Language", save: "Save", cancel: "Cancel", delete: "Delete", edit: "Edit",
+    confirm: "Confirm", loading: "Loading...", send: "Send", reply: "Reply",
+  },
+  ar: {
+    home: "الرئيسية", schedule: "المواعيد", inbox: "الرسائل", clients: "العملاء", settings: "الإعدادات",
+    services: "الخدمات", payments: "المدفوعات", analytics: "التحليلات", promotions: "العروض",
+    loyalty: "الولاء", staff: "الموظفين", notifications: "الإشعارات", packages: "الباقات",
+    waitlist: "قائمة الانتظار", goodMorning: "صباح الخير", hey: "مرحباً", goodEvening: "مساء الخير",
+    todaySchedule: "جدول اليوم", noAppts: "لا مواعيد اليوم", seeAll: "عرض الكل",
+    addClient: "إضافة عميل", searchClients: "بحث عن عميل...", totalClients: "إجمالي العملاء",
+    addService: "أضف خدمتك الأولى", newBooking: "حجز جديد", signOut: "تسجيل الخروج",
+    changePassword: "تغيير كلمة المرور", deleteAccount: "حذف الحساب", import: "استيراد",
+    language: "اللغة", save: "حفظ", cancel: "إلغاء", delete: "حذف", edit: "تعديل",
+    confirm: "تأكيد", loading: "جاري التحميل...", send: "إرسال", reply: "رد",
+  },
+};
+function getLang() { return localStorage.getItem("spool_lang") || "en"; }
+function t(key) { const lang = getLang(); return LANGS[lang]?.[key] || LANGS.en[key] || key; }
+function isRTL() { return getLang() === "ar"; }
+
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -823,6 +853,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
             { icon: "⬡", label: "Payments", screen: "payments", color: C.gold, ownerOnly: true },
             { icon: "⚙", label: "Settings", screen: "settings", color: C.mid },
             { icon: "♥", label: "Loyalty", screen: "loyalty", color: "#f472b6", ownerOnly: true },
+            { icon: "◈", label: "Packages", screen: "packages", color: "#a78bfa", ownerOnly: true },
             { icon: "⟐", label: "Analytics", screen: "analytics", color: C.blue, ownerOnly: true },
             { icon: "⊛", label: "Promotions", screen: "promotions", color: "#fb923c", ownerOnly: true },
             { icon: "⊡", label: "Staff", screen: "staff", color: C.green },
@@ -2167,6 +2198,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
         <Card>
           {[
             { icon: "✦", label: "Services", sub: "Manage your services & prices", screen: "services", ownerOnly: true },
+            { icon: "◈", label: "Packages", sub: "Bundles & memberships", screen: "packages", ownerOnly: true },
             { icon: "◉", label: "Business Profile", sub: "Edit your business info", screen: "profile", ownerOnly: true },
             { icon: "⤴", label: "Connected Accounts", sub: "WhatsApp, Instagram, Google", screen: "connections", ownerOnly: true },
             { icon: "⟐", label: "Subscription", sub: "Pro Plan · $29/mo", screen: "subscription", ownerOnly: true },
@@ -2178,6 +2210,15 @@ function Settings({ navigate, userRole, staffOwnerId }) {
             </div>
           ))}
         </Card>
+        <SectionLabel>{t("language")}</SectionLabel>
+        <Card style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", gap: 0 }}>
+            {[["en", "English"], ["ar", "العربية"]].map(([code, label]) => (
+              <div key={code} onClick={() => { localStorage.setItem("spool_lang", code); document.documentElement.dir = code === "ar" ? "rtl" : "ltr"; window.location.reload(); }} style={{ flex: 1, padding: "14px", textAlign: "center", fontSize: 14, fontWeight: 600, color: getLang() === code ? C.accent : C.mid, background: getLang() === code ? C.accentSoft : "transparent", borderBottom: getLang() === code ? `2px solid ${C.accent}` : `2px solid transparent`, cursor: "pointer" }}>{label}</div>
+            ))}
+          </div>
+        </Card>
+
         <div style={{ padding: "16px 0" }}>
           <button onClick={async () => {
             const newPass = prompt("Enter new password (min 6 characters):");
@@ -5628,7 +5669,7 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
-  const screens = { splash: Splash, login: Login, onboarding: Onboarding, home: Home, schedule: Schedule, inbox: Inbox, clients: Clients, payments: Payments, settings: Settings, loyalty: Loyalty, notifications: Notifications, analytics: Analytics, promotions: Promotions, booking: Booking, staff: Staff, waitlist: Waitlist, profile: BusinessProfile, connections: ConnectedAccounts, subscription: Subscription, sharelink: ShareLink, services: Services };
+  const screens = { splash: Splash, login: Login, onboarding: Onboarding, home: Home, schedule: Schedule, inbox: Inbox, clients: Clients, payments: Payments, settings: Settings, loyalty: Loyalty, notifications: Notifications, analytics: Analytics, promotions: Promotions, booking: Booking, staff: Staff, waitlist: Waitlist, profile: BusinessProfile, connections: ConnectedAccounts, subscription: Subscription, sharelink: ShareLink, services: Services, packages: Packages };
   const Screen = screens[screen] || Home;
 
   const isAuthScreen = screen === "login" || screen === "onboarding" || screen === "booking" || screen === "splash";
@@ -5651,7 +5692,7 @@ export default function App() {
   const [mobileAIOpen, setMobileAIOpen] = useState(false);
 
   return (
-    <div style={{ fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", background: C.bg, minHeight: "100vh", color: C.text }}>
+    <div style={{ fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", background: C.bg, minHeight: "100vh", color: C.text, direction: isRTL() ? "rtl" : "ltr" }}>
       <style>{GLOBAL_STYLES}</style>
       {/* Toast Notifications */}
       <div style={{ position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 9999, display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 400, padding: "0 16px", pointerEvents: "none" }}>
