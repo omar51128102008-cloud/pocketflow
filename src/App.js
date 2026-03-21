@@ -1229,6 +1229,10 @@ function Clients({ navigate, userRole, staffOwnerId }) {
   const [newInstagram, setNewInstagram] = useState("");
   const [adding, setAdding] = useState(false);
   const [clientAppts, setClientAppts] = useState([]);
+  const [showImport, setShowImport] = useState(false);
+  const [importRows, setImportRows] = useState([]);
+  const [importStep, setImportStep] = useState("upload"); // upload, preview, done
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     const loadClients = async () => {
@@ -1407,7 +1411,10 @@ function Clients({ navigate, userRole, staffOwnerId }) {
             <BackBtn onBack={() => navigate("home")} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Clients</div>
           </div>
-          <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "9px 16px", fontSize: 13 }}>+ Add</BtnPrimary>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => { setShowImport(true); setImportStep("upload"); setImportRows([]); }} style={{ padding: "9px 14px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Import</button>
+            <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "9px 16px", fontSize: 13 }}>+ Add</BtnPrimary>
+          </div>
         </div>
         <div style={{ fontSize: 13, color: C.mid }}>{clients.length} total clients</div>
       </div>
@@ -1496,6 +1503,145 @@ function Clients({ navigate, userRole, staffOwnerId }) {
             <input placeholder="(555) 123-4567" type="tel" value={newPhone} onChange={e => setNewPhone(handlePhoneInput(e.target.value))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
             <input placeholder="Instagram handle" value={newInstagram} onChange={e => setNewInstagram(e.target.value)} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 20 }} />
             <BtnPrimary disabled={!newName || adding} onClick={addClient} style={{ width: "100%", padding: 14 }}>{adding ? "Adding..." : "Add Client"}</BtnPrimary>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {showImport && (
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowImport(false)}>
+          <div style={{ background: C.surfaceSolid, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 560, padding: "24px 20px 32px", maxHeight: "85vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
+
+            {importStep === "done" ? (
+              <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <div style={{ fontSize: 48, marginBottom: 16, animation: "pop 0.5s cubic-bezier(0.34,1.56,0.64,1)" }}>✓</div>
+                <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Import Complete</div>
+                <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>All client data has been imported and matched.</div>
+                <BtnPrimary onClick={() => { setShowImport(false); window.location.reload(); }} style={{ width: "100%", padding: 14 }}>Done</BtnPrimary>
+              </div>
+            ) : importStep === "preview" ? (
+              <>
+                <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Review Import</div>
+                <div style={{ fontSize: 13, color: C.mid, marginBottom: 16 }}>{importRows.length} rows found. Match them to existing clients or create new ones.</div>
+                {importRows.map((row, i) => {
+                  const match = clients.find(c => c.name.toLowerCase().trim() === (row.name || "").toLowerCase().trim());
+                  const similar = !match ? clients.find(c => {
+                    const a = c.name.toLowerCase().split(" ");
+                    const b = (row.name || "").toLowerCase().split(" ");
+                    return a.some(w => b.includes(w) && w.length > 2);
+                  }) : null;
+                  return (
+                    <div key={i} style={{ background: C.surface, border: `1px solid ${match ? C.green + "44" : similar ? C.gold + "44" : C.border}`, borderRadius: 14, padding: 14, marginBottom: 8 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700 }}>{row.name || "Unknown"}</div>
+                          <div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>
+                            {row.total ? `Total: $${row.total}` : ""}{row.paid ? ` · Paid: $${row.paid}` : ""}{row.owed ? ` · Owed: $${row.owed}` : ""}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 8, background: match ? `${C.green}18` : similar ? `${C.gold}18` : C.accentSoft, color: match ? C.green : similar ? C.gold : C.accent }}>
+                          {match ? "✓ Matched" : similar ? "~ Similar" : "+ New"}
+                        </div>
+                      </div>
+                      {match && <div style={{ fontSize: 11, color: C.green }}>Will merge into: {match.name}</div>}
+                      {similar && !row._linkedTo && (
+                        <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                          <button onClick={() => { setImportRows(p => p.map((r, j) => j === i ? { ...r, _linkedTo: similar.id, _linkedName: similar.name } : r)); }} style={{ flex: 1, padding: 8, background: `${C.gold}15`, border: `1px solid ${C.gold}33`, borderRadius: 10, fontSize: 11, fontWeight: 600, color: C.gold, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Connect to {similar.name}</button>
+                          <button onClick={() => { setImportRows(p => p.map((r, j) => j === i ? { ...r, _linkedTo: "new" } : r)); }} style={{ flex: 1, padding: 8, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 11, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Create New</button>
+                        </div>
+                      )}
+                      {row._linkedTo && row._linkedTo !== "new" && <div style={{ fontSize: 11, color: C.gold, marginTop: 4 }}>→ Connected to: {row._linkedName}</div>}
+                      {row._linkedTo === "new" && <div style={{ fontSize: 11, color: C.accent, marginTop: 4 }}>→ Will create as new client</div>}
+                    </div>
+                  );
+                })}
+                <BtnPrimary disabled={importing} onClick={async () => {
+                  setImporting(true);
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) { setImporting(false); return; }
+                  const oid = (userRole === "staff" && staffOwnerId) ? staffOwnerId : session.user.id;
+
+                  for (const row of importRows) {
+                    const name = (row.name || "").trim();
+                    if (!name) continue;
+                    const total = parseFloat(row.total) || 0;
+                    const paid = parseFloat(row.paid) || 0;
+                    const owed = parseFloat(row.owed) || (total - paid);
+
+                    // Find match
+                    const exactMatch = clients.find(c => c.name.toLowerCase().trim() === name.toLowerCase());
+                    const linkedId = row._linkedTo && row._linkedTo !== "new" ? row._linkedTo : null;
+                    const target = exactMatch || (linkedId ? clients.find(c => c.id === linkedId) : null);
+
+                    if (target) {
+                      // Merge into existing
+                      await supabase.from("clients").update({
+                        total_amount: (target.total_amount || target.total_spent || 0) + total,
+                        amount_paid: (target.amount_paid || target.total_spent || 0) + paid,
+                        amount_owed: (target.amount_owed || 0) + owed,
+                        total_spent: (target.total_spent || 0) + paid,
+                      }).eq("id", target.id);
+                    } else {
+                      // Create new client
+                      const avatar = name.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase();
+                      await supabase.from("clients").insert([{
+                        name, avatar, owner_id: oid,
+                        total_amount: total, amount_paid: paid, amount_owed: owed,
+                        total_spent: paid, total_visits: 0,
+                        joined: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+                      }]);
+                    }
+                  }
+                  setImporting(false);
+                  setImportStep("done");
+                }} style={{ width: "100%", padding: 14, marginTop: 12 }}>{importing ? "Importing..." : `Import ${importRows.length} Rows`}</BtnPrimary>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Import Clients</div>
+                <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>Upload a CSV or Excel file with client names and financial data</div>
+                <div style={{ fontSize: 11, color: C.dim, marginBottom: 12 }}>
+                  Expected columns: <span style={{ color: C.accent }}>Name</span>, <span style={{ color: C.accent }}>Total</span>, <span style={{ color: C.accent }}>Paid</span>, <span style={{ color: C.accent }}>Owed</span> (or any similar headers)
+                </div>
+                <label style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 20px", background: C.surface, border: `2px dashed ${C.borderHigh}`, borderRadius: 16, cursor: "pointer", marginBottom: 16 }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>↑</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Choose file</div>
+                  <div style={{ fontSize: 12, color: C.dim }}>CSV, TSV, or Excel (.xlsx)</div>
+                  <input type="file" accept=".csv,.tsv,.xlsx,.xls" style={{ display: "none" }} onChange={async e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const text = await file.text();
+                    // Parse CSV/TSV
+                    const sep = text.includes("\t") ? "\t" : ",";
+                    const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+                    if (lines.length < 2) { alert("File needs at least a header row and one data row."); return; }
+                    const headers = lines[0].split(sep).map(h => h.replace(/"/g, "").trim().toLowerCase());
+                    // Find column indices
+                    const nameCol = headers.findIndex(h => h.includes("name") || h.includes("client") || h.includes("customer"));
+                    const totalCol = headers.findIndex(h => h.includes("total") || h.includes("amount") || h.includes("balance"));
+                    const paidCol = headers.findIndex(h => h.includes("paid") || h.includes("received") || h.includes("payment"));
+                    const owedCol = headers.findIndex(h => h.includes("owed") || h.includes("remaining") || h.includes("left") || h.includes("due") || h.includes("unpaid"));
+                    if (nameCol < 0) { alert("Couldn't find a 'Name' column. Make sure your file has a header row with 'Name', 'Client', or 'Customer'."); return; }
+                    const rows = lines.slice(1).map(line => {
+                      const cols = line.split(sep).map(c => c.replace(/"/g, "").trim());
+                      return {
+                        name: cols[nameCol] || "",
+                        total: totalCol >= 0 ? cols[totalCol]?.replace(/[^0-9.]/g, "") : "",
+                        paid: paidCol >= 0 ? cols[paidCol]?.replace(/[^0-9.]/g, "") : "",
+                        owed: owedCol >= 0 ? cols[owedCol]?.replace(/[^0-9.]/g, "") : "",
+                      };
+                    }).filter(r => r.name);
+                    setImportRows(rows);
+                    setImportStep("preview");
+                  }} />
+                </label>
+                <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.7, textAlign: "center" }}>
+                  Save your Excel file as CSV first if it's .xlsx<br/>
+                  The AI will auto-match names to existing clients
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
