@@ -1,6 +1,6 @@
 // spool Push Notification Service Worker
 var ICON = "https://omar51128102008-cloud.github.io/pocketflow/notification-icon.png";
-var IMAGE = "https://omar51128102008-cloud.github.io/pocketflow/notification-icon-512.png";
+var BANNER = "https://omar51128102008-cloud.github.io/pocketflow/notification-banner.png";
 
 self.addEventListener("push", function(event) {
   var data = event.data ? event.data.json() : {};
@@ -9,7 +9,7 @@ self.addEventListener("push", function(event) {
     body: data.body || "You have a new notification",
     icon: data.icon || ICON,
     badge: data.badge || ICON,
-    image: data.image || IMAGE,
+    image: data.image || BANNER,
     vibrate: [200, 100, 200],
     data: { url: data.url || "/" },
     tag: data.tag || "spool-" + Date.now(),

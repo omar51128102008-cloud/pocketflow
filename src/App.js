@@ -5508,7 +5508,7 @@ export default function App() {
           body: msg,
           icon: "https://omar51128102008-cloud.github.io/pocketflow/notification-icon.png",
           badge: "https://omar51128102008-cloud.github.io/pocketflow/notification-icon.png",
-          image: "https://omar51128102008-cloud.github.io/pocketflow/notification-icon-512.png",
+          image: "https://omar51128102008-cloud.github.io/pocketflow/notification-banner.png",
           silent: false,
           requireInteraction: type === "booking",
           tag: "spool-" + Date.now(),
