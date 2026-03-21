@@ -292,7 +292,7 @@ function Login({ navigate, setUserRole, setStaffOwnerId }) {
 
   if (resetSent) return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
-      <div style={{ fontSize: 60, marginBottom: 24 }}>📧</div>
+      <div style={{ fontSize: 60, marginBottom: 24 }}>✉</div>
       <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800, marginBottom: 12 }}>Check your email</div>
       <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7, marginBottom: 28 }}>We sent a password reset link to<br /><span style={{ color: C.accent, fontWeight: 600 }}>{email}</span></div>
       <BtnPrimary onClick={() => { setResetMode(false); setResetSent(false); }} style={{ padding: "13px 28px" }}>Back to Login</BtnPrimary>
@@ -1469,7 +1469,7 @@ function Clients({ navigate, userRole, staffOwnerId }) {
                   </div>
                   {activeTab === "contact" && (
                     <div>
-                      {[["📱", "Phone", formatPhone(selectedClient.phone)], ["📸", "Instagram", selectedClient.instagram], ["📅", "Last visit", selectedClient.lastVisit]].map(([icon, label, val], i) => (
+                      {[["◎", "Phone", formatPhone(selectedClient.phone)], ["📸", "Instagram", selectedClient.instagram], ["📅", "Last visit", selectedClient.lastVisit]].map(([icon, label, val], i) => (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: i < 2 ? `1px solid ${C.border}` : "none" }}>
                           <span style={{ fontSize: 16 }}>{icon}</span>
                           <div><div style={{ fontSize: 11, color: C.dim }}>{label}</div><div style={{ fontSize: 13, fontWeight: 600, marginTop: 1 }}>{val || "—"}</div></div>
@@ -1658,7 +1658,7 @@ function Services({ navigate }) {
   const [saving, setSaving] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ name: "", price: "", duration: "", desc: "", icon: "✦", active: true, category: "Hair" });
+  const [form, setForm] = useState({ name: "", price: "", duration: "", desc: "", icon: "✦", active: true, category: "Standard" });
   const [generatingDesc, setGeneratingDesc] = useState(false);
   const [userId, setUserId] = useState(null);
   const [filterCat, setFilterCat] = useState("All");
@@ -1678,7 +1678,7 @@ function Services({ navigate }) {
     load();
   }, []);
 
-  const resetForm = () => setForm({ name: "", price: "", duration: "", desc: "", icon: "✦", active: true, category: "Hair" });
+  const resetForm = () => setForm({ name: "", price: "", duration: "", desc: "", icon: "✦", active: true, category: "Standard" });
 
   const openAdd = () => { resetForm(); setEditingId(null); setShowAdd(true); };
   const openEdit = (s) => { setForm({ name: s.name, price: String(s.price), duration: s.duration, desc: s.description || "", icon: s.icon || "✦", active: s.active !== false, category: s.category || "Hair" }); setEditingId(s.id); setShowAdd(true); };
@@ -1740,10 +1740,10 @@ function Services({ navigate }) {
               ))}
             </div>
             <div style={{ fontSize: 12, color: C.dim, fontWeight: 600, marginBottom: 12 }}>{services.filter(s => s.active !== false).length} active · {services.filter(s => s.active === false).length} hidden</div>
-            {services.filter(s => filterCat === "All" || (s.category || "Hair") === filterCat).map((s, i) => (
+            {services.filter(s => filterCat === "All" || (s.category || "Standard") === filterCat).map((s, i) => (
               <Card key={s.id} style={{ padding: "16px", marginBottom: 10, opacity: s.active === false ? 0.5 : 1, transition: "opacity 0.2s" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 14, background: `linear-gradient(135deg,${C.accentDark}22,${C.accent}22)`, border: `1px solid ${C.accent}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: C.accent, flexShrink: 0 }}>{(s.category || "H")[0]}</div>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: `linear-gradient(135deg,${C.accentDark}22,${C.accent}22)`, border: `1px solid ${C.accent}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: C.accent, flexShrink: 0 }}>{(s.category || "S")[0]}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 700 }}>{s.name}</span>
@@ -1763,7 +1763,7 @@ function Services({ navigate }) {
               </Card>
             ))}
             <div style={{ marginTop: 8, padding: "14px 16px", borderRadius: 14, background: C.accentSoft, border: `1px solid ${C.accent}33`, fontSize: 13, color: C.mid, lineHeight: 1.6 }}>
-              💡 Changes go live on your booking page instantly
+              ◈ Changes go live on your booking page instantly
             </div>
           </>
         )}
@@ -2248,9 +2248,9 @@ function Settings({ navigate, userRole, staffOwnerId }) {
         <Card style={{ marginBottom: 8 }}>
           {[
             { icon: "⟐", label: "Stripe", sub: "Accept card payments from clients", connected: true },
-            { icon: "🅿️", label: "PayPal", sub: "Your PayPal email or link", connected: false, placeholder: "PayPal email or paypal.me/link" },
-            { icon: "💵", label: "Cash App", sub: "Your $Cashtag", connected: false, placeholder: "e.g. $YourCashtag" },
-            { icon: "💱", label: "Zelle", sub: "Your Zelle phone or email", connected: false, placeholder: "Phone number or email" },
+            { icon: "PP", label: "PayPal", sub: "Your PayPal email or link", connected: false, placeholder: "PayPal email or paypal.me/link" },
+            { icon: "CA", label: "Cash App", sub: "Your $Cashtag", connected: false, placeholder: "e.g. $YourCashtag" },
+            { icon: "ZL", label: "Zelle", sub: "Your Zelle phone or email", connected: false, placeholder: "Phone number or email" },
           ].map((p, i, arr) => (
             <div key={p.label}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: (!paymentInputOpen[p.label] && i < arr.length - 1) ? `1px solid ${C.border}` : "none" }}>
@@ -2335,7 +2335,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
 
                 <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Category</div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                  {[{ id: "bug", label: "🐛 Bug" }, { id: "ui", label: "🎨 UI Issue" }, { id: "feature", label: "💡 Suggestion" }, { id: "other", label: "💬 Other" }].map(c => (
+                  {[{ id: "bug", label: "🐛 Bug" }, { id: "ui", label: "🎨 UI Issue" }, { id: "feature", label: "◈ Suggestion" }, { id: "other", label: "💬 Other" }].map(c => (
                     <div key={c.id} onClick={() => setBugCategory(c.id)} style={{ flex: 1, padding: "10px 6px", borderRadius: 12, background: bugCategory === c.id ? C.accentSoft : C.surface, border: `1px solid ${bugCategory === c.id ? C.accent : C.border}`, textAlign: "center", fontSize: 11, fontWeight: 600, color: bugCategory === c.id ? C.accent : C.mid, cursor: "pointer" }}>{c.label}</div>
                   ))}
                 </div>
@@ -2352,7 +2352,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
                     </div>
                   ) : (
                     <label style={{ flex: 1, padding: "16px 14px", background: C.surface, border: `1px dashed ${C.borderHigh}`, borderRadius: 14, fontSize: 13, color: C.mid, cursor: "pointer", textAlign: "center", fontWeight: 600 }}>
-                      📷 Upload Screenshot
+                      ◎ Upload Screenshot
                       <input type="file" accept="image/*" style={{ display: "none" }} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async ev => { const compressed = await compressImage(ev.target.result, 400, 0.6); setBugScreenshot(compressed); }; reader.readAsDataURL(file); }} />
                     </label>
                   )}
@@ -2360,7 +2360,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
 
                 <div style={{ fontSize: 11, color: C.dim, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Device Info <span style={{ fontWeight: 400 }}>(auto-detected)</span></div>
                 <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 14px", fontSize: 12, color: C.dim, marginBottom: 20, lineHeight: 1.6 }}>
-                  {navigator.userAgent.includes("Mobile") ? "📱 Mobile" : "💻 Desktop"} · {navigator.userAgent.includes("Chrome") ? "Chrome" : navigator.userAgent.includes("Safari") ? "Safari" : navigator.userAgent.includes("Firefox") ? "Firefox" : "Browser"} · {window.innerWidth}×{window.innerHeight}
+                  {navigator.userAgent.includes("Mobile") ? "◎ Mobile" : "💻 Desktop"} · {navigator.userAgent.includes("Chrome") ? "Chrome" : navigator.userAgent.includes("Safari") ? "Safari" : navigator.userAgent.includes("Firefox") ? "Firefox" : "Browser"} · {window.innerWidth}×{window.innerHeight}
                 </div>
 
                 <BtnPrimary disabled={!bugText.trim() || bugSubmitting} onClick={async () => {
@@ -2589,7 +2589,7 @@ function Loyalty({ navigate }) {
         <div>{/* col 2: automated messages */}
         <SectionLabel>Automated Messages</SectionLabel>
         <Card style={{ marginBottom: 8 }}>
-          {[["🎂","Birthday message","Coming soon",birthdayOn,setBirthdayOn],["🔁","Rebook reminder","Coming soon",rebookOn,setRebookOn],["⭐","Review request","Active via cron",reviewOn,setReviewOn],["💔","Win-back campaign","Coming soon",winbackOn,setWinbackOn]].map(([icon,label,sub,val,set],i)=>(
+          {[["♡","Birthday message","Coming soon",birthdayOn,setBirthdayOn],["↻","Rebook reminder","Coming soon",rebookOn,setRebookOn],["★","Review request","Active via cron",reviewOn,setReviewOn],["↩","Win-back campaign","Coming soon",winbackOn,setWinbackOn]].map(([icon,label,sub,val,set],i)=>(
             <div key={i} style={{ display:"flex",alignItems:"center",gap:12,padding:"14px 16px",borderBottom:i<3?`1px solid ${C.border}`:"none" }}>
               <span style={{ fontSize:20 }}>{icon}</span>
               <div style={{ flex:1 }}><div style={{ fontSize:14,fontWeight:600 }}>{label}</div><div style={{ fontSize:12,color:C.mid,marginTop:2 }}>{sub}</div></div>
@@ -2601,7 +2601,7 @@ function Loyalty({ navigate }) {
         <SectionLabel>Recent Reviews</SectionLabel>
         {realReviews.length === 0 ? (
           <Card style={{ padding: "32px 20px", textAlign: "center" }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>⭐</div>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>★</div>
             <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No reviews yet</div>
             <div style={{ fontSize: 13, color: C.dim }}>Reviews from clients will appear here</div>
           </Card>
@@ -2611,7 +2611,7 @@ function Loyalty({ navigate }) {
               <span style={{ fontSize:14,fontWeight:600 }}>{r.client_name}</span>
               <span style={{ fontSize:11,color:C.dim }}>{timeAgo(r.created_at)}</span>
             </div>
-            <div style={{ fontSize:16,marginBottom:8 }}>{"⭐".repeat(r.rating || 5)}</div>
+            <div style={{ fontSize:16,marginBottom:8 }}>{"★".repeat(r.rating || 5)}</div>
             {r.text && <div style={{ fontSize:13,color:C.mid,lineHeight:1.5 }}>{r.text}</div>}
             {r.service && <div style={{ fontSize:11,color:C.dim,marginTop:6 }}>{r.service}</div>}
           </Card>
@@ -2931,7 +2931,7 @@ function Analytics({ navigate }) {
                 <SectionLabel>AI Insights</SectionLabel>
                 {insights.map((ins, i) => (
                   <div key={i} style={{ background: C.accentSoft, border: `1px solid ${C.accent}22`, borderRadius: 14, padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
-                    <span style={{ fontSize: 16, flexShrink: 0 }}>{"📅💰👥⭐".split("")[i]}</span>
+                    <span style={{ fontSize: 16, flexShrink: 0 }}>{"📅💰👥★".split("")[i]}</span>
                     <span style={{ fontSize: 13, color: C.mid, lineHeight: 1.5 }}>{ins}</span>
                   </div>
                 ))}
@@ -3120,7 +3120,7 @@ function Promotions({ navigate }) {
             </div>
             <SectionLabel>Send via</SectionLabel>
             <div style={{ display: "flex", gap: 8, marginBottom: 28 }}>
-              {[{ id: "email", label: "📧 Email" }, { id: "sms", label: "📱 SMS" }].map(ch => (
+              {[{ id: "email", label: "✉ Email" }, { id: "sms", label: "◎ SMS" }].map(ch => (
                 <div key={ch.id} onClick={() => setChannel(p => p.includes(ch.id) ? p.filter(x => x !== ch.id) : [...p, ch.id])} style={{ flex: 1, padding: "12px", borderRadius: 12, background: channel.includes(ch.id) ? C.accentSoft : C.surface, border: `1px solid ${channel.includes(ch.id) ? C.accent : C.border}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: channel.includes(ch.id) ? C.accent : C.mid, cursor: "pointer" }}>{ch.label}</div>
               ))}
             </div>
@@ -3513,7 +3513,7 @@ function Booking({ navigate }) {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.dim, marginBottom: 8 }}>
-              <span>🔒</span><span>Payments secured by Stripe. Your card info is never stored.</span>
+              <span>◉</span><span>Payments secured by Stripe. Your card info is never stored.</span>
             </div>
           </div>
         )}
@@ -3531,7 +3531,7 @@ function Booking({ navigate }) {
           onClick={() => step < 3 ? setStep(p => p + 1) : handlePay()}
           style={{ width: "100%", padding: 17, fontSize: 16 }}
         >
-          {paying ? "Processing payment..." : step === 0 ? "Continue →" : step === 1 ? "Enter Your Details →" : step === 2 ? "Continue to Payment →" : "Pay " + depositStr + " & Confirm 🔒"}
+          {paying ? "Processing payment..." : step === 0 ? "Continue →" : step === 1 ? "Enter Your Details →" : step === 2 ? "Continue to Payment →" : "Pay " + depositStr + " & Confirm ◉"}
         </BtnPrimary>
       </div>
     </div>
@@ -3558,6 +3558,7 @@ function Staff({ navigate, userRole, staffOwnerId }) {
   const [bizContext, setBizContext] = useState("");
   const [groupMessages, setGroupMessages] = useState([]);
   const [groupInput, setGroupInput] = useState("");
+  const [gcRecording, setGcRecording] = useState(null);
   const [aiTyping, setAiTyping] = useState(false);
   const chatEndRef = useRef(null);
   const [myName, setMyName] = useState("You");
@@ -3700,17 +3701,28 @@ function Staff({ navigate, userRole, staffOwnerId }) {
             return (
               <div key={m.id || i} style={{ display: "flex", flexDirection: isMe ? "row-reverse" : "row", gap: 8, marginBottom: groupMessages[i+1]?.user_id === m.user_id ? 2 : 12, alignItems: "flex-end" }}>
                 {!isMe && (
-                  <div style={{ width: 28, height: 28, flexShrink: 0, visibility: showAvatar ? "visible" : "hidden" }}>
+                  <div style={{ width: 32, height: 32, flexShrink: 0, visibility: showAvatar ? "visible" : "hidden" }}>
                     {isAI
-                      ? <div style={{ width: 28, height: 28, borderRadius: 14, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#fff", fontWeight: 800 }}>AI</div>
-                      : <div style={{ width: 28, height: 28, borderRadius: 14, background: C.surfaceHigh, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: C.mid }}>{avatar}</div>
+                      ? <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#fff", fontWeight: 800 }}>AI</div>
+                      : <div style={{ width: 32, height: 32, borderRadius: "50%", background: C.surfaceHigh, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: C.mid }}>{avatar}</div>
                     }
                   </div>
                 )}
                 <div style={{ maxWidth: "72%" }}>
                   {showName && <div style={{ fontSize: 11, color: isAI ? C.accent : C.mid, fontWeight: 600, marginBottom: 3, marginLeft: 4 }}>{m.sender}</div>}
                   <div style={{ padding: "10px 14px", borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: isMe ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : isAI ? "rgba(124,58,237,0.12)" : C.surface, border: isMe ? "none" : `1px solid ${isAI ? C.accent + "22" : C.border}`, fontSize: 14, lineHeight: 1.5, color: isMe ? "#fff" : C.text }}>
-                    {/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(m.text) ? <img src={m.text} alt="" style={{ maxWidth: "100%", borderRadius: 10, display: "block" }} /> : m.text}
+                    {m.text.startsWith("VOICE:") ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div onClick={e => { const audio = e.currentTarget.parentElement.querySelector("audio"); if (audio) audio.paused ? audio.play() : audio.pause(); }} style={{ width: 32, height: 32, borderRadius: "50%", background: isMe ? "rgba(255,255,255,0.2)" : C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill={isMe ? "#fff" : C.accent}><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ height: 4, background: isMe ? "rgba(255,255,255,0.3)" : C.border, borderRadius: 2 }}><div style={{ height: "100%", width: "60%", background: isMe ? "#fff" : C.accent, borderRadius: 2 }} /></div>
+                          <div style={{ fontSize: 10, color: isMe ? "rgba(255,255,255,0.7)" : C.dim, marginTop: 3 }}>Voice message</div>
+                        </div>
+                        <audio src={m.text.replace("VOICE:", "")} preload="none" />
+                      </div>
+                    ) : /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(m.text) || m.text.startsWith("data:image/") ? <img src={m.text} alt="" style={{ maxWidth: "100%", borderRadius: 10, display: "block" }} /> : m.text}
                   </div>
                   {(i === groupMessages.length - 1 || groupMessages[i+1]?.user_id !== m.user_id) && <div style={{ fontSize: 10, color: C.dim, marginTop: 3, textAlign: isMe ? "right" : "left", marginLeft: 4 }}>{m.time}</div>}
                 </div>
@@ -3731,7 +3743,48 @@ function Staff({ navigate, userRole, staffOwnerId }) {
         <div style={{ padding:"10px 14px 32px", borderTop:`1px solid ${C.border}`, flexShrink:0 }}>
           <div style={{ fontSize:11, color:C.dim, marginBottom:6, marginLeft:2 }}>Type <span style={{color:C.accent,fontWeight:700}}>@{aiName}</span> to ask the AI</div>
           <div style={{ display:"flex", gap:8, background:C.surface, border:`1px solid ${C.border}`, borderRadius:16, padding:"8px 8px 8px 14px", alignItems:"center" }}>
-            <div onClick={async () => { const url = prompt("Paste image or GIF URL:"); if (url && url.trim()) { await supabase.from("group_messages").insert([{ owner_id: bizOwnerId, user_id: myUserId, sender_name: myName, text: url.trim(), is_ai: false }]); setGroupMessages(p => [...p, { id: Date.now(), user_id: myUserId, sender: myName, text: url.trim(), time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}), isAI: false }]); } }} style={{ cursor:"pointer", fontSize:18, flexShrink:0 }}>📷</div>
+            <label style={{ cursor:"pointer", fontSize:16, flexShrink:0, color: C.mid }}>
+                  ◎
+                  <input type="file" accept="image/*" style={{ display:"none" }} onChange={async e => {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async ev => {
+                      const compressed = await compressImage(ev.target.result, 400, 0.6);
+                      await supabase.from("group_messages").insert([{ owner_id: bizOwnerId, user_id: myUserId, sender_name: myName, text: compressed, is_ai: false }]);
+                      setGroupMessages(p => [...p, { id: Date.now(), user_id: myUserId, sender: myName, text: compressed, time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}), isAI: false }]);
+                    };
+                    reader.readAsDataURL(file);
+                  }} />
+                </label>
+            <div onClick={async () => {
+              if (gcRecording) {
+                gcRecording.stop();
+                return;
+              }
+              try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4" });
+                const chunks = [];
+                mr.ondataavailable = e => chunks.push(e.data);
+                mr.onstop = async () => {
+                  stream.getTracks().forEach(t => t.stop());
+                  setGcRecording(null);
+                  const blob = new Blob(chunks, { type: mr.mimeType });
+                  const reader = new FileReader();
+                  reader.onload = async () => {
+                    const b64 = reader.result;
+                    await supabase.from("group_messages").insert([{ owner_id: bizOwnerId, user_id: myUserId, sender_name: myName, text: "VOICE:" + b64, is_ai: false }]);
+                    setGroupMessages(p => [...p, { id: Date.now(), user_id: myUserId, sender: myName, text: "VOICE:" + b64, time: new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}), isAI: false }]);
+                  };
+                  reader.readAsDataURL(blob);
+                };
+                mr.start();
+                setGcRecording(mr);
+              } catch { alert("Microphone access denied"); }
+            }} style={{ cursor:"pointer", flexShrink:0, width: 28, height: 28, borderRadius: 8, background: gcRecording ? C.red : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={gcRecording ? "#fff" : C.mid} strokeWidth="2.5" strokeLinecap="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+            </div>
+            {gcRecording && <div style={{ fontSize: 12, color: C.red, fontWeight: 700, animation: "pulse 1s infinite" }}>Recording...</div>}
             <input
               value={groupInput}
               onChange={e => setGroupInput(e.target.value)}
@@ -3797,7 +3850,7 @@ function Staff({ navigate, userRole, staffOwnerId }) {
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{s.revenue}</div>
-                  <div style={{ fontSize: 11, color: C.dim, marginTop: 3 }}>{s.rating} ⭐</div>
+                  <div style={{ fontSize: 11, color: C.dim, marginTop: 3 }}>{s.rating} ★</div>
                 </div>
               </Card>
             ))}
@@ -4976,6 +5029,15 @@ ${isVoice ? "VOICE MODE: Respond in 1-2 natural sentences. No markdown, no forma
 TOOLS YOU HAVE:
 1. MEMORY — save facts the user tells you
 2. NAVIGATION — take the user to any screen in the app
+3. ACTIONS — execute changes in the app (change AI name, add clients, etc.)
+
+ACTION INSTRUCTIONS:
+- ACTION:changeAIName:NewName — changes your own name in settings
+- ACTION:addClient:ClientName — creates a new client
+- ACTION:cancelAppt:ClientName — cancels their next appointment
+- Format: ACTION:command:value on its own line, then your reply on the next line
+- Example: "change your name to Luna" → ACTION:changeAIName:Luna\nDone! I'm Luna now.
+- Example: "add a client named Sarah" → ACTION:addClient:Sarah\nSarah has been added!
 
 MEMORY INSTRUCTIONS:
 - When the user shares personal or business info worth remembering, start your response with MEMORY:fact on its own line
@@ -4991,7 +5053,7 @@ NAVIGATION INSTRUCTIONS:
 - Screens: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings, home, notifications
 - Example: "show me analytics" → NAV:analytics\nHere's your business performance!
 
-Both NAV: and MEMORY: are invisible to the user — they trigger actions in the app automatically. Never mention them.
+NAV:, MEMORY:, and ACTION: are invisible to the user — they trigger actions in the app automatically. Never mention them.
 
 THINGS TO BE GREAT AT:
 - Answering "how's my business doing?" with precise numbers from the data
@@ -5094,6 +5156,31 @@ THINGS TO BE GREAT AT:
       text = text.replace(/^MEMORY:.+$/gim, "").trim();
       // If stripping MEMORY left nothing, provide a fallback
       if (!text) text = "Got it, I'll remember that!";
+    }
+
+    // Handle ACTION: commands
+    const actionMatches = text.match(/^ACTION:(.+)$/gim);
+    if (actionMatches) {
+      actionMatches.forEach(a => {
+        const parts = a.replace(/^ACTION:\s*/i, "").split(":");
+        const cmd = parts[0]?.trim().toLowerCase();
+        const val = parts.slice(1).join(":").trim();
+        if (cmd === "changeainame" && val && ownerId) {
+          supabase.from("business_profiles").upsert({ user_id: ownerId, ai_name: val }, { onConflict: "user_id" }).then(() => {});
+          setAiName(val);
+        }
+        if (cmd === "addclient" && val && ownerId) {
+          const avatar = val.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase();
+          supabase.from("clients").insert([{ name: val, avatar, owner_id: ownerId, total_visits: 0, total_spent: 0, joined: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }) }]).then(() => {});
+        }
+        if (cmd === "cancelappt" && val && ownerId) {
+          supabase.from("appointments").select("id").eq("owner_id", ownerId).ilike("client_name", `%${val}%`).eq("status", "confirmed").order("created_at", { ascending: false }).limit(1).then(({ data }) => {
+            if (data?.[0]) supabase.from("appointments").update({ status: "cancelled" }).eq("id", data[0].id).then(() => {});
+          });
+        }
+      });
+      text = text.replace(/^ACTION:.+$/gim, "").trim();
+      if (!text) text = "Done!";
     }
 
     // Try explicit NAV: prefix
@@ -5347,10 +5434,25 @@ export default function App() {
   const [toasts, setToasts] = useState([]);
   const lastApptCountRef = useRef(null);
 
+  // Request notification permission on first load
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      setTimeout(() => Notification.requestPermission(), 3000);
+    }
+    // Register service worker
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/pocketflow/sw-notify.js").catch(() => {});
+    }
+  }, []);
+
   const showToast = (msg, type = "info") => {
     const id = Date.now();
     setToasts(p => [...p, { id, msg, type }]);
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4000);
+    // Also show native browser notification
+    if ("Notification" in window && Notification.permission === "granted") {
+      try { new Notification("spool", { body: msg, icon: "/pocketflow/logo192.png", silent: false }); } catch {}
+    }
   };
 
   // Poll for new appointments every 30s and show toast
@@ -5363,8 +5465,15 @@ export default function App() {
       if (lastApptCountRef.current !== null && count > lastApptCountRef.current) {
         const diff = count - lastApptCountRef.current;
         showToast(`${diff} new booking${diff > 1 ? "s" : ""}!`, "booking");
-        // Play sound
-        try { new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGMcBj+a2teleS4OELI=").play(); } catch {}
+        // Notification sound
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator(); const g = ctx.createGain();
+          osc.connect(g); g.connect(ctx.destination);
+          osc.frequency.value = 880; g.gain.value = 0.1;
+          osc.start(); osc.stop(ctx.currentTime + 0.15);
+          setTimeout(() => { const o2 = ctx.createOscillator(); const g2 = ctx.createGain(); o2.connect(g2); g2.connect(ctx.destination); o2.frequency.value = 1100; g2.gain.value = 0.1; o2.start(); o2.stop(ctx.currentTime + 0.15); }, 180);
+        } catch {}
       }
       lastApptCountRef.current = count;
     }, 30000);
