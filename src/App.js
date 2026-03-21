@@ -1056,6 +1056,9 @@ Price: ${a.price || ""}`);
 function Inbox({ navigate, userRole, staffOwnerId }) {
   const [msgs, setMsgs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [sending, setSending] = useState(false);
   const unread = msgs.filter(m => m.unread);
 
   useEffect(() => {
@@ -1071,9 +1074,32 @@ function Inbox({ navigate, userRole, staffOwnerId }) {
   }, []);
 
   const handleAI = async (m) => {
-    const reply = "Hey! Thanks for reaching out 💕 Let me check on that and get back to you shortly.";
-    await supabase.from("messages").update({ handled: true, unread: false, reply }).eq("id", m.id);
-    setMsgs(p => p.map(x => x.id === m.id ? { ...x, handled: true, unread: false, reply } : x));
+    try {
+      const res = await fetch("https://pocketflow-proxy-production.up.railway.app/reply-message", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message_id: m.id, sender_id: m.sender_id, platform: m.platform, reply_text: "Hey! Thanks for reaching out! Let me check on that and get back to you shortly." }),
+      });
+      const data = await res.json();
+      await supabase.from("messages").update({ handled: true, unread: false, reply: "Hey! Thanks for reaching out! Let me check on that and get back to you shortly." }).eq("id", m.id);
+      setMsgs(p => p.map(x => x.id === m.id ? { ...x, handled: true, unread: false, reply: "Hey! Thanks for reaching out! Let me check on that and get back to you shortly." } : x));
+    } catch {
+      await supabase.from("messages").update({ handled: true, unread: false, reply: "Auto-reply sent" }).eq("id", m.id);
+      setMsgs(p => p.map(x => x.id === m.id ? { ...x, handled: true, unread: false, reply: "Auto-reply sent" } : x));
+    }
+  };
+
+  const handleManualReply = async (m) => {
+    if (!replyText.trim()) return;
+    setSending(true);
+    try {
+      await fetch("https://pocketflow-proxy-production.up.railway.app/reply-message", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message_id: m.id, sender_id: m.sender_id, platform: m.platform, reply_text: replyText.trim() }),
+      });
+    } catch {}
+    await supabase.from("messages").update({ handled: true, unread: false, reply: replyText.trim() }).eq("id", m.id);
+    setMsgs(p => p.map(x => x.id === m.id ? { ...x, handled: true, unread: false, reply: replyText.trim() } : x));
+    setReplyingTo(null); setReplyText(""); setSending(false);
   };
 
   return (
@@ -1115,9 +1141,17 @@ function Inbox({ navigate, userRole, staffOwnerId }) {
                     <div style={{ fontSize: 12, color: "#6ee7b7", lineHeight: 1.5 }}>{m.reply}</div>
                   </div>
                 ) : (
-                  <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                    <BtnPrimary onClick={() => handleAI(m)} style={{ flex: 1, padding: 10, fontSize: 12 }}>Let AI handle it</BtnPrimary>
-                    <button style={{ flex: 1, padding: 10, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 12, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Reply myself</button>
+                  <div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                      <BtnPrimary onClick={() => handleAI(m)} style={{ flex: 1, padding: 10, fontSize: 12 }}>AI Reply</BtnPrimary>
+                      <button onClick={() => { setReplyingTo(replyingTo === m.id ? null : m.id); setReplyText(""); }} style={{ flex: 1, padding: 10, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 12, fontWeight: 600, color: replyingTo === m.id ? C.accent : C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>{replyingTo === m.id ? "Cancel" : "Reply"}</button>
+                    </div>
+                    {replyingTo === m.id && (
+                      <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+                        <input value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => e.key === "Enter" && handleManualReply(m)} placeholder="Type your reply..." style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
+                        <BtnPrimary disabled={!replyText.trim() || sending} onClick={() => handleManualReply(m)} style={{ padding: "10px 16px", fontSize: 12 }}>{sending ? "..." : "Send"}</BtnPrimary>
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
@@ -4726,28 +4760,54 @@ function AISidebarPanel({ navigate, isMobile }) {
   };
 
   const buildSystemPrompt = (isVoice = false) => {
-    const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+    const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
     const time = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-    const memBlock = memories.length > 0 ? `\nTHINGS YOU REMEMBER ABOUT THE USER:\n${memories.map(m => "- " + m).join("\n")}` : "";
-    return `You are ${aiName}, an AI business assistant inside spool.
-Today: ${today} at ${time}.
+    const memBlock = memories.length > 0 ? `\n\nYOUR MEMORY (facts you've learned about this user):\n${memories.map(m => "- " + m).join("\n")}` : "";
+    return `You are ${aiName}, a personal AI business assistant built into spool — a booking and business management app for beauty professionals.
+
+CURRENT DATE & TIME: ${today}, ${time}
+
 BUSINESS DATA:
-${bizContext || "Loading..."}${memBlock}
-PERSONALITY: Warm, sharp, confident. Like a brilliant friend who knows this business inside out.
-IMPORTANT: When mentioning clients, ALWAYS use only their FIRST name (e.g. "Tasha" not "Tasha Monroe", "Kendra" not "Kendra Blake"). This feels more personal and natural.
-${isVoice ? "VOICE MODE: 1-2 short natural sentences only. No markdown. Conversational." : "TEXT MODE: Use **bold** for key numbers/names. Max 3-4 sentences unless asked for more. No bullet spam."}
-MEMORY RULE: When the user tells you personal info worth remembering (their name, preferences, facts about them or their business), put "MEMORY:the fact" on its own line at the VERY START of your response, THEN always write your normal reply on the next line. You MUST always include a reply after the MEMORY line. Examples:
-User: "My name is Omar" → MEMORY:User's name is Omar\nGot it, **Omar**! What can I help with?
-User: "I prefer morning appointments" → MEMORY:User prefers morning appointments\nNoted! I'll keep that in mind for scheduling.
-User: "What time is my first appointment?" → (no MEMORY needed, just answer normally)
-NAVIGATION RULE — CRITICAL: When the user asks to go to any screen/page, you MUST start your response with "NAV:screenname" on its own line. No exceptions.
-FORMAT: NAV:screenname\nYour message here.
-SCREENS: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings, home.
-EXAMPLES:
-User: "take me to inbox" → NAV:inbox\nHere are your messages!
-User: "open schedule" → NAV:schedule\nHere's your schedule!
-The NAV:screenname and MEMORY: parts are invisible to the user — they trigger actions automatically.
-You remember this conversation — reference earlier messages when relevant.`;
+${bizContext || "No data loaded yet."}${memBlock}
+
+YOUR PERSONALITY:
+- You're warm, confident, and genuinely helpful — like a smart business partner who happens to know everything about their schedule, clients, and finances
+- You're direct. No filler words. Every sentence should be useful
+- You use the user's first name naturally when you know it
+- When mentioning clients, use FIRST NAMES ONLY (e.g. "Tasha" not "Tasha Monroe")
+- You proactively suggest things: "Looks like you have a gap at 2 PM — want me to send a reminder to clients who haven't booked this month?"
+- You notice patterns: "Your Thursdays are always packed — have you considered raising prices for that day?"
+- You're honest when you don't know something
+
+${isVoice ? "VOICE MODE: Respond in 1-2 natural sentences. No markdown, no formatting, no asterisks. Sound like a real person talking." : "TEXT MODE: Use **bold** sparingly for key numbers and names. Keep responses 2-4 sentences unless the user asks for detail. Structure longer answers clearly but never use bullet lists unless asked."}
+
+TOOLS YOU HAVE:
+1. MEMORY — save facts the user tells you
+2. NAVIGATION — take the user to any screen in the app
+
+MEMORY INSTRUCTIONS:
+- When the user shares personal or business info worth remembering, start your response with MEMORY:fact on its own line
+- Categories: name, preferences, goals, business details, client notes, personal facts
+- Be specific: "User prefers to start work at 10 AM" not "User has a preference"
+- Only save genuinely useful facts, not every sentence
+- ALWAYS write your normal reply AFTER the MEMORY line
+- If nothing needs saving, just respond normally (no MEMORY line)
+Example: User says "I usually don't work Mondays" → MEMORY:User doesn't work on Mondays\nGot it! I'll keep that in mind when looking at your schedule.
+
+NAVIGATION INSTRUCTIONS:
+- When the user wants to go somewhere, start with NAV:screenname on its own line
+- Screens: schedule, inbox, clients, payments, analytics, promotions, loyalty, services, staff, waitlist, settings, home, notifications
+- Example: "show me analytics" → NAV:analytics\nHere's your business performance!
+
+Both NAV: and MEMORY: are invisible to the user — they trigger actions in the app automatically. Never mention them.
+
+THINGS TO BE GREAT AT:
+- Answering "how's my business doing?" with real numbers from the data
+- Helping draft messages to clients
+- Suggesting pricing strategies based on what's working
+- Noticing no-shows and suggesting follow-ups
+- Helping plan the week ahead based on the schedule
+- Answering questions about specific clients from the data`;
   };
 
   // Strips NAV: prefix, triggers navigation, returns clean display text
@@ -4762,32 +4822,78 @@ You remember this conversation — reference earlier messages when relevant.`;
       memMatches.forEach(m => {
         const fact = m.replace(/^MEMORY:\s*/i, "").trim();
         if (fact && ownerId) {
-          // Check if this updates an existing memory (same category like "name", "preference")
           const factLower = fact.toLowerCase();
-          const keywords = ["name is", "name's", "prefer", "favorite", "likes", "wants", "birthday", "located", "lives in"];
-          const matchedKey = keywords.find(k => factLower.includes(k));
+
+          // Smart category detection for dedup
+          const categories = [
+            { keys: ["name is", "name's", "my name", "call me"], cat: "name" },
+            { keys: ["prefer", "preference", "rather", "likes to", "doesn't like"], cat: "preference" },
+            { keys: ["birthday", "born on", "born in"], cat: "birthday" },
+            { keys: ["located", "lives in", "based in", "from"], cat: "location" },
+            { keys: ["works on", "work on", "doesn't work", "days off", "schedule"], cat: "schedule" },
+            { keys: ["goal", "wants to", "trying to", "planning to"], cat: "goals" },
+            { keys: ["specializes", "specialty", "best at", "known for"], cat: "specialty" },
+            { keys: ["price", "pricing", "charges", "rates"], cat: "pricing" },
+            { keys: ["phone", "number is", "email is", "contact"], cat: "contact" },
+          ];
+
+          const matchedCat = categories.find(c => c.keys.some(k => factLower.includes(k)));
 
           setMemories(prev => {
-            // Remove old memory with same keyword to avoid conflicts
-            if (matchedKey) {
-              const filtered = prev.filter(p => !p.toLowerCase().includes(matchedKey));
+            if (matchedCat) {
+              // Replace ALL memories in same category
+              const filtered = prev.filter(p => {
+                const pLower = p.toLowerCase();
+                return !matchedCat.keys.some(k => pLower.includes(k));
+              });
               return [...filtered, fact];
             }
-            if (prev.includes(fact)) return prev;
+            // Exact duplicate check
+            if (prev.some(p => p.toLowerCase() === factLower)) return prev;
+            // Semantic duplicate check — if >60% word overlap, replace
+            const factWords = new Set(factLower.split(/\s+/));
+            const similar = prev.findIndex(p => {
+              const pWords = new Set(p.toLowerCase().split(/\s+/));
+              const overlap = [...factWords].filter(w => pWords.has(w)).length;
+              return overlap / Math.max(factWords.size, pWords.size) > 0.6;
+            });
+            if (similar >= 0) {
+              const copy = [...prev];
+              copy[similar] = fact;
+              return copy;
+            }
+            // Cap at 30 memories
+            if (prev.length >= 30) return [...prev.slice(1), fact];
             return [...prev, fact];
           });
 
-          // Delete old conflicting memories from Supabase, then insert new
-          if (matchedKey) {
-            supabase.from("ai_memories").select("id,fact").eq("owner_id", myUserId || ownerId).then(({ data }) => {
+          // Supabase: delete old conflicting, insert new
+          const uid = myUserId || ownerId;
+          if (matchedCat) {
+            supabase.from("ai_memories").select("id,fact").eq("owner_id", uid).then(({ data }) => {
               if (data) {
-                const old = data.filter(d => d.fact.toLowerCase().includes(matchedKey));
+                const old = data.filter(d => {
+                  const dLower = d.fact.toLowerCase();
+                  return matchedCat.keys.some(k => dLower.includes(k));
+                });
                 old.forEach(o => supabase.from("ai_memories").delete().eq("id", o.id).then(() => {}));
               }
-              supabase.from("ai_memories").insert([{ owner_id: myUserId || ownerId, fact }]).then(() => {});
+              supabase.from("ai_memories").insert([{ owner_id: uid, fact }]).then(() => {});
             });
           } else {
-            supabase.from("ai_memories").insert([{ owner_id: myUserId || ownerId, fact }]).then(() => {});
+            // Check for semantic duplicates in DB too
+            supabase.from("ai_memories").select("id,fact").eq("owner_id", uid).then(({ data }) => {
+              if (data) {
+                const factWords = new Set(factLower.split(/\s+/));
+                const similar = data.find(d => {
+                  const dWords = new Set(d.fact.toLowerCase().split(/\s+/));
+                  const overlap = [...factWords].filter(w => dWords.has(w)).length;
+                  return overlap / Math.max(factWords.size, dWords.size) > 0.6;
+                });
+                if (similar) supabase.from("ai_memories").delete().eq("id", similar.id).then(() => {});
+              }
+              supabase.from("ai_memories").insert([{ owner_id: uid, fact }]).then(() => {});
+            });
           }
         }
       });
