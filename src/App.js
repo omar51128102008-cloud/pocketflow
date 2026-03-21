@@ -5472,7 +5472,7 @@ export default function App() {
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4000);
     // Also show native browser notification
     if ("Notification" in window && Notification.permission === "granted") {
-      try { new Notification("spool", { body: msg, icon: "/pocketflow/notification-icon.png", badge: "/pocketflow/notification-icon.png", silent: false }); } catch {}
+      try { new Notification("spool", { body: msg, icon: "https://omar51128102008-cloud.github.io/pocketflow/notification-icon.png", badge: "https://omar51128102008-cloud.github.io/pocketflow/notification-icon.png", silent: false }); } catch {}
     }
   };
 
