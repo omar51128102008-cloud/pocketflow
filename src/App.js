@@ -24,7 +24,7 @@ const LANGS = {
     services: "Services", payments: "Payments", analytics: "Analytics", promotions: "Promotions",
     loyalty: "Loyalty", staff: "Staff", notifications: "Notifications", packages: "Packages",
     waitlist: "Waitlist", goodMorning: "Good morning", hey: "Hey", goodEvening: "Good evening",
-    todaySchedule: "Today's Schedule", noAppts: "No appointments today", seeAll: "See all",
+    todaySchedule: "Today's Schedule", noAppts: t("noAppts"), seeAll: "See all",
     addClient: "Add Client", searchClients: "Search clients...", totalClients: "total clients",
     addService: "Add Your First Service", newBooking: "New Booking", signOut: "Sign Out",
     changePassword: "Change Password", deleteAccount: "Delete Account", import: "Import",
@@ -132,21 +132,21 @@ const BackBtn = ({ onBack }) => (
 
 const BottomNav = ({ active, navigate }) => {
   const items = [
-    { id: "home", label: "Home", d: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" },
-    { id: "schedule", label: "Schedule", d: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
-    { id: "inbox", label: "Inbox", d: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" },
-    { id: "clients", label: "Clients", d: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
+    { id: "home", label: t("home"), d: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" },
+    { id: "schedule", label: t("schedule"), d: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+    { id: "inbox", label: t("inbox"), d: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" },
+    { id: "clients", label: t("clients"), d: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
   ];
   return (
     <div className="mobile-only" style={{ position: "fixed", bottom: 0, left: 0, width: "100%", background: "rgba(6,6,10,0.92)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", padding: "10px 0 24px", zIndex: 50 }}>
-      {items.map(t => {
-        const isActive = active === t.id;
+      {items.map(item => {
+        const isActive = active === item.id;
         return (
-          <div key={t.id} onClick={() => navigate(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer", position: "relative", transition: "transform 0.2s" }}>
+          <div key={item.id} onClick={() => navigate(item.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer", position: "relative", transition: "transform 0.2s" }}>
             <div style={{ width: 36, height: 36, borderRadius: 12, background: isActive ? `${C.accent}18` : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s" }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isActive ? C.accent : C.dim} strokeWidth={isActive ? "2" : "1.6"} strokeLinecap="round" strokeLinejoin="round" style={{ transition: "stroke 0.2s" }}><path d={t.d}/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isActive ? C.accent : C.dim} strokeWidth={isActive ? "2" : "1.6"} strokeLinecap="round" strokeLinejoin="round" style={{ transition: "stroke 0.2s" }}><path d={item.d}/></svg>
             </div>
-            <div style={{ fontSize: 9, fontWeight: isActive ? 700 : 500, color: isActive ? C.accent : C.dim, letterSpacing: 0.3, transition: "color 0.2s" }}>{t.label}</div>
+            <div style={{ fontSize: 9, fontWeight: isActive ? 700 : 500, color: isActive ? C.accent : C.dim, letterSpacing: 0.3, transition: "color 0.2s" }}>{item.label}</div>
           </div>
         );
       })}
@@ -503,7 +503,7 @@ function Onboarding({ navigate }) {
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Tell us about<br />your business</div>
             <div style={{ fontSize: 14, color: C.mid, marginBottom: 28 }}>We'll set everything up around you.</div>
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>YOUR NAME</div>
-            <input placeholder="e.g. Jasmine, Omar..." value={ownerName} onChange={e => setOwnerName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 16 }} />
+            <input placeholder="Your name" value={ownerName} onChange={e => setOwnerName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 16 }} />
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>YOUR PHONE</div>
             <input placeholder="(555) 123-4567" type="tel" value={ownerPhone} onChange={e => setOwnerPhone(handlePhoneInput(e.target.value))} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 16 }} />
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>BUSINESS NAME</div>
@@ -669,7 +669,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
       const _mn = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       const _now = new Date();
       const _ts = `${_dn[_now.getDay()]} ${_mn[_now.getMonth()]} ${_now.getDate()}`;
-      const todayCount = allAppts.filter(a => a.day === _ts || a.day === "Today").length;
+      const todayCount = allAppts.filter(a => a.day === _ts || (a.day === "Today" && a.created_at && new Date(a.created_at).toDateString() === new Date().toDateString())).length;
       const aiHandled = allMsgs.filter(m => m.handled).length;
       const clientCount = (clientsRes.data || []).length;
 
@@ -703,7 +703,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
   const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const todayStr = `${dayNames[now.getDay()]} ${monthNames[now.getMonth()]} ${now.getDate()}`;
   const unread = msgs.filter(m => m.unread);
-  const todayAppts = appts.filter(a => a.day === todayStr || a.day === "Today");
+  const todayAppts = appts.filter(a => a.day === todayStr || (a.day === "Today" && a.created_at && new Date(a.created_at).toDateString() === new Date().toDateString()));
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -768,7 +768,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
           {/* Left col */}
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, marginTop: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 2, textTransform: "uppercase" }}>Today's Schedule</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: C.dim, letterSpacing: 2, textTransform: "uppercase" }}>{t("todaySchedule")}</span>
               <span style={{ fontSize: 11, color: C.accent, fontWeight: 600, cursor: "pointer" }} onClick={() => navigate("schedule")}>See all →</span>
             </div>
             <Card style={{ padding: "4px 16px", marginBottom: 16 }}>
@@ -849,15 +849,15 @@ function Home({ navigate, userRole, staffOwnerId }) {
         {/* Mobile-only grid */}
         <div className="mobile-only" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
           {[
-            { icon: "✦", label: "Services", screen: "services", color: C.accent, ownerOnly: true },
-            { icon: "⬡", label: "Payments", screen: "payments", color: C.gold, ownerOnly: true },
+            { icon: "✦", label: t("services"), screen: "services", color: C.accent, ownerOnly: true },
+            { icon: "⬡", label: t("payments"), screen: "payments", color: C.gold, ownerOnly: true },
             { icon: "⚙", label: "Settings", screen: "settings", color: C.mid },
-            { icon: "♥", label: "Loyalty", screen: "loyalty", color: "#f472b6", ownerOnly: true },
-            { icon: "◈", label: "Packages", screen: "packages", color: "#a78bfa", ownerOnly: true },
-            { icon: "⟐", label: "Analytics", screen: "analytics", color: C.blue, ownerOnly: true },
-            { icon: "⊛", label: "Promotions", screen: "promotions", color: "#fb923c", ownerOnly: true },
-            { icon: "⊡", label: "Staff", screen: "staff", color: C.green },
-            { icon: "◷", label: "Waitlist", screen: "waitlist", color: C.yellow, ownerOnly: true },
+            { icon: "♥", label: t("loyalty"), screen: "loyalty", color: "#f472b6", ownerOnly: true },
+            { icon: "◈", label: t("packages"), screen: "packages", color: "#a78bfa", ownerOnly: true },
+            { icon: "⟐", label: t("analytics"), screen: "analytics", color: C.blue, ownerOnly: true },
+            { icon: "⊛", label: t("promotions"), screen: "promotions", color: "#fb923c", ownerOnly: true },
+            { icon: "⊡", label: t("staff"), screen: "staff", color: C.green },
+            { icon: "◷", label: t("waitlist"), screen: "waitlist", color: C.yellow, ownerOnly: true },
             { icon: "⤴", label: "Share Link", screen: "sharelink", color: C.accent, ownerOnly: true },
           ].filter(i => userRole === "owner" || !i.ownerOnly).map(item => (
             <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
@@ -932,13 +932,13 @@ function Schedule({ navigate, userRole, staffOwnerId }) {
   const filtered = appts.filter(a => {
     if (search && !a.client_name?.toLowerCase().includes(search.toLowerCase()) && !a.service?.toLowerCase().includes(search.toLowerCase())) return false;
     if (dateFilter !== "all") {
-      if (dateFilter === "today") return a.day === _ts2 || a.day === "Today";
+      if (dateFilter === "today") return a.day === _ts2 || (a.day === "Today" && a.created_at && new Date(a.created_at).toDateString() === new Date().toDateString());
       return a.day === dateFilter;
     }
     return true;
   });
 
-  const todayAppts = filtered.filter(a => a.day === _ts2 || a.day === "Today");
+  const todayAppts = filtered.filter(a => a.day === _ts2 || (a.day === "Today" && a.created_at && new Date(a.created_at).toDateString() === new Date().toDateString()));
   const upcomingAppts = filtered.filter(a => a.day !== _ts2 && a.day !== "Today");
   const totalRevenue = appts.filter(a => a.status === "confirmed").reduce((s, a) => s + (parseInt((a.price||"0").replace(/\D/g,""))||0), 0);
 
@@ -963,7 +963,7 @@ function Schedule({ navigate, userRole, staffOwnerId }) {
       <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
           <BackBtn onBack={() => navigate("home")} />
-          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Schedule</div>
+          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("schedule")}</div>
         </div>
         <div style={{ fontSize: 13, color: C.mid }}>{appts.length} appointments · ${totalRevenue} confirmed</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "10px 14px" }}>
@@ -1140,7 +1140,7 @@ function Inbox({ navigate, userRole, staffOwnerId }) {
       <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
           <BackBtn onBack={() => navigate("home")} />
-          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Inbox</div>
+          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("inbox")}</div>
         </div>
         <div style={{ fontSize: 13, color: C.mid }}>AI handled {msgs.filter(m => m.handled).length} of {msgs.length} messages</div>
       </div>
@@ -1442,10 +1442,10 @@ function Clients({ navigate, userRole, staffOwnerId }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <BackBtn onBack={() => navigate("home")} />
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Clients</div>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("clients")}</div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => { setShowImport(true); setImportStep("upload"); setImportRows([]); }} style={{ padding: "9px 14px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Import</button>
+            <button onClick={() => { setShowImport(true); setImportStep("upload"); setImportRows([]); }} style={{ padding: "9px 14px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>{t("import")}</button>
             <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "9px 16px", fontSize: 13 }}>+ Add</BtnPrimary>
           </div>
         </div>
@@ -1456,7 +1456,7 @@ function Clients({ navigate, userRole, staffOwnerId }) {
         <div>
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "10px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clients..." style={{ background: "none", border: "none", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", width: "100%" }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t("searchClients")} style={{ background: "none", border: "none", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", width: "100%" }} />
         </div>
         {loading ? (
           <div style={{ padding: "16px 0" }}>{[1,2,3].map(i => <div key={i} style={{ height: 68, background: C.surface, borderRadius: 18, marginBottom: 10, animation: "shimmer 1.5s infinite", backgroundImage: `linear-gradient(90deg,${C.surface},${C.surfaceHigh},${C.surface})`, backgroundSize: "200% 100%" }} />)}</div>
@@ -1748,7 +1748,7 @@ function Services({ navigate }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <BackBtn onBack={() => navigate("settings")} />
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Services</div>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("services")}</div>
           </div>
           <BtnPrimary onClick={openAdd} style={{ padding: "9px 18px", fontSize: 13 }}>+ Add</BtnPrimary>
         </div>
@@ -1986,7 +1986,7 @@ function Payments({ navigate }) {
       <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BackBtn onBack={() => navigate("home")} />
-          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Payments</div>
+          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("payments")}</div>
         </div>
       </div>
       <div style={{ padding: "0 20px" }}>
@@ -2037,6 +2037,9 @@ function Settings({ navigate, userRole, staffOwnerId }) {
   const [aiReminders, setAiReminders] = useState(true);
   const [aiFollowUps, setAiFollowUps] = useState(true);
   const [aiPromos, setAiPromos] = useState(false);
+  const [aiEditClients, setAiEditClients] = useState(true);
+  const [aiEditStaff, setAiEditStaff] = useState(true);
+  const [aiEditSettings, setAiEditSettings] = useState(true);
   const [tone, setTone] = useState("friendly");
   const [bufferTime, setBufferTime] = useState("15");
   const [maxDaily, setMaxDaily] = useState("6");
@@ -2075,6 +2078,9 @@ function Settings({ navigate, userRole, staffOwnerId }) {
         if (s.aiReminders !== undefined) setAiReminders(s.aiReminders);
         if (s.aiFollowUps !== undefined) setAiFollowUps(s.aiFollowUps);
         if (s.aiPromos !== undefined) setAiPromos(s.aiPromos);
+        if (s.aiEditClients !== undefined) setAiEditClients(s.aiEditClients);
+        if (s.aiEditStaff !== undefined) setAiEditStaff(s.aiEditStaff);
+        if (s.aiEditSettings !== undefined) setAiEditSettings(s.aiEditSettings);
         if (s.tone) setTone(s.tone);
         if (s.bufferTime) setBufferTime(s.bufferTime);
         if (s.maxDaily) setMaxDaily(s.maxDaily);
@@ -2105,13 +2111,13 @@ function Settings({ navigate, userRole, staffOwnerId }) {
       if (!session) return;
       const { data: existing } = await supabase.from("business_profiles").select("settings").eq("user_id", session.user.id).single();
       const prev = existing?.settings || {};
-      const settings = { ...prev, aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, tone, bufferTime, maxDaily, sunday, paymentDetails, depositPct: parseInt(depositPct) || 30 };
+      const settings = { ...prev, aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, aiEditClients, aiEditStaff, aiEditSettings, tone, bufferTime, maxDaily, sunday, paymentDetails, depositPct: parseInt(depositPct) || 30 };
       await supabase.from("business_profiles").upsert({ user_id: session.user.id, settings }, { onConflict: "user_id" });
       setAutoSaveMsg("Saved");
       setTimeout(() => setAutoSaveMsg(""), 1500);
     }, 800);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
-  }, [aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, tone, bufferTime, maxDaily, sunday, paymentDetails, depositPct, settingsLoaded]);
+  }, [aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, aiEditClients, aiEditStaff, aiEditSettings, tone, bufferTime, maxDaily, sunday, paymentDetails, depositPct, settingsLoaded]);
 
   const saveAiName = async () => {
     if (!aiName.trim()) return;
@@ -2128,7 +2134,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
       <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BackBtn onBack={() => navigate("home")} />
-          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Settings</div>
+          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("settings")}</div>
           {autoSaveMsg && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginLeft: "auto" }}>✓ {autoSaveMsg}</div>}
         </div>
       </div>
@@ -2170,8 +2176,17 @@ function Settings({ navigate, userRole, staffOwnerId }) {
             {["friendly", "professional", "casual"].map(t => <div key={t} onClick={() => setTone(t)} style={{ flex: 1, padding: "11px 8px", borderRadius: 12, background: tone === t ? C.accentSoft : C.surfaceHigh, border: `1px solid ${tone === t ? C.accent : C.borderHigh}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: tone === t ? C.accent : C.mid, cursor: "pointer", textTransform: "capitalize" }}>{t}</div>)}
           </div>
           <div style={{ background: C.surfaceHigh, border: `1px solid ${C.borderHigh}`, borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.mid, lineHeight: 1.5 }}>
-            {tone === "friendly" ? '"Hey! I have a 2pm open this Saturday, does that work?"' : tone === "professional" ? '"Good afternoon. I have availability at 2:00 PM this Saturday."' : '"Saturday at 2 works? Let me know!"'}
+            {tone === "friendly" ? '"Hey! I have a 2pm slot open this Saturday, does that work?"' : tone === "professional" ? '"Good afternoon. I have availability at 2:00 PM this Saturday."' : '"Saturday at 2 works? Let me know!"'}
           </div>
+        </Card>
+        <SectionLabel>AI Permissions</SectionLabel>
+        <Card style={{ marginBottom: 8 }}>
+          {[["Edit clients", "Add, update, delete client data", aiEditClients, setAiEditClients], ["Edit staff", "Add, update, remove team members", aiEditStaff, setAiEditStaff], ["Edit settings", "Change business name, deposit %, buffer time", aiEditSettings, setAiEditSettings]].map(([label, sub, val, set], i) => (
+            <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", borderBottom: i < 2 ? `1px solid ${C.border}` : "none" }}>
+              <div><div style={{ fontSize: 14, fontWeight: 600 }}>{label}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>{sub}</div></div>
+              <Toggle on={val} onToggle={() => set(p => !p)} />
+            </div>
+          ))}
         </Card>
         </>}
         {userRole === "staff" && (
@@ -2226,8 +2241,8 @@ function Settings({ navigate, userRole, staffOwnerId }) {
             const { error } = await supabase.auth.updateUser({ password: newPass });
             if (error) alert("Error: " + error.message);
             else alert("Password updated!");
-          }} style={{ width: "100%", padding: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.text, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }}>Change Password</button>
-          <button onClick={async () => { await supabase.auth.signOut(); navigate("login"); }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }}>Sign Out</button>
+          }} style={{ width: "100%", padding: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.text, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }}>{t("changePassword")}</button>
+          <button onClick={async () => { await supabase.auth.signOut(); navigate("login"); }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }}>{t("signOut")}</button>
           {userRole === "owner" && <button onClick={async () => {
             if (!window.confirm("Are you sure you want to delete your account? ALL your data will be permanently lost.")) return;
             if (!window.confirm("This is your last chance. Type 'DELETE' below to confirm.")) return;
@@ -2246,7 +2261,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
             ]);
             await supabase.auth.signOut();
             navigate("login");
-          }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.red}33`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Delete Account</button>}
+          }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.red}33`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>{t("deleteAccount")}</button>}
         </div>
         </div>{/* end col 1 */}
         {userRole === "owner" && <div>{/* col 2 */}
@@ -2499,7 +2514,7 @@ function Loyalty({ navigate }) {
       <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BackBtn onBack={() => navigate("home")} />
-          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Loyalty</div>
+          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("loyalty")}</div>
         </div>
       </div>
       <div style={{ padding: "0 20px" }}>
@@ -2740,7 +2755,7 @@ function Notifications({ navigate }) {
       <div style={{ padding: "52px 20px 16px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
           <BackBtn onBack={() => navigate("home")} />
-          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Notifications</div>
+          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("notifications")}</div>
         </div>
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
           {["all", "booking", "payment", "ai", "alert"].map(f => (
@@ -2806,7 +2821,7 @@ function Analytics({ navigate }) {
   const dayNamesA = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   const monthNamesA = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const todayStrA = `${dayNamesA[nowA.getDay()]} ${monthNamesA[nowA.getMonth()]} ${nowA.getDate()}`;
-  const todayAppts = appts.filter(a => a.day === todayStrA || a.day === "Today");
+  const todayAppts = appts.filter(a => a.day === todayStrA || (a.day === "Today" && a.created_at && new Date(a.created_at).toDateString() === new Date().toDateString()));
   const todayRev = todayAppts.filter(a => a.status === "confirmed").reduce((s, a) => s + parsePrice(a.price), 0);
 
   // Service breakdown
@@ -2890,7 +2905,7 @@ function Analytics({ navigate }) {
       <div style={{ padding: "52px 20px 20px", position: "sticky", top: 0, background: C.bg, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BackBtn onBack={() => navigate("home")} />
-          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Analytics</div>
+          <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("analytics")}</div>
         </div>
       </div>
       <div style={{ padding: "0 20px" }}>
@@ -3842,7 +3857,7 @@ function Staff({ navigate, userRole, staffOwnerId }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <BackBtn onBack={() => navigate("home")} />
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Staff</div>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("staff")}</div>
           </div>
           <div style={{ display:"flex", gap:8 }}>
             <div onClick={() => setView("groupchat")} style={{ padding:"9px 14px", background:C.surface, border:`1px solid ${C.border}`, borderRadius:12, fontSize:13, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
@@ -3979,7 +3994,7 @@ function Waitlist({ navigate }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <BackBtn onBack={() => navigate("home")} />
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Waitlist</div>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("waitlist")}</div>
           </div>
           <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "9px 16px", fontSize: 13 }}>+ Add</BtnPrimary>
         </div>
@@ -4585,7 +4600,7 @@ function Packages({ navigate }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <BackBtn onBack={() => navigate("home")} />
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>Packages</div>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("packages")}</div>
           </div>
           <BtnPrimary onClick={() => setShowAdd(true)} style={{ padding: "9px 16px", fontSize: 13 }}>+ Create</BtnPrimary>
         </div>
@@ -4918,7 +4933,7 @@ function AISidebarPanel({ navigate, isMobile }) {
       const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
       const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       const todayStr = `${dayNames[now.getDay()]} ${monthNames[now.getMonth()]} ${now.getDate()}`;
-      const todayAppts = allAppts.filter(a => a.day === todayStr || a.day === "Today" || a.status === "pending");
+      const todayAppts = allAppts.filter(a => a.day === todayStr || (a.day === "Today" && a.created_at && new Date(a.created_at).toDateString() === new Date().toDateString()) || a.status === "pending");
       const confirmedAppts = allAppts.filter(a => a.status === "confirmed");
       const upcomingAppts = allAppts.filter(a => a.status === "confirmed" || a.status === "pending").slice(0, 10);
       const unhandled = (msgRes.data || []).length;
@@ -4938,7 +4953,7 @@ function AISidebarPanel({ navigate, isMobile }) {
       setBizContext(ctx);
       setAiName(name);
       const hour = new Date().getHours();
-      const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Hey" : "Good evening";
+      const greeting = hour < 12 ? t("goodMorning") : hour < 17 ? t("hey") : t("goodEvening");
       const todayLine = todayAppts.length ? `You have **${todayAppts.length} appointment${todayAppts.length > 1 ? "s" : ""}** today.` : "No appointments today.";
       const msgLine = unhandled ? ` **${unhandled} unread message${unhandled > 1 ? "s" : ""}** waiting.` : "";
       // Always refresh the first greeting message with the current name
@@ -5043,7 +5058,7 @@ YOUR PERSONALITY:
 - You're warm, confident, and genuinely helpful — like a smart business partner who knows everything about their schedule, clients, and finances
 - You're direct and precise. Every sentence should be useful. No filler
 - You use the user's first name naturally when you know it
-- When mentioning clients, use FIRST NAMES ONLY (e.g. "Tasha" not "Tasha Monroe")
+- When mentioning clients, use FIRST NAMES ONLY (first name only, not full name)
 - You proactively suggest things: "You have a gap at 2 PM — want me to send a reminder to clients who haven't booked this month?"
 - You notice patterns: "Thursdays are your busiest day — have you considered raising prices for peak times?"
 - You can do math: calculate totals, averages, remaining balances, profit margins
@@ -5064,13 +5079,31 @@ TOOLS YOU HAVE:
 2. NAVIGATION — take the user to any screen in the app
 3. ACTIONS — execute changes in the app (change AI name, add clients, etc.)
 
-ACTION INSTRUCTIONS:
-- ACTION:changeAIName:NewName — changes your own name in settings
-- ACTION:addClient:ClientName — creates a new client
-- ACTION:cancelAppt:ClientName — cancels their next appointment
-- Format: ACTION:command:value on its own line, then your reply on the next line
-- Example: "change your name to Luna" → ACTION:changeAIName:Luna\nDone! I'm Luna now.
-- Example: "add a client named Sarah" → ACTION:addClient:Sarah\nSarah has been added!
+ACTION INSTRUCTIONS — you can make real changes in the app:
+CLIENT ACTIONS:
+- ACTION:addClient:Name — create a new client
+- ACTION:deleteClient:Name — delete a client
+- ACTION:updateClient:Name:field:value — update client info (fields: phone, instagram, amount_owed, amount_paid)
+APPOINTMENT ACTIONS:
+- ACTION:cancelAppt:ClientName — cancel their next appointment
+STAFF ACTIONS:
+- ACTION:addStaff:Name:Role — add a new staff member
+- ACTION:updateStaff:Name:field:value — update staff (fields: role, status, phone)
+- ACTION:removeStaff:Name — remove a staff member
+SETTINGS ACTIONS:
+- ACTION:changeAIName:NewName — change your own name
+- ACTION:changeBizName:NewName — change business name
+- ACTION:setBufferTime:minutes — set buffer between appointments (0/15/30/45)
+- ACTION:setMaxDaily:number — set max appointments per day
+- ACTION:setDepositPct:number — set deposit percentage
+FORMAT: ACTION:command:params on its own line, then your normal reply on the next line.
+IMPORTANT: Only use actions the user explicitly asks for. Never change things unprompted.
+Examples:
+- "change your name to Luna" → ACTION:changeAIName:Luna\nDone! I'm Luna now.
+- "add Sarah as a new client" → ACTION:addClient:Sarah\nSarah has been added!
+- "update Mohammed's role to Manager" → ACTION:updateStaff:Mohammed:role:Manager\nDone! Mohammed is now a Manager.
+- "set the deposit to 25%" → ACTION:setDepositPct:25\nDeposit is now 25%.
+- "Mohammed owes 500" → ACTION:updateClient:Mohammed:amount_owed:500\nUpdated! Mohammed now owes $500.
 
 MEMORY INSTRUCTIONS:
 - When the user shares personal or business info worth remembering, start your response with MEMORY:fact on its own line
@@ -5197,18 +5230,90 @@ THINGS TO BE GREAT AT:
       actionMatches.forEach(a => {
         const parts = a.replace(/^ACTION:\s*/i, "").split(":");
         const cmd = parts[0]?.trim().toLowerCase();
-        const val = parts.slice(1).join(":").trim();
-        if (cmd === "changeainame" && val && ownerId) {
-          supabase.from("business_profiles").upsert({ user_id: ownerId, ai_name: val }, { onConflict: "user_id" }).then(() => {});
-          setAiName(val);
+        const p1 = parts[1]?.trim() || "";
+        const p2 = parts[2]?.trim() || "";
+        const p3 = parts[3]?.trim() || "";
+        const uid = ownerId;
+        if (!uid) return;
+
+        // AI Name
+        if (cmd === "changeainame" && p1) {
+          supabase.from("business_profiles").update({ ai_name: p1 }).eq("user_id", uid).then(() => {});
+          setAiName(p1);
         }
-        if (cmd === "addclient" && val && ownerId) {
-          const avatar = val.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase();
-          supabase.from("clients").insert([{ name: val, avatar, owner_id: ownerId, total_visits: 0, total_spent: 0, joined: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }) }]).then(() => {});
+        // Business name
+        if (cmd === "changebizname" && p1) {
+          supabase.from("business_profiles").update({ biz_name: p1 }).eq("user_id", uid).then(() => {});
         }
-        if (cmd === "cancelappt" && val && ownerId) {
-          supabase.from("appointments").select("id").eq("owner_id", ownerId).ilike("client_name", `%${val}%`).eq("status", "confirmed").order("created_at", { ascending: false }).limit(1).then(({ data }) => {
+        // Add client
+        if (cmd === "addclient" && p1) {
+          const avatar = p1.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase();
+          supabase.from("clients").insert([{ name: p1, avatar, owner_id: uid, total_visits: 0, total_spent: 0, joined: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }) }]).then(() => {});
+        }
+        // Delete client
+        if (cmd === "deleteclient" && p1) {
+          supabase.from("clients").select("id").eq("owner_id", uid).ilike("name", `%${p1}%`).limit(1).then(({ data }) => {
+            if (data?.[0]) supabase.from("clients").delete().eq("id", data[0].id).then(() => {});
+          });
+        }
+        // Update client field
+        if (cmd === "updateclient" && p1 && p2 && p3) {
+          const field = p2.toLowerCase().replace(/\s/g, "_");
+          const validFields = { phone: "phone", instagram: "instagram", amount_owed: "amount_owed", amount_paid: "amount_paid", total_amount: "total_amount" };
+          if (validFields[field]) {
+            const val = ["amount_owed", "amount_paid", "total_amount"].includes(field) ? parseFloat(p3) || 0 : p3;
+            supabase.from("clients").select("id").eq("owner_id", uid).ilike("name", `%${p1}%`).limit(1).then(({ data }) => {
+              if (data?.[0]) supabase.from("clients").update({ [validFields[field]]: val }).eq("id", data[0].id).then(() => {});
+            });
+          }
+        }
+        // Cancel appointment
+        if (cmd === "cancelappt" && p1) {
+          supabase.from("appointments").select("id").eq("owner_id", uid).ilike("client_name", `%${p1}%`).eq("status", "confirmed").order("created_at", { ascending: false }).limit(1).then(({ data }) => {
             if (data?.[0]) supabase.from("appointments").update({ status: "cancelled" }).eq("id", data[0].id).then(() => {});
+          });
+        }
+        // Add staff
+        if (cmd === "addstaff" && p1) {
+          const avatar = p1.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase();
+          supabase.from("staff_members").insert([{ name: p1, role: p2 || "Staff", avatar, phone: "", status: "active", owner_id: uid }]).then(() => {});
+        }
+        // Update staff
+        if (cmd === "updatestaff" && p1 && p2 && p3) {
+          const field = p2.toLowerCase();
+          const validFields = { role: "role", status: "status", phone: "phone" };
+          if (validFields[field]) {
+            supabase.from("staff_members").select("id").eq("owner_id", uid).ilike("name", `%${p1}%`).limit(1).then(({ data }) => {
+              if (data?.[0]) supabase.from("staff_members").update({ [validFields[field]]: p3 }).eq("id", data[0].id).then(() => {});
+            });
+          }
+        }
+        // Remove staff
+        if (cmd === "removestaff" && p1) {
+          supabase.from("staff_members").select("id").eq("owner_id", uid).ilike("name", `%${p1}%`).limit(1).then(({ data }) => {
+            if (data?.[0]) supabase.from("staff_members").delete().eq("id", data[0].id).then(() => {});
+          });
+        }
+        // Settings
+        if (cmd === "setbuffertime" && p1) {
+          supabase.from("business_profiles").select("settings").eq("user_id", uid).single().then(({ data }) => {
+            const s = data?.settings || {};
+            s.bufferTime = p1;
+            supabase.from("business_profiles").update({ settings: s }).eq("user_id", uid).then(() => {});
+          });
+        }
+        if (cmd === "setmaxdaily" && p1) {
+          supabase.from("business_profiles").select("settings").eq("user_id", uid).single().then(({ data }) => {
+            const s = data?.settings || {};
+            s.maxDaily = p1;
+            supabase.from("business_profiles").update({ settings: s }).eq("user_id", uid).then(() => {});
+          });
+        }
+        if (cmd === "setdepositpct" && p1) {
+          supabase.from("business_profiles").select("settings").eq("user_id", uid).single().then(({ data }) => {
+            const s = data?.settings || {};
+            s.depositPct = parseInt(p1) || 30;
+            supabase.from("business_profiles").update({ settings: s }).eq("user_id", uid).then(() => {});
           });
         }
       });
