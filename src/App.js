@@ -2242,6 +2242,13 @@ function Settings({ navigate, userRole, staffOwnerId }) {
             </div>
           ))}
         </Card>
+        <button onClick={async () => {
+          if (!window.confirm("Clear all AI memory? The AI will forget everything it learned about you.")) return;
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) return;
+          await supabase.from("ai_memories").delete().eq("owner_id", session.user.id);
+          showToast("AI memory cleared");
+        }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.dim, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginTop: 8, marginBottom: 8 }}>Clear AI Memory</button>
         </>}
         {userRole === "staff" && (
           <>
@@ -3752,9 +3759,9 @@ function Staff({ navigate, userRole, staffOwnerId }) {
         const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "llama-3.1-8b-instant", max_tokens: 200,
+            model: "llama-3.3-70b-versatile", max_tokens: 250,
             messages: [
-              { role: "system", content: `You are ${aiName}, an AI assistant in a staff group chat. Be concise, helpful, and friendly. Business context:\n${bizContext}\nAnswer questions from the staff about the business, schedule, clients, or anything they need. Keep replies short (2-3 sentences max). No navigation commands here.` },
+              { role: "system", content: `You are ${aiName}, an AI assistant in a staff group chat. Be concise, helpful, and friendly. Business context:\n${bizContext}\nAnswer questions from the staff about the business, schedule, clients, or anything they need. Keep replies short (2-3 sentences max). Always give a real answer — never just say "Got it". No navigation commands here.` },
               ...groupMessages.slice(-10).map(m => ({ role: m.isAI ? "assistant" : "user", content: m.text })),
               { role: "user", content: question || text }
             ],
@@ -5166,13 +5173,21 @@ Examples:
 - "Mohammed owes 500" → ACTION:updateClient:Mohammed:amount_owed:500\nUpdated! Mohammed now owes $500.
 
 MEMORY INSTRUCTIONS:
-- When the user shares personal or business info worth remembering, start your response with MEMORY:fact on its own line
-- Categories: name, preferences, goals, business details, client notes, personal facts, financial info
-- Be specific: "User prefers to start work at 10 AM" not "User has a preference"
-- Only save genuinely useful facts, not every sentence
-- ALWAYS write your normal reply AFTER the MEMORY line
-- If nothing needs saving, just respond normally (no MEMORY line)
-Example: User says "I usually don't work Mondays" → MEMORY:User doesn't work on Mondays\nGot it! I'll keep that in mind when looking at your schedule.
+- ONLY save memory when the user TELLS you something new about themselves (their name, preferences, facts)
+- NEVER use MEMORY when the user is ASKING you a question
+- When saving: put MEMORY:fact on the FIRST line, then your FULL reply on the NEXT line
+- The reply after MEMORY: must be a complete, natural response — not just "Got it"
+- If you're not saving anything, just respond normally with NO memory line
+BAD example: User asks "what's my name?" → MEMORY:... (WRONG — they asked a question, not told you something)
+GOOD example: User says "my name is Omar" → MEMORY:User's name is Omar\nNice to meet you, Omar! How can I help you today?
+GOOD example: User asks "what's my name?" → Your name is Omar! (no MEMORY line needed — just answer the question)
+
+CRITICAL RESPONSE RULES:
+- ALWAYS give a real, conversational response. Never respond with just "Got it" or "Done"
+- When the user asks a question, ANSWER it directly
+- When the user asks "what's my name?" — check your memory and say their actual name
+- If you don't know something, say "I don't have that info" — don't make things up
+- NEVER hallucinate or invent information that isn't in your data or memory
 
 NAVIGATION INSTRUCTIONS:
 - When the user wants to go somewhere, start with NAV:screenname on its own line
@@ -5280,8 +5295,7 @@ THINGS TO BE GREAT AT:
         }
       });
       text = text.replace(/^MEMORY:.+$/gim, "").trim();
-      // If stripping MEMORY left nothing, provide a fallback
-      if (!text) text = "Got it, I'll remember that!";
+      if (!text) text = "I've saved that. What else can I help with?";
     }
 
     // Handle ACTION: commands
@@ -5378,7 +5392,7 @@ THINGS TO BE GREAT AT:
         }
       });
       text = text.replace(/^ACTION:.+$/gim, "").trim();
-      if (!text) text = "Done!";
+      if (!text) text = "Done! The change has been applied.";
     }
 
     // Try explicit NAV: prefix
@@ -5446,16 +5460,16 @@ THINGS TO BE GREAT AT:
       const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant", max_tokens: 200,
+          model: "llama-3.3-70b-versatile", max_tokens: 200,
           messages: [
             { role: "system", content: buildSystemPrompt(true) },
-            ...history.map(m => ({ role: m.role, content: m.text })),
+            ...history.slice(-8).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.text })),
             { role: "user", content: text }
           ],
         }),
       });
       const data = await res.json();
-      const raw = data.choices?.[0]?.message?.content || "Got it.";
+      const raw = data.choices?.[0]?.message?.content || "I didn't catch that. Try again?";
       const { text: reply } = handleNavIntent(raw);
       setChatHistory(p => [...(p || []), { role: "assistant", text: reply, time: new Date() }]);
       setVoiceLoading(false);
@@ -5479,16 +5493,16 @@ THINGS TO BE GREAT AT:
       const res = await fetch("https://pocketflow-proxy-production.up.railway.app/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile", max_tokens: 400,
+          model: "llama-3.3-70b-versatile", max_tokens: 600,
           messages: [
             { role: "system", content: buildSystemPrompt(false) },
-            ...(chatHistory || []).map(m => ({ role: m.role, content: m.text })),
+            ...(chatHistory || []).slice(-14).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.text })),
             { role: "user", content: text },
           ],
         }),
       });
       const data = await res.json();
-      const raw = data.choices?.[0]?.message?.content || "On it.";
+      const raw = data.choices?.[0]?.message?.content || "I'm having trouble processing that. Try rephrasing?";
       const { text: reply } = handleNavIntent(raw);
       setChatHistory(p => [...p, { role: "assistant", text: reply, time: new Date() }]);
     } catch {
