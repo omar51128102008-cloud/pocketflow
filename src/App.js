@@ -131,7 +131,7 @@ function useDesktop() {
 }
 
 const BtnPrimary = ({ children, onClick, disabled, style }) => (
-  <button onClick={onClick} disabled={disabled} style={{ background: disabled ? "rgba(255,255,255,0.05)" : `linear-gradient(135deg,${C.accentDark},${C.accent})`, border: "none", borderRadius: 14, color: disabled ? C.dim : "#fff", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", fontWeight: 600, fontSize: 15, cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.3s cubic-bezier(0.16,1,0.3,1)", boxShadow: disabled ? "none" : "0 4px 24px rgba(139,92,246,0.25)", ...style }} onMouseEnter={e => { if (!disabled) e.currentTarget.style.boxShadow = "0 6px 32px rgba(139,92,246,0.4)"; }} onMouseLeave={e => { if (!disabled) e.currentTarget.style.boxShadow = "0 4px 24px rgba(139,92,246,0.25)"; }}>{children}</button>
+  <button onClick={onClick} disabled={disabled} style={{ background: disabled ? "rgba(139,92,246,0.15)" : `linear-gradient(135deg,${C.accentDark},${C.accent})`, border: disabled ? "1px solid rgba(139,92,246,0.2)" : "none", borderRadius: 14, color: disabled ? "rgba(167,139,250,0.5)" : "#fff", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", fontWeight: 600, fontSize: 15, cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.3s cubic-bezier(0.16,1,0.3,1)", boxShadow: disabled ? "none" : "0 4px 24px rgba(139,92,246,0.25)", ...style }} onMouseEnter={e => { if (!disabled) e.currentTarget.style.boxShadow = "0 6px 32px rgba(139,92,246,0.4)"; }} onMouseLeave={e => { if (!disabled) e.currentTarget.style.boxShadow = "0 4px 24px rgba(139,92,246,0.25)"; }}>{children}</button>
 );
 
 const BackBtn = ({ onBack }) => (
@@ -265,6 +265,8 @@ async function copyToClipboard(text) {
   try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
 }
 
+
+
 // ── SPLASH ─────────────────────────────────────────────────────────────────────
 function Splash() {
   return (
@@ -359,7 +361,7 @@ function Login({ navigate, setUserRole, setStaffOwnerId }) {
 
   if (resetSent) return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
-      <div style={{ fontSize: 60, marginBottom: 24 }}>✉</div>
+      <div style={{ marginBottom: 24 }}>"✉"</div>
       <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800, marginBottom: 12 }}>Check your email</div>
       <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7, marginBottom: 28 }}>We sent a password reset link to<br /><span style={{ color: C.accent, fontWeight: 600 }}>{email}</span></div>
       <BtnPrimary onClick={() => { setResetMode(false); setResetSent(false); }} style={{ padding: "13px 28px" }}>Back to Login</BtnPrimary>
@@ -423,8 +425,8 @@ const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const PLATFORMS = [
   { id: "whatsapp", label: "WhatsApp", icon: "W", color: "#25D366" },
   { id: "instagram", label: "Instagram", icon: "IG", color: "#E1306C" },
-  { id: "google", label: "Google Calendar", icon: "▣", color: "#4285F4" },
-  { id: "facebook", label: "Facebook", icon: "⊡", color: "#1877F2" },
+  { id: "google", label: "Google Calendar", icon: "▪", color: "#4285F4" },
+  { id: "facebook", label: "Facebook", icon: "⊞", color: "#1877F2" },
 ];
 const AI_PERMISSIONS = [
   { id: "reply_dms", label: "Reply to DMs automatically", sub: "AI responds to inquiries 24/7" },
@@ -724,10 +726,10 @@ function Home({ navigate, userRole, staffOwnerId }) {
       const milestones = [];
       if (clientCount >= 50 && clientCount < 55) milestones.push({ icon: "🎉", text: "50 clients! You're building something real." });
       if (clientCount >= 100 && clientCount < 105) milestones.push({ icon: "🔥", text: "100 clients! Your business is on fire." });
-      if (totalRev >= 1000 && totalRev < 1100) milestones.push({ icon: "⬡", text: "$1,000 earned! First milestone unlocked." });
+      if (totalRev >= 1000 && totalRev < 1100) milestones.push({ icon: "▬", text: "$1,000 earned! First milestone unlocked." });
       if (totalRev >= 5000 && totalRev < 5200) milestones.push({ icon: "💎", text: "$5,000 earned! You're a pro." });
       if (totalRev >= 10000 && totalRev < 10500) milestones.push({ icon: "🚀", text: "$10,000 earned! Incredible growth." });
-      if (totalAppts >= 100 && totalAppts < 105) milestones.push({ icon: "▣", text: "100 appointments! Consistency is key." });
+      if (totalAppts >= 100 && totalAppts < 105) milestones.push({ icon: "▪", text: "100 appointments! Consistency is key." });
 
       setStats({ weekRevenue: thisWeekRev, todayCount, aiHandled, clientCount, revChange, milestones, lastWeekRev });
       if (milestones.length > 0) setTimeout(fireConfetti, 500);
@@ -764,10 +766,10 @@ function Home({ navigate, userRole, staffOwnerId }) {
           {homeLoading ? [1,2,3,4].map(i => (
             <div key={i} style={{ height: 64, background: C.surface, borderRadius: 18, animation: "shimmer 1.5s infinite", backgroundImage: `linear-gradient(90deg,${C.surface},${C.surfaceHigh},${C.surface})`, backgroundSize: "200% 100%" }} />
           )) : [
-            { label: "Revenue", value: "$" + stats.weekRevenue, sub: "this week", color: C.gold, icon: "⬡", ownerOnly: true },
-            { label: "Appointments", value: String(stats.todayCount), sub: "today", color: C.text, icon: "▣" },
+            { label: "Revenue", value: "$" + stats.weekRevenue, sub: "this week", color: C.gold, icon: "▬", ownerOnly: true },
+            { label: "Appointments", value: String(stats.todayCount), sub: "today", color: C.text, icon: "▪" },
             { label: "AI handled", value: String(stats.aiHandled), sub: "messages", color: C.accent, icon: "✦", ownerOnly: true },
-            { label: "Clients", value: String(stats.clientCount), sub: "total", color: C.green, icon: "⊡" },
+            { label: "Clients", value: String(stats.clientCount), sub: "total", color: C.green, icon: "⊞" },
           ].filter(s => userRole === "owner" || !s.ownerOnly).map((s, i) => (
             <Card key={i} style={{ padding: "14px", display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: `${s.color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{s.icon}</div>
@@ -873,8 +875,8 @@ function Home({ navigate, userRole, staffOwnerId }) {
                 {[
                   { icon: "＋", label: "New Appointment", screen: "schedule" },
                   { icon: "✉", label: t("inbox"), screen: "inbox" },
-                  { icon: "⊡", label: "Staff Chat", screen: "staff" },
-                  { icon: "⟐", label: t("analytics"), screen: "analytics" },
+                  { icon: "⊞", label: "Staff Chat", screen: "staff" },
+                  { icon: "▥", label: t("analytics"), screen: "analytics" },
                 ].filter(i => userRole === 'owner' || i.screen !== 'analytics').map(item => (
                   <Card key={item.screen} onClick={() => { navigate(item.screen); haptic("light"); }} style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} className="card-press">
                     <span style={{ fontSize: 20 }}>{item.icon}</span>
@@ -890,7 +892,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
                   const ok = await copyToClipboard(link);
                   if (ok) { haptic("medium"); showToast("Booking link copied!", "info"); }
                 }} style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginTop: 10, background: `linear-gradient(135deg,${C.accentDark}22,${C.accent}18)`, borderColor: `${C.accent}33` }} className="card-press">
-                  <span style={{ fontSize: 20 }}>⤴</span>
+                  <span>"↗"</span>
                   <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>Copy Booking Link</span>
                   <span style={{ fontSize: 11, color: C.accent, fontWeight: 700 }}>TAP TO COPY</span>
                 </Card>
@@ -904,15 +906,15 @@ function Home({ navigate, userRole, staffOwnerId }) {
         <div className="mobile-only" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
           {[
             { icon: "✦", label: t("services"), screen: "services", color: C.accent, ownerOnly: true },
-            { icon: "⬡", label: t("payments"), screen: "payments", color: C.gold, ownerOnly: true },
+            { icon: "▬", label: t("payments"), screen: "payments", color: C.gold, ownerOnly: true },
             { icon: "⚙", label: t("settings"), screen: "settings", color: C.mid },
-            { icon: "♥", label: t("loyalty"), screen: "loyalty", color: "#f472b6", ownerOnly: true },
-            { icon: "◈", label: t("packages"), screen: "packages", color: "#a78bfa", ownerOnly: true },
-            { icon: "⟐", label: t("analytics"), screen: "analytics", color: C.blue, ownerOnly: true },
-            { icon: "⊛", label: t("promotions"), screen: "promotions", color: "#fb923c", ownerOnly: true },
-            { icon: "⊡", label: t("staff"), screen: "staff", color: C.green },
-            { icon: "◷", label: t("waitlist"), screen: "waitlist", color: C.yellow, ownerOnly: true },
-            { icon: "⤴", label: getLang() === "ar" ? "رابط الحجز" : "Share Link", screen: "sharelink", color: C.accent, ownerOnly: true },
+            { icon: "♡", label: t("loyalty"), screen: "loyalty", color: "#f472b6", ownerOnly: true },
+            { icon: "⬡", label: t("packages"), screen: "packages", color: "#a78bfa", ownerOnly: true },
+            { icon: "▥", label: t("analytics"), screen: "analytics", color: C.blue, ownerOnly: true },
+            { icon: "⚡", label: t("promotions"), screen: "promotions", color: "#fb923c", ownerOnly: true },
+            { icon: "⊞", label: t("staff"), screen: "staff", color: C.green },
+            { icon: "⏳", label: t("waitlist"), screen: "waitlist", color: C.yellow, ownerOnly: true },
+            { icon: "↗", label: getLang() === "ar" ? "رابط الحجز" : "Share Link", screen: "sharelink", color: C.accent, ownerOnly: true },
           ].filter(i => userRole === "owner" || !i.ownerOnly).map(item => (
             <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} className="card-press">
               <div style={{ width: 38, height: 38, borderRadius: 12, background: `${item.color}15`, border: `1px solid ${item.color}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
@@ -1006,7 +1008,7 @@ function Schedule({ navigate, userRole, staffOwnerId }) {
 
   const EmptyState = ({ label }) => (
     <Card style={{ padding: 24, textAlign: "center" }}>
-      <div style={{ width: 44, height: 44, borderRadius: 14, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 16, color: C.accent, fontWeight: 800 }}>▣</div>
+      <div style={{ width: 44, height: 44, borderRadius: 14, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", color: C.accent }}>"▪"</div>
       <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>No {label} appointments</div>
       <div style={{ fontSize: 12, color: C.dim }}>Share your booking link to start filling your schedule</div>
     </Card>
@@ -1203,7 +1205,7 @@ function Inbox({ navigate, userRole, staffOwnerId }) {
           <div style={{ padding: "16px 0" }}>{[1,2,3].map(i => <div key={i} style={{ height: 68, background: C.surface, borderRadius: 18, marginBottom: 10, animation: "shimmer 1.5s infinite", backgroundImage: `linear-gradient(90deg,${C.surface},${C.surfaceHigh},${C.surface})`, backgroundSize: "200% 100%" }} />)}</div>
         ) : msgs.length === 0 ? (
           <Card style={{ padding: 32, textAlign: "center" }}>
-            <div style={{ width: 56, height: 56, borderRadius: 18, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 22 }}>✉</div>
+            <div style={{ width: 56, height: 56, borderRadius: 18, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", }}>"✉"</div>
             <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Inbox</div>
             <div style={{ fontSize: 13, color: C.mid, lineHeight: 1.7 }}>Messages from clients will appear here.<br/>Connect WhatsApp or Instagram in Settings to start receiving messages automatically.</div>
             <BtnPrimary onClick={() => navigate("connections")} style={{ padding: "10px 24px", fontSize: 13, marginTop: 16 }}>Connect Accounts</BtnPrimary>
@@ -1814,7 +1816,7 @@ function Services({ navigate }) {
           <div style={{ padding: "16px 0" }}>{[1,2,3].map(i => <div key={i} style={{ height: 76, background: C.surface, borderRadius: 18, marginBottom: 10, animation: "shimmer 1.5s infinite", backgroundImage: `linear-gradient(90deg,${C.surface},${C.surfaceHigh},${C.surface})`, backgroundSize: "200% 100%" }} />)}</div>
         ) : services.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px" }}>
-            <div style={{ width: 56, height: 56, borderRadius: 18, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 22, color: C.accent, fontWeight: 800 }}>✦</div>
+            <div style={{ width: 56, height: 56, borderRadius: 18, background: C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", color: C.accent }}>"✦"</div>
             <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>No services yet</div>
             <div style={{ fontSize: 13, color: C.dim, marginBottom: 24 }}>Add your services so clients can book from your page</div>
             <BtnPrimary onClick={openAdd} style={{ padding: "12px 28px" }}>Add Your First Service</BtnPrimary>
@@ -2020,7 +2022,7 @@ function Payments({ navigate }) {
         <Card>
           {appointments.slice(0, showAllPayments ? appointments.length : 5).map((appt, i, arr) => (
             <div key={appt.id} onClick={() => setSelectedInvoice(appt)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 16px", borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
-              <div style={{ width: 38, height: 38, borderRadius: 12, background: `${statusColor(appt.status)}18`, border: `1px solid ${statusColor(appt.status)}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{appt.status === "confirmed" || appt.status === "completed" ? "✓" : appt.status === "pending" ? "⏳" : "!"}</div>
+              <div style={{ width: 38, height: 38, borderRadius: 12, background: `${statusColor(appt.status)}18`, border: `1px solid ${statusColor(appt.status)}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{appt.status === "confirmed" || appt.status === "completed" ? "✓" : appt.status === "pending" ? "◔" : "!"}</div>
               <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600 }}>{appt.client_name}</div><div style={{ fontSize: 11, color: C.mid, marginTop: 2 }}>{appt.service} · {formatDate(appt.day) || appt.time}</div></div>
               <div style={{ textAlign: "right" }}><div style={{ fontSize: 14, fontWeight: 700, color: C.gold }}>{appt.price || "—"}</div><div style={{ fontSize: 10, color: statusColor(appt.status), marginTop: 3, fontWeight: 600, textTransform: "uppercase" }}>{statusLabel(appt.status)}</div></div>
             </div>
@@ -2274,10 +2276,10 @@ function Settings({ navigate, userRole, staffOwnerId }) {
         <Card>
           {[
             { icon: "✦", label: "Services", sub: "Manage your services & prices", screen: "services", ownerOnly: true },
-            { icon: "◈", label: "Packages", sub: "Bundles & memberships", screen: "packages", ownerOnly: true },
-            { icon: "◉", label: "Business Profile", sub: "Edit your business info", screen: "profile", ownerOnly: true },
-            { icon: "⤴", label: "Connected Accounts", sub: "WhatsApp, Instagram, Google", screen: "connections", ownerOnly: true },
-            { icon: "⟐", label: "Subscription", sub: "Pro Plan · $29/mo", screen: "subscription", ownerOnly: true },
+            { icon: "⬡", label: "Packages", sub: "Bundles & memberships", screen: "packages", ownerOnly: true },
+            { icon: "⍟", label: "Business Profile", sub: "Edit your business info", screen: "profile", ownerOnly: true },
+            { icon: "↗", label: "Connected Accounts", sub: "WhatsApp, Instagram, Google", screen: "connections", ownerOnly: true },
+            { icon: "▥", label: "Subscription", sub: "Pro Plan · $29/mo", screen: "subscription", ownerOnly: true },
           ].filter(i => userRole === "owner" || !i.ownerOnly).map(({ icon, label, sub, screen }, i, arr) => (
             <div key={i} onClick={() => navigate(screen)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : "none", cursor: "pointer" }}>
               <span style={{ fontSize: 20 }}>{icon}</span>
@@ -2358,7 +2360,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
         <SectionLabel>Payment Setup</SectionLabel>
         <Card style={{ marginBottom: 8 }}>
           {[
-            { icon: "⟐", label: "Stripe", sub: "Accept card payments from clients", connected: true },
+            { icon: "▥", label: "Stripe", sub: "Accept card payments from clients", connected: true },
             { icon: "PP", label: "PayPal", sub: "Your PayPal email or link", connected: false, placeholder: "PayPal email or paypal.me/link" },
             { icon: "CA", label: "Cash App", sub: "Your $Cashtag", connected: false, placeholder: "e.g. $YourCashtag" },
             { icon: "ZL", label: "Zelle", sub: "Your Zelle phone or email", connected: false, placeholder: "Phone number or email" },
@@ -2712,7 +2714,7 @@ function Loyalty({ navigate }) {
         <SectionLabel>Recent Reviews</SectionLabel>
         {realReviews.length === 0 ? (
           <Card style={{ padding: "32px 20px", textAlign: "center" }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>★</div>
+            <div style={{ marginBottom: 12 }}>"★"</div>
             <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>No reviews yet</div>
             <div style={{ fontSize: 13, color: C.dim }}>Reviews from clients will appear here</div>
           </Card>
@@ -2796,7 +2798,7 @@ function Notifications({ navigate }) {
     setNotifs(prev => prev.map(n => ({ ...n, read: true })));
   };
 
-  const iconFor = (type) => ({ booking: "▣", payment: "⬡", ai: "✦", alert: "!", review: "★" })[type] || "◉";
+  const iconFor = (type) => ({ booking: "▪", payment: "▬", ai: "✦", alert: "!", review: "★" })[type] || "⍟";
   const timeAgo = (ts) => {
     const diff = Date.now() - new Date(ts).getTime();
     const m = Math.floor(diff / 60000);
@@ -3624,7 +3626,7 @@ function Booking({ navigate }) {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.dim, marginBottom: 8 }}>
-              <span>◉</span><span>Payments secured by Stripe. Your card info is never stored.</span>
+              <span>"✓"</span><span>Payments secured by Stripe. Your card info is never stored.</span>
             </div>
           </div>
         )}
@@ -3731,7 +3733,7 @@ function Staff({ navigate, userRole, staffOwnerId }) {
         const mapped = msgs.map(m => ({ id: m.id, user_id: m.user_id, sender: m.sender_name, text: m.text, time: new Date(m.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}), isAI: m.is_ai }));
         setGroupMessages(prev => prev.length !== mapped.length ? mapped : prev);
       }
-    }, 5000);
+    }, 2000);
     return () => clearInterval(poll);
   }, [view, bizOwnerId]);
 
@@ -3823,15 +3825,18 @@ function Staff({ navigate, userRole, staffOwnerId }) {
                   {showName && <div style={{ fontSize: 11, color: isAI ? C.accent : C.mid, fontWeight: 600, marginBottom: 3, marginLeft: 4 }}>{m.sender}</div>}
                   <div style={{ padding: "10px 14px", borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: isMe ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : isAI ? "rgba(124,58,237,0.12)" : C.surface, border: isMe ? "none" : `1px solid ${isAI ? C.accent + "22" : C.border}`, fontSize: 14, lineHeight: 1.5, color: isMe ? "#fff" : C.text }}>
                     {m.text.startsWith("VOICE:") ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div onClick={e => { const audio = e.currentTarget.parentElement.querySelector("audio"); if (audio) audio.paused ? audio.play() : audio.pause(); }} style={{ width: 32, height: 32, borderRadius: "50%", background: isMe ? "rgba(255,255,255,0.2)" : C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill={isMe ? "#fff" : C.accent}><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 180 }}>
+                        <div onClick={e => { const audio = e.currentTarget.parentElement.querySelector("audio"); if (audio) { if (audio.paused) { audio.play(); e.currentTarget.dataset.playing = "1"; } else { audio.pause(); e.currentTarget.dataset.playing = ""; } } }} style={{ width: 34, height: 34, borderRadius: "50%", background: isMe ? "rgba(255,255,255,0.2)" : C.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "transform 0.2s" }} onMouseDown={e => e.currentTarget.style.transform="scale(0.9)"} onMouseUp={e => e.currentTarget.style.transform="scale(1)"}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill={isMe ? "#fff" : C.accent}><polygon points="6 3 20 12 6 21 6 3"/></svg>
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ height: 4, background: isMe ? "rgba(255,255,255,0.3)" : C.border, borderRadius: 2 }}><div style={{ height: "100%", width: "60%", background: isMe ? "#fff" : C.accent, borderRadius: 2 }} /></div>
-                          <div style={{ fontSize: 10, color: isMe ? "rgba(255,255,255,0.7)" : C.dim, marginTop: 3 }}>Voice message</div>
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 2, height: 28 }}>
+                          {Array.from({length: 20}, (_, j) => {
+                            const h = [12,18,8,22,14,24,10,20,16,6,18,22,8,14,20,10,24,12,16,8][j];
+                            return <div key={j} style={{ width: 2.5, height: h, borderRadius: 2, background: isMe ? "rgba(255,255,255," + (0.4 + j * 0.03) + ")" : C.accent + (j < 12 ? "cc" : "44"), transition: "height 0.2s" }} />;
+                          })}
                         </div>
-                        <audio src={m.text.replace("VOICE:", "")} preload="none" />
+                        <div style={{ fontSize: 10, color: isMe ? "rgba(255,255,255,0.6)" : C.dim, flexShrink: 0 }}>0:08</div>
+                        <audio src={m.text.replace("VOICE:", "")} preload="none" onEnded={e => { const btn = e.currentTarget.parentElement.querySelector("[data-playing]"); if (btn) btn.dataset.playing = ""; }} />
                       </div>
                     ) : /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(m.text) || m.text.startsWith("data:image/") ? <img src={m.text} alt="" style={{ maxWidth: "100%", borderRadius: 14, display: "block" }} /> : m.text}
                   </div>
@@ -4340,7 +4345,7 @@ function ConnectedAccounts({ navigate }) {
           {[
             { icon: "W", label: "WhatsApp Business", sub: "Auto-reply to client messages", color: "#25D366" },
             { icon: "📸", label: "Instagram DMs", sub: "Reply to DMs automatically", color: "#E1306C" },
-            { icon: "⊡", label: "Facebook Messenger", sub: "Handle Facebook inquiries", color: "#1877F2" },
+            { icon: "⊞", label: "Facebook Messenger", sub: "Handle Facebook inquiries", color: "#1877F2" },
           ].map((a, i, arr) => (
             <div key={a.label} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px", borderBottom: i < arr.length - 1 ? `1px solid ${C.border}` : "none", opacity: 0.5 }}>
               <div style={{ width: 44, height: 44, borderRadius: 14, background: a.color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{a.icon}</div>
@@ -4837,18 +4842,18 @@ function Sidebar({ active, navigate, userRole, staffOwnerId }) {
   }, [userRole, staffOwnerId]);
   const mainNav = [
     { id: "home", icon: "⌂", label: "Home" },
-    { id: "schedule", icon: "▣", label: "Schedule" },
+    { id: "schedule", icon: "▪", label: "Schedule" },
     { id: "inbox", icon: "✉", label: "Inbox" },
     { id: "clients", icon: "◎", label: "Clients" },
   ];
   const secondaryNav = [
     { id: "services", icon: "✦", label: "Services", ownerOnly: true },
-    { id: "payments", icon: "⬡", label: "Payments", ownerOnly: true },
-    { id: "analytics", icon: "⟐", label: "Analytics", ownerOnly: true },
-    { id: "promotions", icon: "⊛", label: "Promotions", ownerOnly: true },
-    { id: "loyalty", icon: "♥", label: "Loyalty", ownerOnly: true },
-    { id: "staff", icon: "⊡", label: "Staff" },
-    { id: "waitlist", icon: "◷", label: "Waitlist", ownerOnly: true },
+    { id: "payments", icon: "▬", label: "Payments", ownerOnly: true },
+    { id: "analytics", icon: "▥", label: "Analytics", ownerOnly: true },
+    { id: "promotions", icon: "⚡", label: "Promotions", ownerOnly: true },
+    { id: "loyalty", icon: "♡", label: "Loyalty", ownerOnly: true },
+    { id: "staff", icon: "⊞", label: "Staff" },
+    { id: "waitlist", icon: "⏳", label: "Waitlist", ownerOnly: true },
   ].filter(i => userRole === "owner" || !i.ownerOnly);
 
   return (
@@ -5658,10 +5663,17 @@ export default function App() {
 
   // Request notification permission on first load
   useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      setTimeout(() => Notification.requestPermission().then(p => { if (p === "granted") subscribePush(); }), 3000);
-    } else if ("Notification" in window && Notification.permission === "granted") {
-      subscribePush();
+    if ("Notification" in window) {
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      if (Notification.permission === "default" && !isSafari) {
+        setTimeout(() => Notification.requestPermission().then(p => { if (p === "granted") subscribePush(); }), 3000);
+      } else if (Notification.permission === "granted") {
+        subscribePush();
+      }
+      if (isSafari && Notification.permission === "default") {
+        // Safari needs PWA - show toast after 5s
+        setTimeout(() => showToast("For notifications on Mac, add spool to your Dock via Safari Share menu"), 8000);
+      }
     }
     // Register service worker
     if ("serviceWorker" in navigator) {
@@ -5890,7 +5902,7 @@ export default function App() {
       <div style={{ position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 9999, display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 400, padding: "0 16px", pointerEvents: "none" }}>
         {toasts.map(t => (
           <div key={t.id} style={{ background: t.type === "booking" ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : t.type === "error" ? C.red : C.surfaceSolid, border: `1px solid ${t.type === "booking" ? C.accent : t.type === "error" ? C.red : C.border}`, borderRadius: 16, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, animation: "slideDown 0.3s ease", boxShadow: "0 8px 32px rgba(0,0,0,0.4)", backdropFilter: "blur(20px)", pointerEvents: "auto" }}>
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, flexShrink: 0 }}>{t.type === "booking" ? "▣" : t.type === "error" ? "!" : "◉"}</div>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, flexShrink: 0 }}>{t.type === "booking" ? "▪" : t.type === "error" ? "!" : "⍟"}</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>{t.msg}</div>
           </div>
         ))}
@@ -5913,19 +5925,19 @@ export default function App() {
             </div>
             <div style={{ maxHeight: 320, overflowY: "auto" }}>
               {[
-                { icon: "◉", label: "Home", screen: "home" },
-                { icon: "▣", label: t("schedule"), screen: "schedule" },
+                { icon: "⍟", label: "Home", screen: "home" },
+                { icon: "▪", label: t("schedule"), screen: "schedule" },
                 { icon: "✉", label: t("inbox"), screen: "inbox" },
-                { icon: "◈", label: t("clients"), screen: "clients" },
+                { icon: "⬡", label: t("clients"), screen: "clients" },
                 { icon: "✦", label: t("services"), screen: "services" },
-                { icon: "⬡", label: t("payments"), screen: "payments" },
-                { icon: "⟐", label: t("analytics"), screen: "analytics" },
-                { icon: "⊛", label: t("promotions"), screen: "promotions" },
-                { icon: "♥", label: t("loyalty"), screen: "loyalty" },
-                { icon: "◈", label: t("packages"), screen: "packages" },
+                { icon: "▬", label: t("payments"), screen: "payments" },
+                { icon: "▥", label: t("analytics"), screen: "analytics" },
+                { icon: "⚡", label: t("promotions"), screen: "promotions" },
+                { icon: "♡", label: t("loyalty"), screen: "loyalty" },
+                { icon: "⬡", label: t("packages"), screen: "packages" },
                 { icon: "★", label: t("staff"), screen: "staff" },
-                { icon: "⏳", label: t("waitlist"), screen: "waitlist" },
-                { icon: "◉", label: t("settings"), screen: "settings" },
+                { icon: "◔", label: t("waitlist"), screen: "waitlist" },
+                { icon: "⍟", label: t("settings"), screen: "settings" },
                 { icon: "◎", label: t("notifications"), screen: "notifications" },
               ].filter(i => !cmdSearch || i.label.toLowerCase().includes(cmdSearch.toLowerCase())).map(i => (
                 <div key={i.screen} onClick={() => { navigate(i.screen); setCmdPalette(false); haptic("light"); }} style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 18px", cursor: "pointer", borderBottom: `1px solid ${C.border}` }} onMouseEnter={e => e.currentTarget.style.background = C.surfaceHigh} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
