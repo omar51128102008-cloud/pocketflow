@@ -210,6 +210,9 @@ async function loadBiz() {
   biz.reviews = reviewsRes.data || [];
   biz.avgRating = biz.reviews.length > 0 ? (biz.reviews.reduce((s,r) => s + (r.rating||5), 0) / biz.reviews.length).toFixed(1) : null;
   biz.staff = staffRes.data || [];
+  // Social proof - count total bookings
+  const { count: totalBookings } = await sb.from('appointments').select('id', { count: 'exact', head: true }).eq('owner_id', BUSINESS_ID);
+  biz.totalBookings = totalBookings || 0;
   render();
 }
 
@@ -579,6 +582,12 @@ function renderStep() {
   if (S.step===0) return `
     <div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px">What are you coming in for?</div>
     <div style="font-size:14px;color:${C.mid};margin-bottom:24px">Select one or more services</div>
+    ${biz.totalBookings > 5 || (biz.reviews && biz.reviews.length > 0) ? `
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      ${biz.totalBookings > 5 ? `<div style="display:inline-flex;align-items:center;gap:6px;background:${C.surface};border:1px solid ${C.border};border-radius:100px;padding:5px 12px;font-size:12px;color:${C.mid};font-weight:600">◉ ${biz.totalBookings}+ bookings</div>` : ''}
+      ${biz.reviews && biz.reviews.length > 0 ? `<div style="display:inline-flex;align-items:center;gap:6px;background:${C.surface};border:1px solid ${C.border};border-radius:100px;padding:5px 12px;font-size:12px;color:#fbbf24;font-weight:600">★ ${biz.avgRating} (${biz.reviews.length} reviews)</div>` : ''}
+      <div style="display:inline-flex;align-items:center;gap:6px;background:${C.surface};border:1px solid ${C.border};border-radius:100px;padding:5px 12px;font-size:12px;color:${C.green};font-weight:600">✓ Verified on spool</div>
+    </div>` : ''}
     ${S.services.length===0 ? `
       <div style="text-align:center;padding:60px 20px;color:${C.dim}">
         <div style="font-size:40px;margin-bottom:12px">✂️</div>
