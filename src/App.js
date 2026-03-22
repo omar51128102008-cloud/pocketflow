@@ -24,7 +24,7 @@ const LANGS = {
     services: "Services", payments: "Payments", analytics: "Analytics", promotions: "Promotions",
     loyalty: "Loyalty", staff: "Staff", notifications: "Notifications", packages: "Packages",
     waitlist: "Waitlist", goodMorning: "Good morning", hey: "Hey", goodEvening: "Good evening",
-    todaySchedule: "Today's Schedule", noAppts: t("noAppts"), seeAll: "See all",
+    todaySchedule: "Today's Schedule", noAppts: "No appointments today", seeAll: "See all",
     addClient: "Add Client", searchClients: "Search clients...", totalClients: "total clients",
     addService: "Add Your First Service", newBooking: "New Booking", signOut: "Sign Out",
     changePassword: "Change Password", deleteAccount: "Delete Account", import: "Import",
@@ -44,6 +44,10 @@ const LANGS = {
     confirm: "تأكيد", loading: "جاري التحميل...", send: "إرسال", reply: "رد",
   },
 };
+// Global toast function (works in any component)
+let _globalToastFn = null;
+function showToast(msg, type) { if (_globalToastFn) _globalToastFn(msg, type); }
+
 function getLang() { return localStorage.getItem("spool_lang") || "en"; }
 function t(key) { const lang = getLang(); return LANGS[lang]?.[key] || LANGS.en[key] || key; }
 function isRTL() { return getLang() === "ar"; }
@@ -4283,8 +4287,6 @@ function ConnectedAccounts({ navigate }) {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
-
   return (
     <div style={{ paddingBottom: 80 }}>
       {toast && (
@@ -4389,11 +4391,6 @@ function Subscription({ navigate }) {
     };
     load();
   }, []);
-
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
-  };
 
   const startCheckout = async (p) => {
     setCheckoutLoading(p.id);
@@ -5677,7 +5674,7 @@ export default function App() {
     } catch {}
   };
 
-  const showToast = (msg, type = "info") => {
+  const _showToast = (msg, type = "info") => {
     const id = Date.now();
     setToasts(p => [...p, { id, msg, type }]);
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4000);
@@ -5696,6 +5693,7 @@ export default function App() {
       } catch {}
     }
   };
+  _globalToastFn = _showToast;
 
   // Poll for new appointments every 30s and show toast
   useEffect(() => {
