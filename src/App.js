@@ -50,7 +50,7 @@ function isRTL() { return getLang() === "ar"; }
 
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;scroll-behavior:smooth;}
   ::-webkit-scrollbar{width:4px;}
   ::-webkit-scrollbar-track{background:transparent;}
   ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:4px;}
@@ -68,6 +68,12 @@ const GLOBAL_STYLES = `
   @keyframes wave1{0%,100%{d:path("M0,50 Q25,20 50,50 Q75,80 100,50")}50%{d:path("M0,50 Q25,80 50,50 Q75,20 100,50")}}
   @keyframes blobMorph{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%}25%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%}50%{border-radius:50% 60% 30% 60%/30% 40% 70% 50%}75%{border-radius:40% 60% 50% 40%/70% 30% 50% 60%}}
   @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes confetti-fall{0%{transform:translateY(-10vh) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+  @keyframes successPop{0%{transform:scale(0);opacity:0}50%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+  @keyframes cardPress{0%{transform:scale(1)}50%{transform:scale(0.97)}100%{transform:scale(1)}}
+  .page-enter{animation:pageIn 0.25s ease-out;will-change:opacity,transform}
+  .card-press{transition:transform 0.15s ease}.card-press:active{transform:scale(0.97)}
   @keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(139,92,246,0.15)}50%{box-shadow:0 0 40px rgba(139,92,246,0.3)}}
   @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
   @keyframes scaleIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}
@@ -142,7 +148,7 @@ const BottomNav = ({ active, navigate }) => {
       {items.map(item => {
         const isActive = active === item.id;
         return (
-          <div key={item.id} onClick={() => navigate(item.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer", position: "relative", transition: "transform 0.2s" }}>
+          <div key={item.id} onClick={() => { navigate(item.id); haptic("light"); }} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer", position: "relative", transition: "transform 0.2s" }}>
             <div style={{ width: 36, height: 36, borderRadius: 12, background: isActive ? `${C.accent}18` : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s" }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isActive ? C.accent : C.dim} strokeWidth={isActive ? "2" : "1.6"} strokeLinecap="round" strokeLinejoin="round" style={{ transition: "stroke 0.2s" }}><path d={item.d}/></svg>
             </div>
@@ -228,6 +234,31 @@ function handlePhoneInput(val) {
   if (d.length <= 3) return d;
   if (d.length <= 6) return `(${d.slice(0,3)}) ${d.slice(3)}`;
   return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+}
+
+// Confetti explosion
+function fireConfetti() {
+  const colors = ["#a78bfa", "#7c3aed", "#f59e0b", "#34d399", "#fb7185", "#7dd3fc"];
+  const container = document.createElement("div");
+  container.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:99999;overflow:hidden";
+  document.body.appendChild(container);
+  for (let i = 0; i < 60; i++) {
+    const p = document.createElement("div");
+    const size = Math.random() * 8 + 4;
+    p.style.cssText = `position:absolute;width:${size}px;height:${size}px;background:${colors[i % colors.length]};border-radius:${Math.random() > 0.5 ? "50%" : "2px"};left:${Math.random() * 100}%;top:-10px;animation:confetti-fall ${Math.random() * 2 + 1.5}s ease-in forwards;animation-delay:${Math.random() * 0.5}s;opacity:0.9`;
+    container.appendChild(p);
+  }
+  setTimeout(() => container.remove(), 4000);
+}
+
+// Haptic feedback (mobile)
+function haptic(type) {
+  try { if (navigator.vibrate) navigator.vibrate(type === "heavy" ? 50 : type === "medium" ? 30 : 10); } catch {}
+}
+
+// Copy to clipboard with feedback
+async function copyToClipboard(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
 }
 
 // ── SPLASH ─────────────────────────────────────────────────────────────────────
@@ -623,8 +654,9 @@ function Home({ navigate, userRole, staffOwnerId }) {
   const [appts, setAppts] = useState([]);
   const [msgs, setMsgs] = useState([]);
   const [stats, setStats] = useState({ weekRevenue: 0, todayCount: 0, aiHandled: 0, clientCount: 0 });
+  const [homeLoading, setHomeLoading] = useState(true);
   const h = new Date().getHours();
-  const greetText = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  const greetText = h < 12 ? t("goodMorning") : h < 17 ? t("hey") : t("goodEvening");
 
   const activity = (() => {
     const items = [];
@@ -694,6 +726,8 @@ function Home({ navigate, userRole, staffOwnerId }) {
       if (totalAppts >= 100 && totalAppts < 105) milestones.push({ icon: "▣", text: "100 appointments! Consistency is key." });
 
       setStats({ weekRevenue: thisWeekRev, todayCount, aiHandled, clientCount, revChange, milestones, lastWeekRev });
+      if (milestones.length > 0) setTimeout(fireConfetti, 500);
+      setHomeLoading(false);
     };
     load();
   }, []);
@@ -712,7 +746,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
         <div style={{ position: "absolute", top: 0, right: 0, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
           <div>
-            <div style={{ fontSize: 12, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, fontWeight: 500 }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
+            <div style={{ fontSize: 12, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, fontWeight: 500 }}>{new Date().toLocaleDateString(getLang() === "ar" ? "ar-SA" : "en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.2 }}>{greetText},<br /><span style={{ background: `linear-gradient(135deg,${C.accent},#e0b3ff)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{userName || "there"}</span></div>
           </div>
           <div style={{ position: "relative", cursor: "pointer" }} onClick={() => navigate("notifications")}>
@@ -723,7 +757,9 @@ function Home({ navigate, userRole, staffOwnerId }) {
 
         {/* Stats row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 24 }}>
-          {[
+          {homeLoading ? [1,2,3,4].map(i => (
+            <div key={i} style={{ height: 64, background: C.surface, borderRadius: 18, animation: "shimmer 1.5s infinite", backgroundImage: `linear-gradient(90deg,${C.surface},${C.surfaceHigh},${C.surface})`, backgroundSize: "200% 100%" }} />
+          )) : [
             { label: "Revenue", value: "$" + stats.weekRevenue, sub: "this week", color: C.gold, icon: "⬡", ownerOnly: true },
             { label: "Appointments", value: String(stats.todayCount), sub: "today", color: C.text, icon: "▣" },
             { label: "AI handled", value: String(stats.aiHandled), sub: "messages", color: C.accent, icon: "✦", ownerOnly: true },
@@ -832,16 +868,30 @@ function Home({ navigate, userRole, staffOwnerId }) {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {[
                   { icon: "＋", label: "New Appointment", screen: "schedule" },
-                  { icon: "✉", label: "View Inbox", screen: "inbox" },
-                  { icon: "⤴", label: "Booking Link", screen: "sharelink" },
+                  { icon: "✉", label: t("inbox"), screen: "inbox" },
                   { icon: "⊡", label: "Staff Chat", screen: "staff" },
-                ].filter(i => userRole === 'owner' || i.screen !== 'sharelink').map(item => (
-                  <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                  { icon: "⟐", label: t("analytics"), screen: "analytics" },
+                ].filter(i => userRole === 'owner' || i.screen !== 'analytics').map(item => (
+                  <Card key={item.screen} onClick={() => { navigate(item.screen); haptic("light"); }} style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} className="card-press">
                     <span style={{ fontSize: 20 }}>{item.icon}</span>
                     <span style={{ fontSize: 13, fontWeight: 600 }}>{item.label}</span>
                   </Card>
                 ))}
               </div>
+              {userRole === "owner" && (
+                <Card onClick={async () => {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) return;
+                  const link = `https://omar51128102008-cloud.github.io/pocketflow/book?id=${session.user.id}`;
+                  const ok = await copyToClipboard(link);
+                  if (ok) { haptic("medium"); showToast("Booking link copied!", "info"); }
+                }} style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginTop: 10, background: `linear-gradient(135deg,${C.accentDark}22,${C.accent}18)`, borderColor: `${C.accent}33` }} className="card-press">
+                  <span style={{ fontSize: 20 }}>⤴</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>Copy Booking Link</span>
+                  <span style={{ fontSize: 11, color: C.accent, fontWeight: 700 }}>TAP TO COPY</span>
+                </Card>
+              )}
+              <div style={{ fontSize: 11, color: C.dim, textAlign: "center", marginTop: 12 }}>Press <span style={{ background: C.surfaceHigh, borderRadius: 4, padding: "2px 6px", fontWeight: 600 }}>⌘K</span> to search anything</div>
             </div>
           </div>
         </div>
@@ -851,16 +901,16 @@ function Home({ navigate, userRole, staffOwnerId }) {
           {[
             { icon: "✦", label: t("services"), screen: "services", color: C.accent, ownerOnly: true },
             { icon: "⬡", label: t("payments"), screen: "payments", color: C.gold, ownerOnly: true },
-            { icon: "⚙", label: "Settings", screen: "settings", color: C.mid },
+            { icon: "⚙", label: t("settings"), screen: "settings", color: C.mid },
             { icon: "♥", label: t("loyalty"), screen: "loyalty", color: "#f472b6", ownerOnly: true },
             { icon: "◈", label: t("packages"), screen: "packages", color: "#a78bfa", ownerOnly: true },
             { icon: "⟐", label: t("analytics"), screen: "analytics", color: C.blue, ownerOnly: true },
             { icon: "⊛", label: t("promotions"), screen: "promotions", color: "#fb923c", ownerOnly: true },
             { icon: "⊡", label: t("staff"), screen: "staff", color: C.green },
             { icon: "◷", label: t("waitlist"), screen: "waitlist", color: C.yellow, ownerOnly: true },
-            { icon: "⤴", label: "Share Link", screen: "sharelink", color: C.accent, ownerOnly: true },
+            { icon: "⤴", label: getLang() === "ar" ? "رابط الحجز" : "Share Link", screen: "sharelink", color: C.accent, ownerOnly: true },
           ].filter(i => userRole === "owner" || !i.ownerOnly).map(item => (
-            <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+            <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} className="card-press">
               <div style={{ width: 38, height: 38, borderRadius: 12, background: `${item.color}15`, border: `1px solid ${item.color}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
               <span style={{ fontSize: 14, fontWeight: 600 }}>{item.label}</span>
             </Card>
@@ -4954,10 +5004,23 @@ function AISidebarPanel({ navigate, isMobile }) {
       setAiName(name);
       const hour = new Date().getHours();
       const greeting = hour < 12 ? t("goodMorning") : hour < 17 ? t("hey") : t("goodEvening");
-      const todayLine = todayAppts.length ? `You have **${todayAppts.length} appointment${todayAppts.length > 1 ? "s" : ""}** today.` : "No appointments today.";
+      const todayLine = todayAppts.length ? `You have **${todayAppts.length} appointment${todayAppts.length > 1 ? "s" : ""}** today.` : "";
       const msgLine = unhandled ? ` **${unhandled} unread message${unhandled > 1 ? "s" : ""}** waiting.` : "";
-      // Always refresh the first greeting message with the current name
-      const freshGreeting = { role: "assistant", text: `${greeting}! I'm **${name}**. ${todayLine}${msgLine} What do you need?`, time: new Date() };
+      // Smart insights
+      const insights = [];
+      if (revenue > 0 && confirmedAppts.length > 0) {
+        const avgRev = Math.round(revenue / confirmedAppts.length);
+        insights.push(`Your average booking is worth **$${avgRev}**.`);
+      }
+      if (todayAppts.length === 0 && confirmedAppts.length > 0) {
+        insights.push("Quiet day — perfect time to send a promo or catch up on follow-ups.");
+      }
+      if (todayAppts.length >= 5) {
+        insights.push("Packed day! Stay hydrated and crush it.");
+      }
+      const insightLine = insights.length > 0 ? " " + insights[Math.floor(Math.random() * insights.length)] : "";
+      const noApptLine = !todayLine ? "No appointments today." : "";
+      const freshGreeting = { role: "assistant", text: `${greeting}! I'm **${name}**. ${todayLine || noApptLine}${msgLine}${insightLine}`, time: new Date() };
       setChatHistory(prev => {
         if (!prev || prev.length === 0) return [freshGreeting];
         // If name changed, update the first message
@@ -5569,6 +5632,18 @@ export default function App() {
   const [staffOwnerId, setStaffOwnerId] = useState(null);
   const [toasts, setToasts] = useState([]);
   const lastApptCountRef = useRef(null);
+  const [cmdPalette, setCmdPalette] = useState(false);
+  const [cmdSearch, setCmdSearch] = useState("");
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setCmdPalette(p => !p); setCmdSearch(""); }
+      if (e.key === "Escape") setCmdPalette(false);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   // Request notification permission on first load
   useEffect(() => {
@@ -5808,6 +5883,52 @@ export default function App() {
           </div>
         ))}
       </div>
+      {/* Command Palette (Ctrl+K) */}
+      {cmdPalette && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", zIndex: 10000, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "15vh" }} onClick={() => setCmdPalette(false)}>
+          <div style={{ background: C.surfaceSolid, border: `1px solid ${C.border}`, borderRadius: 20, width: "100%", maxWidth: 480, overflow: "hidden", animation: "slideDown 0.2s ease", boxShadow: "0 24px 80px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 18px", borderBottom: `1px solid ${C.border}` }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input autoFocus value={cmdSearch} onChange={e => setCmdSearch(e.target.value)} placeholder="Search screens, actions..." style={{ flex: 1, background: "none", border: "none", fontSize: 16, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", outline: "none" }} onKeyDown={e => {
+                if (e.key === "Enter") {
+                  const q = cmdSearch.toLowerCase();
+                  const screens = ["home","schedule","inbox","clients","payments","analytics","promotions","loyalty","services","staff","waitlist","settings","notifications","packages"];
+                  const match = screens.find(s => s.includes(q));
+                  if (match) { navigate(match); setCmdPalette(false); }
+                }
+              }} />
+              <div style={{ fontSize: 11, color: C.dim, background: C.surfaceHigh, borderRadius: 6, padding: "3px 8px", fontWeight: 600 }}>ESC</div>
+            </div>
+            <div style={{ maxHeight: 320, overflowY: "auto" }}>
+              {[
+                { icon: "◉", label: "Home", screen: "home" },
+                { icon: "▣", label: t("schedule"), screen: "schedule" },
+                { icon: "✉", label: t("inbox"), screen: "inbox" },
+                { icon: "◈", label: t("clients"), screen: "clients" },
+                { icon: "✦", label: t("services"), screen: "services" },
+                { icon: "⬡", label: t("payments"), screen: "payments" },
+                { icon: "⟐", label: t("analytics"), screen: "analytics" },
+                { icon: "⊛", label: t("promotions"), screen: "promotions" },
+                { icon: "♥", label: t("loyalty"), screen: "loyalty" },
+                { icon: "◈", label: t("packages"), screen: "packages" },
+                { icon: "★", label: t("staff"), screen: "staff" },
+                { icon: "⏳", label: t("waitlist"), screen: "waitlist" },
+                { icon: "◉", label: t("settings"), screen: "settings" },
+                { icon: "◎", label: t("notifications"), screen: "notifications" },
+              ].filter(i => !cmdSearch || i.label.toLowerCase().includes(cmdSearch.toLowerCase())).map(i => (
+                <div key={i.screen} onClick={() => { navigate(i.screen); setCmdPalette(false); haptic("light"); }} style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 18px", cursor: "pointer", borderBottom: `1px solid ${C.border}` }} onMouseEnter={e => e.currentTarget.style.background = C.surfaceHigh} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <span style={{ fontSize: 16, width: 24, textAlign: "center", color: C.accent }}>{i.icon}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>{i.label}</span>
+                  <span style={{ marginLeft: "auto", fontSize: 11, color: C.dim }}>→</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: "10px 18px", borderTop: `1px solid ${C.border}`, fontSize: 11, color: C.dim }}>
+              <span style={{ background: C.surfaceHigh, borderRadius: 4, padding: "2px 6px", marginRight: 6, fontWeight: 600 }}>⌘K</span> to toggle · <span style={{ background: C.surfaceHigh, borderRadius: 4, padding: "2px 6px", marginLeft: 4, marginRight: 6, fontWeight: 600 }}>↵</span> to navigate
+            </div>
+          </div>
+        </div>
+      )}
       {showSidebar && <Sidebar active={screen} navigate={navigate} userRole={userRole} staffOwnerId={staffOwnerId} />}
       {needsPaywall && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
@@ -5833,7 +5954,9 @@ export default function App() {
         minHeight: "100vh",
       }}>
         <div style={{ maxWidth: showSidebar ? "none" : isDesktop ? 720 : 480, margin: "0 auto", padding: showSidebar ? "0 24px" : isDesktop ? "0 24px" : "0", width: "100%", overflowX: "hidden" }}>
-          <Screen navigate={navigate} userRole={userRole} staffOwnerId={staffOwnerId} setUserRole={setUserRole} setStaffOwnerId={setStaffOwnerId} />
+          <div key={screen} className="page-enter">
+            <Screen navigate={navigate} userRole={userRole} staffOwnerId={staffOwnerId} setUserRole={setUserRole} setStaffOwnerId={setStaffOwnerId} />
+          </div>
         </div>
       </div>
       {showAISidebar && <AISidebarPanel navigate={navigate} />}
