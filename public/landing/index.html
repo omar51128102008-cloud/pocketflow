@@ -9,6 +9,12 @@
 <meta property="og:description" content="AI-powered booking, payments, and business management. The comfort you deserve.">
 <meta property="og:image" content="https://www.spoolapp.io/notification-banner.png">
 <link rel="icon" href="https://www.spoolapp.io/favicon.ico">
+<link rel="apple-touch-icon" href="/logo192.png">
+<link rel="manifest" href="/manifest-landing.json">
+<meta name="theme-color" content="#a78bfa">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="spool">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#05040a;--s1:rgba(12,11,18,0.7);--bd:rgba(255,255,255,0.05);--bd2:rgba(255,255,255,0.09);--ac:#a78bfa;--acd:#7c3aed;--tx:#f0eeff;--mid:#8b8ba8;--dim:#4e4e6a;--gold:#f59e0b;--green:#34d399}
@@ -345,6 +351,17 @@ el.style.setProperty('--ty','50%');
 // AI demo animate
 var aiObs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting){var msgs=x.target.querySelectorAll('.am');msgs.forEach(function(m,i){setTimeout(function(){m.classList.add('v')},i*800)});aiObs.unobserve(x.target)}})},{threshold:.2});
 var aiD=document.getElementById('aidemo');if(aiD)aiObs.observe(aiD);
+
+// PWA Service Worker Registration
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw-notify.js',{scope:'/'}).then(function(r){
+      console.log('Service Worker registered for landing page',r);
+    }).catch(function(e){
+      console.log('Service Worker registration failed',e);
+    });
+  });
+}
 </script>
 </body>
 </html>
