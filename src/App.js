@@ -72,11 +72,11 @@ const GLOBAL_STYLES = `
   @keyframes wave1{0%,100%{d:path("M0,50 Q25,20 50,50 Q75,80 100,50")}50%{d:path("M0,50 Q25,80 50,50 Q75,20 100,50")}}
   @keyframes blobMorph{0%,100%{border-radius:60% 40% 30% 70%/60% 30% 70% 40%}25%{border-radius:30% 60% 70% 40%/50% 60% 30% 60%}50%{border-radius:50% 60% 30% 60%/30% 40% 70% 50%}75%{border-radius:40% 60% 50% 40%/70% 30% 50% 60%}}
   @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-  @keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pageIn{from{opacity:0}to{opacity:1}}
   @keyframes confetti-fall{0%{transform:translateY(-10vh) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
   @keyframes successPop{0%{transform:scale(0);opacity:0}50%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
   @keyframes cardPress{0%{transform:scale(1)}50%{transform:scale(0.97)}100%{transform:scale(1)}}
-  .page-enter{animation:pageIn 0.25s ease-out;will-change:opacity,transform}
+  .page-enter{animation:pageIn 0.25s ease-out;will-change:opacity}
   .card-press{transition:transform 0.15s ease}.card-press:active{transform:scale(0.97)}
   @keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(139,92,246,0.15)}50%{box-shadow:0 0 40px rgba(139,92,246,0.3)}}
   @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
