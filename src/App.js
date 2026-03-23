@@ -889,7 +889,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
                 <Card onClick={async () => {
                   const { data: { session } } = await supabase.auth.getSession();
                   if (!session) return;
-                  const link = `https://omar51128102008-cloud.github.io/pocketflow/book?id=${session.user.id}`;
+                  const link = `https://www.spoolapp.io/book?id=${session.user.id}`;
                   const ok = await copyToClipboard(link);
                   if (ok) { haptic("medium"); showToast("Booking link copied!", "info"); }
                 }} style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginTop: 10, background: `linear-gradient(135deg,${C.accentDark}22,${C.accent}18)`, borderColor: `${C.accent}33` }} className="card-press">
@@ -3239,7 +3239,7 @@ function Promotions({ navigate }) {
       setClients(cRes.data || []);
       setPastPromos(pRes.data || []);
       setBizName(bRes.data?.biz_name || "");
-      setBookingUrl(`https://omar51128102008-cloud.github.io/pocketflow/book?id=${uid}`);
+      setBookingUrl(`https://www.spoolapp.io/book?id=${uid}`);
     };
     load();
   }, []);
@@ -4400,9 +4400,9 @@ function BusinessProfile({ navigate }) {
           <Card style={{ padding: 16, marginBottom: 20 }}>
             <div style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>Share this link so clients can book directly</div>
             <div style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px", fontSize: 11, color: C.accent, fontWeight: 600, wordBreak: "break-all" }}>
-              {userId ? `omar51128102008-cloud.github.io/pocketflow/book?id=${userId}` : "Loading..."}
+              {userId ? `www.spoolapp.io/book?id=${userId}` : "Loading..."}
             </div>
-            <BtnPrimary onClick={() => userId && navigator.clipboard?.writeText(`https://omar51128102008-cloud.github.io/pocketflow/book?id=${userId}`)} style={{ width: "100%", padding: 12, marginTop: 12, fontSize: 13 }}>Copy Link</BtnPrimary>
+            <BtnPrimary onClick={() => userId && navigator.clipboard?.writeText(`https://www.spoolapp.io/book?id=${userId}`)} style={{ width: "100%", padding: 12, marginTop: 12, fontSize: 13 }}>Copy Link</BtnPrimary>
           </Card>
           {saved
             ? <div style={{ width: "100%", padding: 14, background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 14, fontWeight: 600, color: C.green, textAlign: "center" }}>✓ Saved!</div>
@@ -4454,7 +4454,7 @@ function ConnectedAccounts({ navigate }) {
     try { sessionStorage.setItem("google_oauth_state", state); } catch {}
     const params = new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID,
-      redirect_uri: "https://omar51128102008-cloud.github.io/pocketflow",
+      redirect_uri: "https://www.spoolapp.io",
       response_type: "token",
       scope: GOOGLE_SCOPES,
       include_granted_scopes: "true",
@@ -4590,8 +4590,8 @@ function Subscription({ navigate }) {
           price_id: p.priceId,
           user_id: session.user.id,
           email: session.user.email,
-          success_url: window.location.origin + "/pocketflow?checkout=success",
-          cancel_url: window.location.origin + "/pocketflow?checkout=cancel",
+          success_url: window.location.origin + "/?checkout=success",
+          cancel_url: window.location.origin + "/?checkout=cancel",
         }),
       });
       const data = await res.json();
@@ -4926,7 +4926,7 @@ function ShareLink({ navigate }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setLink(`https://omar51128102008-cloud.github.io/pocketflow/book?id=${session.user.id}`);
+      if (session) setLink(`https://www.spoolapp.io/book?id=${session.user.id}`);
     });
   }, []);
 
@@ -5852,7 +5852,7 @@ export default function App() {
     }
     // Register service worker
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/pocketflow/sw-notify.js").catch(() => {});
+      navigator.serviceWorker.register("/sw-notify.js").catch(() => {});
     }
   }, []);
 
@@ -5884,9 +5884,9 @@ export default function App() {
       try {
         new Notification("spool", {
           body: msg,
-          icon: "https://omar51128102008-cloud.github.io/pocketflow/notification-icon.png",
-          badge: "https://omar51128102008-cloud.github.io/pocketflow/notification-icon.png",
-          image: "https://omar51128102008-cloud.github.io/pocketflow/notification-banner.png",
+          icon: "https://www.spoolapp.io/notification-icon.png",
+          badge: "https://www.spoolapp.io/notification-icon.png",
+          image: "https://www.spoolapp.io/notification-banner.png",
           silent: false,
           requireInteraction: type === "booking",
           tag: "spool-" + Date.now(),

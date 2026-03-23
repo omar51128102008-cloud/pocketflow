@@ -1,6 +1,6 @@
 // spool Push Notification Service Worker
-var ICON = "https://omar51128102008-cloud.github.io/pocketflow/notification-icon.png";
-var BANNER = "https://omar51128102008-cloud.github.io/pocketflow/notification-banner.png";
+var ICON = "https://www.spoolapp.io/notification-icon.png";
+var BANNER = "https://www.spoolapp.io/notification-banner.png";
 
 self.addEventListener("push", function(event) {
   var data = event.data ? event.data.json() : {};
@@ -28,10 +28,10 @@ self.addEventListener("notificationclick", function(event) {
   if (event.action === "dismiss") return;
   var url = event.notification.data && event.notification.data.url
     ? event.notification.data.url
-    : "https://omar51128102008-cloud.github.io/pocketflow/";
+    : "https://www.spoolapp.io/";
   event.waitUntil(clients.matchAll({ type: "window" }).then(function(list) {
     for (var i = 0; i < list.length; i++) {
-      if (list[i].url.indexOf("pocketflow") !== -1 && "focus" in list[i]) return list[i].focus();
+      if (list[i].url.indexOf("spoolapp") !== -1 && "focus" in list[i]) return list[i].focus();
     }
     return clients.openWindow(url);
   }));
