@@ -5,7 +5,11 @@
       "destination": "/index.html"
     },
     {
-      "source": "/(?!static/|.*\\.\\w+$)",
+      "source": "/book",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(?!static/|.*\\.\\w+$|book)",
       "destination": "/landing/index.html"
     }
   ]
