@@ -121,8 +121,9 @@ const SectionLabel = ({ children }) => (
 );
 
 function useDesktop() {
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== "undefined" ? window.innerWidth >= 768 : false);
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const h = () => setIsDesktop(window.innerWidth >= 768);
     window.addEventListener("resize", h);
     return () => window.removeEventListener("resize", h);
@@ -1148,7 +1149,14 @@ function Inbox({ navigate, userRole, staffOwnerId }) {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
+  const [msgSearch, setMsgSearch] = useState("");
   const unread = msgs.filter(m => m.unread);
+  const q = msgSearch.trim().toLowerCase();
+  const filteredMsgs = !q ? msgs : msgs.filter(m =>
+    (m.name || "").toLowerCase().includes(q) ||
+    (m.preview || "").toLowerCase().includes(q) ||
+    (m.platform || "").toLowerCase().includes(q)
+  );
 
   useEffect(() => {
     const load = async () => {
@@ -1199,6 +1207,18 @@ function Inbox({ navigate, userRole, staffOwnerId }) {
           <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("inbox")}</div>
         </div>
         <div style={{ fontSize: 13, color: C.mid }}>AI handled {msgs.filter(m => m.handled).length} of {msgs.length} messages</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "10px 14px" }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input
+              value={msgSearch}
+              onChange={e => setMsgSearch(e.target.value)}
+              placeholder="Search by name, platform, or message..."
+              style={{ background: "none", border: "none", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", width: "100%", outline: "none" }}
+            />
+            {msgSearch && (
+              <div onClick={() => setMsgSearch("")} style={{ fontSize: 16, color: C.dim, cursor: "pointer", flexShrink: 0 }}>×</div>
+            )}
+          </div>
       </div>
       <div style={{ padding: "0 20px" }}>
         {loading ? (
@@ -1210,41 +1230,51 @@ function Inbox({ navigate, userRole, staffOwnerId }) {
             <div style={{ fontSize: 13, color: C.mid, lineHeight: 1.7 }}>Messages from clients will appear here.<br/>Connect WhatsApp or Instagram in Settings to start receiving messages automatically.</div>
             <BtnPrimary onClick={() => navigate("connections")} style={{ padding: "10px 24px", fontSize: 13, marginTop: 16 }}>Connect Accounts</BtnPrimary>
           </Card>
-        ) : (
+          ) : (
           <>
-            {unread.length > 0 && <div style={{ background: "#f43f5e11", border: "1px solid #f43f5e22", borderRadius: 12, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#f87171", fontWeight: 500 }}>⚠ {unread.length} message{unread.length > 1 ? "s" : ""} need your input</div>}
-            {msgs.map(m => (
-              <Card key={m.id} style={{ padding: 16, marginBottom: 12, borderColor: m.unread ? "#f43f5e22" : C.border }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  {m.unread && <div style={{ width: 7, height: 7, borderRadius: "50%", background: C.red, flexShrink: 0 }} />}
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    {m.platform === "whatsapp" ? <WA /> : <IG />}
-                    <span style={{ fontSize: 14, fontWeight: 600 }}>{m.name}</span>
-                  </div>
-                  <span style={{ fontSize: 11, color: C.dim, marginLeft: "auto" }}>{timeAgo(m.created_at)}</span>
-                </div>
-                <div style={{ fontSize: 13, color: C.mid, marginBottom: m.handled ? 12 : 0, lineHeight: 1.5 }}>"{m.preview}"</div>
-                {m.handled ? (
-                  <div style={{ background: "#10b98111", border: "1px solid #10b98122", borderRadius: 10, padding: "10px 12px" }}>
-                    <div style={{ fontSize: 10, color: C.green, fontWeight: 700, marginBottom: 6 }}>✓ AI AUTO-REPLIED</div>
-                    <div style={{ fontSize: 12, color: "#6ee7b7", lineHeight: 1.5 }}>{m.reply}</div>
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                      <BtnPrimary onClick={() => handleAI(m)} style={{ flex: 1, padding: 10, fontSize: 12 }}>AI Reply</BtnPrimary>
-                      <button onClick={() => { setReplyingTo(replyingTo === m.id ? null : m.id); setReplyText(""); }} style={{ flex: 1, padding: 10, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 12, fontWeight: 600, color: replyingTo === m.id ? C.accent : C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>{replyingTo === m.id ? "Cancel" : "Reply"}</button>
-                    </div>
-                    {replyingTo === m.id && (
-                      <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-                        <input value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => e.key === "Enter" && handleManualReply(m)} placeholder="Type your reply..." style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
-                        <BtnPrimary disabled={!replyText.trim() || sending} onClick={() => handleManualReply(m)} style={{ padding: "10px 16px", fontSize: 12 }}>{sending ? "..." : "Send"}</BtnPrimary>
+              {filteredMsgs.length === 0 ? (
+                <Card style={{ padding: 26, textAlign: "center" }}>
+                  <div style={{ fontSize: 36, marginBottom: 10 }}>⌕</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>No matches</div>
+                  <div style={{ fontSize: 13, color: C.mid, lineHeight: 1.6 }}>Try a different search query.</div>
+                </Card>
+              ) : (
+                <>
+                  {unread.length > 0 && <div style={{ background: "#f43f5e11", border: "1px solid #f43f5e22", borderRadius: 12, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#f87171", fontWeight: 500 }}>⚠ {unread.length} message{unread.length > 1 ? "s" : ""} need your input</div>}
+                  {filteredMsgs.map(m => (
+                    <Card key={m.id} style={{ padding: 16, marginBottom: 12, borderColor: m.unread ? "#f43f5e22" : C.border }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                        {m.unread && <div style={{ width: 7, height: 7, borderRadius: "50%", background: C.red, flexShrink: 0 }} />}
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          {m.platform === "whatsapp" ? <WA /> : <IG />}
+                          <span style={{ fontSize: 14, fontWeight: 600 }}>{m.name}</span>
+                        </div>
+                        <span style={{ fontSize: 11, color: C.dim, marginLeft: "auto" }}>{timeAgo(m.created_at)}</span>
                       </div>
-                    )}
-                  </div>
-                )}
-              </Card>
-            ))}
+                      <div style={{ fontSize: 13, color: C.mid, marginBottom: m.handled ? 12 : 0, lineHeight: 1.5 }}>"{m.preview}"</div>
+                      {m.handled ? (
+                        <div style={{ background: "#10b98111", border: "1px solid #10b98122", borderRadius: 10, padding: "10px 12px" }}>
+                          <div style={{ fontSize: 10, color: C.green, fontWeight: 700, marginBottom: 6 }}>✓ AI AUTO-REPLIED</div>
+                          <div style={{ fontSize: 12, color: "#6ee7b7", lineHeight: 1.5 }}>{m.reply}</div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                            <BtnPrimary onClick={() => handleAI(m)} style={{ flex: 1, padding: 10, fontSize: 12 }}>AI Reply</BtnPrimary>
+                            <button onClick={() => { setReplyingTo(replyingTo === m.id ? null : m.id); setReplyText(""); }} style={{ flex: 1, padding: 10, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 12, fontWeight: 600, color: replyingTo === m.id ? C.accent : C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>{replyingTo === m.id ? "Cancel" : "Reply"}</button>
+                          </div>
+                          {replyingTo === m.id && (
+                            <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+                              <input value={replyText} onChange={e => setReplyText(e.target.value)} onKeyDown={e => e.key === "Enter" && handleManualReply(m)} placeholder="Type your reply..." style={{ flex: 1, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
+                              <BtnPrimary disabled={!replyText.trim() || sending} onClick={() => handleManualReply(m)} style={{ padding: "10px 16px", fontSize: 12 }}>{sending ? "..." : "Send"}</BtnPrimary>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </Card>
+                  ))}
+                </>
+              )}
           </>
         )}
       </div>
@@ -2128,7 +2158,12 @@ function Settings({ navigate, userRole, staffOwnerId }) {
       const { data } = await supabase.from("business_profiles").select("ai_name,settings").eq("user_id", bizUid).single();
       if (data?.ai_name) setAiName(data.ai_name);
       if (data?.settings) {
-        const s = typeof data.settings === "string" ? JSON.parse(data.settings) : data.settings;
+        let s = data.settings;
+        try {
+          s = typeof data.settings === "string" ? JSON.parse(data.settings) : data.settings;
+        } catch {
+          s = {};
+        }
         if (s.aiReplies !== undefined) setAiReplies(s.aiReplies);
         if (s.aiBookings !== undefined) setAiBookings(s.aiBookings);
         if (s.aiReminders !== undefined) setAiReminders(s.aiReminders);
@@ -2166,7 +2201,11 @@ function Settings({ navigate, userRole, staffOwnerId }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       const { data: existing } = await supabase.from("business_profiles").select("settings").eq("user_id", session.user.id).single();
-      const prev = existing?.settings || {};
+      let prev = existing?.settings || {};
+      if (typeof prev === "string") {
+        try { prev = JSON.parse(prev); } catch { prev = {}; }
+      }
+      if (!prev || typeof prev !== "object" || Array.isArray(prev)) prev = {};
       const settings = { ...prev, aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, aiEditClients, aiEditStaff, aiEditSettings, tone, bufferTime, maxDaily, sunday, paymentDetails, depositPct: parseInt(depositPct) || 30 };
       await supabase.from("business_profiles").upsert({ user_id: session.user.id, settings }, { onConflict: "user_id" });
       setAutoSaveMsg("Saved");
@@ -3286,7 +3325,7 @@ function Booking({ navigate }) {
   const [loadingServices, setLoadingServices] = useState(true);
 
   // Get owner ID from URL param (public booking page) or from session (in-app)
-  const ownerIdFromUrl = new URLSearchParams(window.location.search).get("id");
+  const ownerIdFromUrl = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("id") : null;
 
   useEffect(() => {
     const load = async () => {
@@ -4255,16 +4294,16 @@ function ConnectedAccounts({ navigate }) {
 
   // Check if already connected on mount + listen for token changes
   const checkGoogleToken = () => {
-    const token = localStorage.getItem("google_access_token");
-    const email = localStorage.getItem("google_email");
-    const expiry = localStorage.getItem("google_token_expiry");
-    if (token && expiry && Date.now() < parseInt(expiry)) {
+    const email = sessionStorage.getItem("google_email");
+    const expiry = sessionStorage.getItem("google_token_expiry");
+    const expNum = parseInt(expiry || "", 10);
+    if (expiry && Number.isFinite(expNum) && Date.now() < expNum) {
       setGoogleConnected(true);
       setGoogleEmail(email);
     } else {
-      localStorage.removeItem("google_access_token");
-      localStorage.removeItem("google_email");
-      localStorage.removeItem("google_token_expiry");
+      sessionStorage.removeItem("google_access_token");
+      sessionStorage.removeItem("google_email");
+      sessionStorage.removeItem("google_token_expiry");
       setGoogleConnected(false);
       setGoogleEmail(null);
     }
@@ -4278,21 +4317,24 @@ function ConnectedAccounts({ navigate }) {
 
   const connectGoogle = () => {
     setGoogleLoading(true);
+    const state = Math.random().toString(36).slice(2);
+    try { sessionStorage.setItem("google_oauth_state", state); } catch {}
     const params = new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID,
       redirect_uri: "https://omar51128102008-cloud.github.io/pocketflow",
       response_type: "token",
       scope: GOOGLE_SCOPES,
       include_granted_scopes: "true",
-      state: "google_calendar_auth",
+      state,
     });
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
   };
 
   const disconnectGoogle = () => {
-    localStorage.removeItem("google_access_token");
-    localStorage.removeItem("google_email");
-    localStorage.removeItem("google_token_expiry");
+    sessionStorage.removeItem("google_access_token");
+    sessionStorage.removeItem("google_email");
+    sessionStorage.removeItem("google_token_expiry");
+    try { sessionStorage.removeItem("google_oauth_state"); } catch {}
     setGoogleConnected(false);
     setGoogleEmail(null);
     setToast("Google Calendar disconnected");
@@ -5781,20 +5823,24 @@ export default function App() {
 
     // Handle Google OAuth callback (token in URL hash)
     const hash = window.location.hash;
-    if (hash && hash.includes("access_token") && hash.includes("state=google_calendar_auth")) {
+    if (hash && hash.includes("access_token")) {
       const hashParams = new URLSearchParams(hash.replace("#", ""));
       const accessToken = hashParams.get("access_token");
       const expiresIn = parseInt(hashParams.get("expires_in") || "3600");
+      const callbackState = hashParams.get("state");
+      const expectedState = sessionStorage.getItem("google_oauth_state");
+      if (expectedState && callbackState && callbackState !== expectedState) return;
+      try { sessionStorage.removeItem("google_oauth_state"); } catch {}
       if (accessToken) {
         // Save token locally
-        localStorage.setItem("google_access_token", accessToken);
-        localStorage.setItem("google_token_expiry", String(Date.now() + expiresIn * 1000));
+        sessionStorage.setItem("google_access_token", accessToken);
+        sessionStorage.setItem("google_token_expiry", String(Date.now() + expiresIn * 1000));
 
         // Get user info + save token to proxy (so book.html can use it)
         fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
           headers: { Authorization: "Bearer " + accessToken }
         }).then(r => r.json()).then(async info => {
-          if (info.email) localStorage.setItem("google_email", info.email);
+          if (info.email) sessionStorage.setItem("google_email", info.email);
           // Get owner's Supabase user ID
           const { data: { session } } = await supabase.auth.getSession();
           const ownerId = session?.user?.id;
