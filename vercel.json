@@ -1,16 +1,9 @@
 {
+  "buildCommand": "npm run build && mv build/index.html build/app.html && cp build/landing/index.html build/index.html",
+  "outputDirectory": "build",
   "rewrites": [
-    {
-      "source": "/app/:path*",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/book",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/(?!static/|.*\\.\\w+$|book)",
-      "destination": "/landing/index.html"
-    }
+    { "source": "/app", "destination": "/app.html" },
+    { "source": "/app/:path*", "destination": "/app.html" },
+    { "source": "/book", "destination": "/book.html" }
   ]
 }

@@ -1,6 +1,6 @@
 // spool Push Notification Service Worker
-var ICON = "https://www.spoolapp.io/notification-icon.png";
-var BANNER = "https://www.spoolapp.io/notification-banner.png";
+var ICON = "/notification-icon.png";
+var BANNER = "/notification-banner.png";
 
 self.addEventListener("push", function(event) {
   var data = event.data ? event.data.json() : {};
@@ -11,7 +11,7 @@ self.addEventListener("push", function(event) {
     badge: data.badge || ICON,
     image: data.image || BANNER,
     vibrate: [200, 100, 200],
-    data: { url: data.url || "/" },
+    data: { url: data.url || "/app" },
     tag: data.tag || "spool-" + Date.now(),
     renotify: true,
     requireInteraction: true,
@@ -28,7 +28,7 @@ self.addEventListener("notificationclick", function(event) {
   if (event.action === "dismiss") return;
   var url = event.notification.data && event.notification.data.url
     ? event.notification.data.url
-    : "https://www.spoolapp.io/";
+    : "/app";
   event.waitUntil(clients.matchAll({ type: "window" }).then(function(list) {
     for (var i = 0; i < list.length; i++) {
       if (list[i].url.indexOf("spoolapp") !== -1 && "focus" in list[i]) return list[i].focus();

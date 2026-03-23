@@ -2,7 +2,7 @@
   "name": "spool",
   "short_name": "spool",
   "description": "AI-powered booking & business management for small businesses",
-  "start_url": "/",
+  "start_url": "/app",
   "display": "standalone",
   "background_color": "#0a0a12",
   "theme_color": "#8b5cf6",
