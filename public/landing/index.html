@@ -7,8 +7,8 @@
 <meta name="description" content="AI-powered booking, payments, and business management for small businesses.">
 <meta property="og:title" content="spool — Run your business on autopilot">
 <meta property="og:description" content="AI-powered booking, payments, and business management. The comfort you deserve.">
-<meta property="og:image" content="/appnotification-banner.png">
-<link rel="icon" href="/appfavicon.ico">
+<meta property="og:image" content="https://www.spoolapp.io/notification-banner.png">
+<link rel="icon" href="https://www.spoolapp.io/favicon.ico">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#05040a;--s1:rgba(12,11,18,0.7);--bd:rgba(255,255,255,0.05);--bd2:rgba(255,255,255,0.09);--ac:#a78bfa;--acd:#7c3aed;--tx:#f0eeff;--mid:#8b8ba8;--dim:#4e4e6a;--gold:#f59e0b;--green:#34d399}
@@ -53,11 +53,20 @@ nav.scrolled{background:rgba(5,4,10,0.85);backdrop-filter:blur(28px);-webkit-bac
 .hc{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:80px}
 
 /* 3D MOCKUP */
-.mw{perspective:1400px;position:relative}
+.mw{perspective:1400px;position:relative;transform-style:preserve-3d}
 .mgl{position:absolute;bottom:-50px;left:50%;transform:translateX(-50%);width:300px;height:40px;border-radius:50%;background:radial-gradient(ellipse,rgba(124,58,237,.3),transparent);filter:blur(14px)}
-.mk{width:300px;height:600px;border-radius:40px;background:linear-gradient(170deg,#12101f 0%,#08071a 100%);border:1.5px solid rgba(255,255,255,.06);box-shadow:0 60px 140px rgba(124,58,237,.15),0 0 80px rgba(124,58,237,.06),0 0 0 1px rgba(255,255,255,.02) inset;padding:10px;position:relative;overflow:hidden}
-.mk::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:28px;background:var(--bg);border-radius:0 0 16px 16px;z-index:2}
-.mi{width:100%;height:100%;border-radius:32px;overflow:hidden;background:#08071a;padding:18px 14px;display:flex;flex-direction:column;gap:10px}
+.mk{width:300px;height:600px;border-radius:40px;background:linear-gradient(170deg,#12101f 0%,#08071a 100%);border:1.5px solid rgba(255,255,255,.06);box-shadow:0 60px 140px rgba(124,58,237,.15),0 0 80px rgba(124,58,237,.06),0 0 0 1px rgba(255,255,255,.02) inset;padding:10px;position:relative;overflow:hidden;transform-style:preserve-3d;isolation:isolate;--mx:50%;--my:50%}
+.mk::after{content:'';position:absolute;inset:0;z-index:2;background:radial-gradient(circle at var(--mx) var(--my),rgba(167,139,250,.28),transparent 56%);mix-blend-mode:screen;opacity:.9;transform:translateZ(46px);pointer-events:none}
+.mk::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:28px;background:var(--bg);border-radius:0 0 16px 16px;z-index:4}
+.mk-holo{position:absolute;inset:-22px;z-index:1;pointer-events:none;transform-style:preserve-3d}
+.holo-layer{position:absolute;inset:0;border-radius:44px;mix-blend-mode:screen;opacity:.9}
+.holo-layer.l1{background:radial-gradient(circle at 30% 20%,rgba(196,181,253,.24),transparent 58%),linear-gradient(140deg,rgba(167,139,250,.14),rgba(0,0,0,0));transform:translateZ(14px) rotateX(10deg) rotateY(-16deg);animation:holo1 6s ease-in-out infinite}
+.holo-layer.l2{background:radial-gradient(circle at 70% 30%,rgba(167,139,250,.22),transparent 60%),linear-gradient(140deg,rgba(196,181,253,.12),rgba(0,0,0,0));transform:translateZ(34px) rotateX(-6deg) rotateY(12deg);opacity:.55;filter:blur(1.2px);animation:holo2 5.5s ease-in-out infinite}
+.holo-layer.l3{background:radial-gradient(circle at 40% 70%,rgba(167,139,250,.18),transparent 60%),linear-gradient(140deg,rgba(167,139,250,.08),rgba(0,0,0,0));transform:translateZ(60px) rotateX(16deg) rotateY(8deg);opacity:.35;filter:blur(2.2px);animation:holo3 7s ease-in-out infinite}
+@keyframes holo1{0%,100%{transform:translateZ(14px) translateY(0) rotateX(10deg) rotateY(-16deg)}50%{transform:translateZ(28px) translateY(-10px) rotateX(13deg) rotateY(-8deg)}}
+@keyframes holo2{0%,100%{transform:translateZ(34px) translateY(0) rotateX(-6deg) rotateY(12deg)}50%{transform:translateZ(52px) translateY(-12px) rotateX(-11deg) rotateY(16deg)}}
+@keyframes holo3{0%,100%{transform:translateZ(60px) translateY(0) rotateX(16deg) rotateY(8deg)}50%{transform:translateZ(78px) translateY(-9px) rotateX(22deg) rotateY(2deg)}}
+.mi{width:100%;height:100%;border-radius:32px;overflow:hidden;background:#08071a;padding:18px 14px;display:flex;flex-direction:column;gap:10px;position:relative;z-index:3;transform:translateZ(26px);backface-visibility:hidden}
 .m-h{font-size:9px;color:var(--dim);text-align:center;padding:6px 0}
 .m-g{font-size:17px;font-weight:800;line-height:1.3}
 .m-g b{color:var(--ac)}
@@ -88,8 +97,12 @@ section{padding:110px 24px;max-width:1100px;margin:0 auto}
 
 /* FEATURE CARDS */
 .cd{background:rgba(10,9,16,0.6);border:1px solid var(--bd);border-radius:22px;padding:32px;transition:all .4s cubic-bezier(.16,1,.3,1);position:relative;overflow:hidden;backdrop-filter:blur(12px)}
-.cd::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,.15),transparent);opacity:0;transition:opacity .4s}
-.cd:hover{transform:translateY(-5px);border-color:rgba(167,139,250,.12);box-shadow:0 16px 48px rgba(124,58,237,.08)}.cd:hover::after{opacity:1}
+.cd::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,.15),transparent);opacity:0;transition:opacity .4s;z-index:2}
+.cd:hover{--lift:-5px;border-color:rgba(167,139,250,.12);box-shadow:0 16px 48px rgba(124,58,237,.08)}.cd:hover::after{opacity:1}
+.tilt3d{--rx:0deg;--ry:0deg;--tx:50%;--ty:50%;--lift:0px;transform-style:preserve-3d;will-change:transform;transform:translateY(var(--lift)) perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry));transition:transform .18s ease,box-shadow .25s ease,border-color .25s ease}
+.tilt3d::before{content:'';position:absolute;inset:-2px;z-index:1;background:radial-gradient(700px circle at var(--tx) var(--ty),rgba(167,139,250,.22),transparent 46%);opacity:.0;pointer-events:none;mix-blend-mode:screen;transform:translateZ(40px);transition:opacity .18s ease}
+.tilt3d:hover::before{opacity:.9}
+.tilt3d > *{position:relative;z-index:2}
 .c-icon{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(167,139,250,.05));border:1px solid rgba(167,139,250,.1);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
 .c-icon svg{width:22px;height:22px;stroke:var(--ac);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .c-t{font-size:18px;font-weight:700;margin-bottom:8px}
@@ -169,14 +182,14 @@ section{padding:70px 18px}
 <canvas id="bg3d"></canvas>
 <div class="content">
 
-<nav id="nav"><div class="nl"><img src="/appnotification-icon.png" alt="spool"><span>spool</span></div><div class="nr"><a href="#features">Features</a><a href="#how">How it Works</a><a href="#pricing">Pricing</a><a href="#investors">Investors</a><a href="/app" class="btn bg">Get Started</a></div></nav>
+<nav id="nav"><div class="nl"><img src="https://www.spoolapp.io/notification-icon.png" alt="spool"><span>spool</span></div><div class="nr"><a href="#features">Features</a><a href="#how">How it Works</a><a href="#pricing">Pricing</a><a href="#investors">Investors</a><a href="/app" class="btn bg">Get Started</a></div></nav>
 
 <div class="hero">
 <div class="hero-badge rv"><div class="dot"></div><span>AI-Powered Business Management</span></div>
 <h1 class="rv d1">Run your business<br>on <span class="gt">autopilot</span></h1>
 <p class="rv d2">spool handles your bookings, payments, clients, and team &mdash; so you can focus on what you actually love doing.</p>
 <div class="hc rv d3"><a href="/app" class="btn bg bb">Start Free Trial</a><a href="#features" class="btn bgh bb">See How It Works</a></div>
-<div class="mw rv d4"><div class="mk" id="mk"><div class="mi"><div class="m-h">9:41 AM &middot; spool</div><div class="m-g">Good morning,<br><b>Omar</b></div><div class="m-s"><div class="m-sc"><div class="m-sv" style="color:var(--gold)">$2,400</div><div class="m-sl">Revenue</div></div><div class="m-sc"><div class="m-sv">12</div><div class="m-sl">Appointments</div></div><div class="m-sc"><div class="m-sv" style="color:var(--ac)">8</div><div class="m-sl">AI Handled</div></div><div class="m-sc"><div class="m-sv" style="color:var(--green)">47</div><div class="m-sl">Clients</div></div></div><div class="m-r"><div class="m-av">JC</div><div><div class="m-t">Jonathan C.</div><div class="m-su">Strategy Session &middot; 2:00 PM</div></div><div class="m-rr">$150</div></div><div class="m-r"><div class="m-av">LM</div><div><div class="m-t">Lisa M.</div><div class="m-su">Brand Consultation &middot; 4:30 PM</div></div><div class="m-rr">$200</div></div><div class="m-orb"></div><div class="m-ai">Ask me anything about your business...</div></div></div><div class="mgl"></div></div>
+<div class="mw rv d4"><div class="mk" id="mk"><div class="mk-holo" aria-hidden="true"><div class="holo-layer l1"></div><div class="holo-layer l2"></div><div class="holo-layer l3"></div></div><div class="mi"><div class="m-h">9:41 AM &middot; spool</div><div class="m-g">Good morning,<br><b>Omar</b></div><div class="m-s"><div class="m-sc"><div class="m-sv" style="color:var(--gold)">$2,400</div><div class="m-sl">Revenue</div></div><div class="m-sc"><div class="m-sv">12</div><div class="m-sl">Appointments</div></div><div class="m-sc"><div class="m-sv" style="color:var(--ac)">8</div><div class="m-sl">AI Handled</div></div><div class="m-sc"><div class="m-sv" style="color:var(--green)">47</div><div class="m-sl">Clients</div></div></div><div class="m-r"><div class="m-av">JC</div><div><div class="m-t">Jonathan C.</div><div class="m-su">Strategy Session &middot; 2:00 PM</div></div><div class="m-rr">$150</div></div><div class="m-r"><div class="m-av">LM</div><div><div class="m-t">Lisa M.</div><div class="m-su">Brand Consultation &middot; 4:30 PM</div></div><div class="m-rr">$200</div></div><div class="m-orb"></div><div class="m-ai">Ask me anything about your business...</div></div></div><div class="mgl"></div></div>
 </div>
 
 <div class="sb"><div class="si rv"><div class="sn" style="color:var(--ac)">500+</div><div class="sl">Active businesses</div></div><div class="si rv d1"><div class="sn">10K+</div><div class="sl">Bookings processed</div></div><div class="si rv d2"><div class="sn" style="color:var(--gold)">$2M+</div><div class="sl">Revenue tracked</div></div><div class="si rv d3"><div class="sn" style="color:var(--green)">98%</div><div class="sl">Uptime</div></div></div>
@@ -218,32 +231,52 @@ section{padding:70px 18px}
 <div class="pc rv d2"><div class="pn">Business</div><div class="pa">$79<span>/mo</span></div><div class="pd">For teams that need everything</div><ul class="pf"><li>Everything in Pro</li><li>WhatsApp & Instagram</li><li>Team group chat</li><li>Custom branding</li><li>API access</li><li>Dedicated manager</li></ul><a href="/app" class="btn bgh" style="width:100%">Contact Sales</a></div>
 </div></section>
 
-<section id="investors"><div class="ib rv"><div class="lbl" style="text-align:center">For Investors</div><div class="ttl" style="text-align:center;margin-bottom:16px">The $180B opportunity</div><p style="font-size:16px;color:var(--mid);line-height:1.7;margin-bottom:32px">12M+ small businesses in the US alone lack modern booking and management software. spool is the AI-native platform they've been waiting for &mdash; combining booking, payments, CRM, and an intelligent assistant that actually takes action.</p><a href="/cdn-cgi/l/email-protection#78101d141417380b0817171456190808" class="btn bg bb">Get in Touch</a></div></section>
+<section id="investors"><div class="ib rv"><div class="lbl" style="text-align:center">For Investors</div><div class="ttl" style="text-align:center;margin-bottom:16px">The $180B opportunity</div><p style="font-size:16px;color:var(--mid);line-height:1.7;margin-bottom:32px">12M+ small businesses in the US alone lack modern booking and management software. spool is the AI-native platform they've been waiting for &mdash; combining booking, payments, CRM, and an intelligent assistant that actually takes action.</p><a href="mailto:hello@spool.app" class="btn bg bb">Get in Touch</a></div></section>
 
 <div class="fc"><div class="fcg"></div><h2 class="rv">The comfort<br>you <span class="gt">deserve</span>.</h2><p class="rv d1">Stop managing. Start growing.</p><a href="/app" class="btn bg bb rv d2">Get Started &mdash; It's Free</a><div style="font-size:13px;color:var(--dim);margin-top:16px;position:relative" class="rv d3">No credit card required</div></div>
 
-<footer><div class="ft"><div class="fbb"><div class="nl"><img src="/appnotification-icon.png" alt="spool" style="width:32px;height:32px;border-radius:10px"><span style="font-size:18px;font-weight:800">spool</span></div><div class="ftg">The comfort you deserve. AI-powered business management for small businesses everywhere.</div></div><div class="fcl"><h4>Product</h4><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="/app">Launch App</a></div><div class="fcl"><h4>Company</h4><a href="#">About</a><a href="#">Blog</a><a href="#">Careers</a></div><div class="fcl"><h4>Legal</h4><a href="#">Terms</a><a href="#">Privacy</a><a href="/cdn-cgi/l/email-protection#caa2afa6a6a58ab9baa5a5a6e4abbaba">Contact</a></div></div><div class="fbt"><span>&copy; 2025 spool. All rights reserved.</span><div style="display:flex;gap:18px"><a href="#" style="color:var(--dim);transition:color .2s" onmouseover="this.style.color='#a78bfa'" onmouseout="this.style.color='#4e4e6a'">Twitter</a><a href="#" style="color:var(--dim);transition:color .2s" onmouseover="this.style.color='#a78bfa'" onmouseout="this.style.color='#4e4e6a'">LinkedIn</a><a href="#" style="color:var(--dim);transition:color .2s" onmouseover="this.style.color='#a78bfa'" onmouseout="this.style.color='#4e4e6a'">Instagram</a></div></div></footer>
+<footer><div class="ft"><div class="fbb"><div class="nl"><img src="https://www.spoolapp.io/notification-icon.png" alt="spool" style="width:32px;height:32px;border-radius:10px"><span style="font-size:18px;font-weight:800">spool</span></div><div class="ftg">The comfort you deserve. AI-powered business management for small businesses everywhere.</div></div><div class="fcl"><h4>Product</h4><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="/app">Launch App</a></div><div class="fcl"><h4>Company</h4><a href="#">About</a><a href="#">Blog</a><a href="#">Careers</a></div><div class="fcl"><h4>Legal</h4><a href="#">Terms</a><a href="#">Privacy</a><a href="mailto:hello@spool.app">Contact</a></div></div><div class="fbt"><span>&copy; 2025 spool. All rights reserved.</span><div style="display:flex;gap:18px"><a href="#" style="color:var(--dim);transition:color .2s" onmouseover="this.style.color='#a78bfa'" onmouseout="this.style.color='#4e4e6a'">Twitter</a><a href="#" style="color:var(--dim);transition:color .2s" onmouseover="this.style.color='#a78bfa'" onmouseout="this.style.color='#4e4e6a'">LinkedIn</a><a href="#" style="color:var(--dim);transition:color .2s" onmouseover="this.style.color='#a78bfa'" onmouseout="this.style.color='#4e4e6a'">Instagram</a></div></div></footer>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // 3D particle field background
 var c=document.getElementById('bg3d'),ctx=c.getContext('2d');
 var W,H,pts=[],mouse={x:0,y:0};
 function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
 resize();window.addEventListener('resize',resize);
-for(var i=0;i<120;i++)pts.push({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random()*2,vz:0.001+Math.random()*0.003,s:Math.random()*1.5+0.5});
+for(var i=0;i<140;i++)pts.push({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random()*2,vz:0.001+Math.random()*0.003,s:Math.random()*1.5+0.5});
 document.addEventListener('mousemove',function(e){mouse.x=e.clientX;mouse.y=e.clientY});
 function drawBg(){
-ctx.clearRect(0,0,W,H);
-var cx=W/2,cy=H/2,scroll=window.scrollY,maxD=200;
+ctx.globalCompositeOperation='source-over';
+ctx.fillStyle='rgba(5,4,10,0.28)';
+ctx.fillRect(0,0,W,H);
+ctx.globalCompositeOperation='lighter';
+var cx=W/2,cy=H/2,scroll=window.scrollY,maxD=220;
+var t=Date.now()*0.0004;
+var rotY=(mouse.x/W-0.5)*0.9 + Math.sin(t)*0.18;
+var rotX=(mouse.y/H-0.5)*0.6 + Math.cos(t)*0.12;
+var cosY=Math.cos(rotY),sinY=Math.sin(rotY),cosX=Math.cos(rotX),sinX=Math.sin(rotX);
 for(var i=0;i<pts.length;i++){
 var p=pts[i];p.z-=p.vz;if(p.z<=0){p.z=2;p.x=Math.random()*2-1;p.y=Math.random()*2-1}
-var scale=1/p.z,sx=cx+p.x*cx*scale,sy=cy+p.y*cy*scale-scroll*0.1;
-var r=p.s*scale*1.2,a=Math.max(0,(1-p.z/2)*0.5);
+var x=p.x,y=p.y,z=p.z;
+var x1=x*cosY + z*sinY;
+var z1=z*cosY - x*sinY;
+var y1=y*cosX - z1*sinX;
+var z2=z1*cosX + y*sinX;
+if(z2<0.12)z2=0.12;
+var scale=1/z2,sx=cx+x1*cx*scale,sy=cy+y1*cy*scale-scroll*0.1;
+var r=p.s*scale*1.2,a=Math.max(0,(1-z2/2)*0.5);
 // Connect nearby particles
-for(var j=i+1;j<pts.length;j++){var q=pts[j],qs=1/q.z,qx=cx+q.x*cx*qs,qy=cy+q.y*cy*qs-scroll*0.1;
-var dx=sx-qx,dy=sy-qy,d=Math.sqrt(dx*dx+dy*dy);
-if(d<maxD){ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(qx,qy);ctx.strokeStyle='rgba(167,139,250,'+(0.03*(1-d/maxD))+')';ctx.lineWidth=0.5;ctx.stroke()}}
+for(var j=i+1;j<pts.length;j++){
+var q=pts[j],qx=q.x,qy=q.y,qz=q.z;
+var qx1=qx*cosY + qz*sinY;
+var qz1=qz*cosY - qx*sinY;
+var qy1=qy*cosX - qz1*sinX;
+var qz2=qz1*cosX + qy*sinX;
+if(qz2<0.12)qz2=0.12;
+var qs=1/qz2,qpx=cx+qx1*cx*qs,qpy=cy+qy1*cy*qs-scroll*0.1;
+var dx=sx-qpx,dy=sy-qpy,d=Math.sqrt(dx*dx+dy*dy);
+if(d<maxD){ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(qpx,qpy);ctx.strokeStyle='rgba(167,139,250,'+(0.03*(1-d/maxD))+')';ctx.lineWidth=0.5;ctx.stroke()}}
 // Mouse repulsion
 var mdx=sx-mouse.x,mdy=sy-mouse.y,md=Math.sqrt(mdx*mdx+mdy*mdy);
 if(md<150){var force=(1-md/150)*0.0008;p.x+=mdx/md*force;p.y+=mdy/md*force}
@@ -259,6 +292,21 @@ if(window.innerWidth<768)return;
 targetX=(e.clientX/window.innerWidth-0.5)*14;
 targetY=(e.clientY/window.innerHeight-0.5)*10;
 });
+if(mkEl){
+mkEl.style.setProperty('--mx','50%');
+mkEl.style.setProperty('--my','50%');
+mkEl.addEventListener('pointermove',function(e){
+var r=mkEl.getBoundingClientRect();
+var x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+var y=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));
+mkEl.style.setProperty('--mx',(x*100).toFixed(1)+'%');
+mkEl.style.setProperty('--my',(y*100).toFixed(1)+'%');
+});
+mkEl.addEventListener('pointerleave',function(){
+mkEl.style.setProperty('--mx','50%');
+mkEl.style.setProperty('--my','50%');
+});
+}
 function lerpMock(){
 currentX+=(targetX-currentX)*0.06;
 currentY+=(targetY-currentY)*0.06;
@@ -273,5 +321,30 @@ document.querySelectorAll('.rv').forEach(function(el){obs.observe(el)});
 window.addEventListener('scroll',function(){document.getElementById('nav').classList.toggle('scrolled',window.scrollY>50)});
 // Smooth anchor scroll
 document.querySelectorAll('a[href^="#"]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();var t=document.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})})});
+// 3D tilt for feature cards
+document.querySelectorAll('.cd').forEach(function(el){
+el.classList.add('tilt3d');
+el.addEventListener('pointermove',function(e){
+var r=el.getBoundingClientRect();
+var px=(e.clientX-r.left)/r.width;
+var py=(e.clientY-r.top)/r.height;
+var rx=(0.5-py)*10;
+var ry=(px-0.5)*14;
+el.style.setProperty('--rx',rx.toFixed(2)+'deg');
+el.style.setProperty('--ry',ry.toFixed(2)+'deg');
+el.style.setProperty('--tx',(px*100).toFixed(1)+'%');
+el.style.setProperty('--ty',(py*100).toFixed(1)+'%');
+});
+el.addEventListener('pointerleave',function(){
+el.style.setProperty('--rx','0deg');
+el.style.setProperty('--ry','0deg');
+el.style.setProperty('--tx','50%');
+el.style.setProperty('--ty','50%');
+});
+});
 // AI demo animate
-var aiObs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting){var msgs=x.target.querySelectorAll('.am');msgs.forEach(function(m,i){setTimeout
+var aiObs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting){var msgs=x.target.querySelectorAll('.am');msgs.forEach(function(m,i){setTimeout(function(){m.classList.add('v')},i*800)});aiObs.unobserve(x.target)}})},{threshold:.2});
+var aiD=document.getElementById('aidemo');if(aiD)aiObs.observe(aiD);
+</script>
+</body>
+</html>
