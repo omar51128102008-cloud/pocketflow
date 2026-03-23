@@ -1,22 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/",
-      "destination": "/landing.html"
-    },
-    {
-      "source": "/app",
-      "destination": "/index.html"
-    },
-    {
       "source": "/app/:path*",
       "destination": "/index.html"
-    }
-  ],
-  "routes": [
+    },
     {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "source": "/(?!static/|.*\\.\\w+$)",
+      "destination": "/landing/index.html"
     }
   ]
 }
