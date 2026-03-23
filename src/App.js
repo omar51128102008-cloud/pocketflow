@@ -926,7 +926,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
       </div>
 
       {selectedAppt && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setSelectedAppt(null)}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 2000, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setSelectedAppt(null)}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 520, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
@@ -1052,7 +1052,7 @@ function Schedule({ navigate, userRole, staffOwnerId }) {
         )}
       </div>
       {selectedAppt && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => { setSelectedAppt(null); setReminderSent(null); }}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 2000, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => { setSelectedAppt(null); setReminderSent(null); }}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 520, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
@@ -1614,7 +1614,7 @@ function Clients({ navigate, userRole, staffOwnerId }) {
       </div>
 
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 2000, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add New Client</div>
@@ -1628,7 +1628,7 @@ function Clients({ navigate, userRole, staffOwnerId }) {
 
       {/* Import Modal */}
       {showImport && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowImport(false)}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 2000, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowImport(false)}>
           <div style={{ background: C.surfaceSolid, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 560, padding: "24px 20px 32px", maxHeight: "85vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
 
@@ -1890,7 +1890,7 @@ function Services({ navigate }) {
 
       {/* Add / Edit Modal */}
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 2000, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 20, fontWeight: 800, marginBottom: 20 }}>{editingId ? "Edit Service" : "New Service"}</div>
 
@@ -1965,9 +1965,13 @@ function Payments({ navigate }) {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== "undefined" ? window.innerWidth >= 768 : false);
+  const [paymentSaving, setPaymentSaving] = useState(false);
+  const [paymentSaved, setPaymentSaved] = useState(false);
+  const [paymentSettingsLoaded, setPaymentSettingsLoaded] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const onResize = () => setIsDesktop(window.innerWidth >= 768);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -1984,6 +1988,36 @@ function Payments({ navigate }) {
     load();
   }, []);
 
+  // Load saved payment settings (deposit protection + fees)
+  useEffect(() => {
+    const loadPaymentSettings = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from("business_profiles").select("settings").eq("user_id", session.user.id).single();
+
+      const raw = data?.settings;
+      let s = {};
+      try { s = typeof raw === "string" ? JSON.parse(raw) : raw; } catch { s = {}; }
+      if (!s || typeof s !== "object" || Array.isArray(s)) s = {};
+
+      if (s.depositEnabled !== undefined) setDepositEnabled(!!s.depositEnabled);
+
+      const dt = s.depositType || (s.depositPct !== undefined ? "percent" : "percent");
+      setDepositType(dt);
+      const dv = dt === "fixed" ? (s.depositAmount ?? 30) : (s.depositAmount ?? s.depositPct ?? 30);
+      setDepositAmount(String(dv));
+
+      if (s.autoCharge !== undefined) setAutoCharge(!!s.autoCharge);
+      if (s.noShowFee !== undefined) setNoShowFee(!!s.noShowFee);
+      if (s.noShowAmount !== undefined) setNoShowAmount(String(s.noShowAmount));
+      if (s.lateCancel !== undefined) setLateCancel(!!s.lateCancel);
+      if (s.lateCancelHours !== undefined) setLateCancelHours(String(s.lateCancelHours));
+
+      setPaymentSettingsLoaded(true);
+    };
+    loadPaymentSettings();
+  }, []);
+
   const parsePrice = p => parseFloat(String(p || "0").replace(/[^0-9.]/g, "")) || 0;
   const paid = appointments.filter(a => a.status === "confirmed" || a.status === "completed");
   const pending = appointments.filter(a => a.status === "pending");
@@ -1991,6 +2025,48 @@ function Payments({ navigate }) {
   const pendingRevenue = pending.reduce((s, a) => s + parsePrice(a.price), 0);
   const statusColor = s => s === "confirmed" || s === "completed" ? C.green : s === "pending" ? C.yellow : C.red;
   const statusLabel = s => s === "confirmed" ? "paid" : s === "completed" ? "paid" : s === "pending" ? "pending" : s || "unknown";
+
+  const savePaymentSettings = async () => {
+    setPaymentSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data: existing } = await supabase.from("business_profiles").select("settings").eq("user_id", session.user.id).single();
+      let prev = existing?.settings || {};
+      if (typeof prev === "string") {
+        try { prev = JSON.parse(prev); } catch { prev = {}; }
+      }
+      if (!prev || typeof prev !== "object" || Array.isArray(prev)) prev = {};
+
+      const cleanedDepositAmount = String(depositAmount).replace(/[^0-9.]/g, "");
+      const cleanedNoShowAmount = String(noShowAmount).replace(/[^0-9.]/g, "");
+
+      const depositPctToStore = depositType === "percent" ? (parseFloat(cleanedDepositAmount) || 30) : (prev.depositPct ?? 30);
+
+      const nextSettings = {
+        ...prev,
+        depositEnabled,
+        depositType,
+        depositAmount: parseFloat(cleanedDepositAmount) || 0,
+        depositPct: depositPctToStore,
+        autoCharge,
+        noShowFee,
+        noShowAmount: parseFloat(cleanedNoShowAmount) || 0,
+        lateCancel,
+        lateCancelHours: parseInt(String(lateCancelHours).replace(/[^0-9]/g, ""), 10) || 24,
+      };
+
+      await supabase.from("business_profiles").upsert({ user_id: session.user.id, settings: nextSettings }, { onConflict: "user_id" });
+      setPaymentSaved(true);
+      setTimeout(() => setPaymentSaved(false), 2000);
+    } catch (e) {
+      console.error("Payment settings save error:", e);
+      alert("Failed to save payment settings. Please try again.");
+    } finally {
+      setPaymentSaving(false);
+    }
+  };
 
   const [showAllPayments, setShowAllPayments] = useState(false);
 
@@ -2034,6 +2110,12 @@ function Payments({ navigate }) {
         </div>
         {lateCancel && <div style={{ padding: "12px 16px" }}><div style={{ display: "flex", gap: 8 }}>{["12", "24", "48"].map(h => <div key={h} onClick={() => setLateCancelHours(h)} style={{ flex: 1, padding: "9px", borderRadius: 10, background: lateCancelHours === h ? C.accentSoft : C.surfaceHigh, border: `1px solid ${lateCancelHours === h ? C.accent : C.borderHigh}`, textAlign: "center", fontSize: 13, fontWeight: 600, color: lateCancelHours === h ? C.accent : C.mid, cursor: "pointer" }}>{h}h</div>)}</div></div>}
       </Card>
+      <div style={{ marginTop: 12, display: "flex", gap: 12, alignItems: "center" }}>
+        <BtnPrimary onClick={savePaymentSettings} disabled={paymentSaving || !paymentSettingsLoaded} style={{ flex: 1, padding: 14, fontSize: 14 }}>
+          {paymentSaving ? "Saving..." : "Save Payment Settings"}
+        </BtnPrimary>
+        {paymentSaved && <div style={{ padding: "10px 14px", background: "#10b98122", border: "1px solid #10b98144", borderRadius: 14, fontSize: 13, fontWeight: 700, color: C.green, whiteSpace: "nowrap" }}>✓ Saved</div>}
+      </div>
     </>
   );
 
@@ -2095,7 +2177,7 @@ function Payments({ navigate }) {
         )}
       </div>
       {selectedInvoice && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setSelectedInvoice(null)}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 2000, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setSelectedInvoice(null)}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 4 }}>{selectedInvoice.client_name}</div>
@@ -2143,6 +2225,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
   const [profilePic, setProfilePic] = useState("");
   const [profileSaved, setProfileSaved] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPaymentSetup, setSavingPaymentSetup] = useState(false);
   const [showBugReport, setShowBugReport] = useState(false);
   const [bugText, setBugText] = useState("");
   const [bugCategory, setBugCategory] = useState("bug");
@@ -2213,6 +2296,20 @@ function Settings({ navigate, userRole, staffOwnerId }) {
     }, 800);
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, aiEditClients, aiEditStaff, aiEditSettings, tone, bufferTime, maxDaily, sunday, paymentDetails, depositPct, settingsLoaded]);
+
+  const saveSettingsNow = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data: existing } = await supabase.from("business_profiles").select("settings").eq("user_id", session.user.id).single();
+    let prev = existing?.settings || {};
+    if (typeof prev === "string") {
+      try { prev = JSON.parse(prev); } catch { prev = {}; }
+    }
+    if (!prev || typeof prev !== "object" || Array.isArray(prev)) prev = {};
+
+    const settings = { ...prev, aiReplies, aiBookings, aiReminders, aiFollowUps, aiPromos, aiEditClients, aiEditStaff, aiEditSettings, tone, bufferTime, maxDaily, sunday, paymentDetails, depositPct: parseInt(depositPct) || 30 };
+    await supabase.from("business_profiles").upsert({ user_id: session.user.id, settings }, { onConflict: "user_id" });
+  };
 
   const saveAiName = async () => {
     if (!aiName.trim()) return;
@@ -2420,7 +2517,23 @@ function Settings({ navigate, userRole, staffOwnerId }) {
                     onChange={e => setPaymentDetails(prev => ({ ...prev, [p.label]: e.target.value }))}
                     style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "11px 14px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 10 }}
                   />
-                  <BtnPrimary onClick={() => setPaymentInputOpen(prev => ({ ...prev, [p.label]: false }))} style={{ width: "100%", padding: 11, fontSize: 13 }}>Save</BtnPrimary>
+                  <BtnPrimary
+                    disabled={savingPaymentSetup}
+                    onClick={async () => {
+                      setSavingPaymentSetup(true);
+                      try {
+                        await saveSettingsNow();
+                        setPaymentInputOpen(prev => ({ ...prev, [p.label]: false }));
+                        setAutoSaveMsg("Saved");
+                        setTimeout(() => setAutoSaveMsg(""), 1500);
+                      } finally {
+                        setSavingPaymentSetup(false);
+                      }
+                    }}
+                    style={{ width: "100%", padding: 11, fontSize: 13 }}
+                  >
+                    {savingPaymentSetup ? "Saving..." : "Save"}
+                  </BtnPrimary>
                 </div>
               )}
             </div>
@@ -2470,7 +2583,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
 
       {/* Bug Report Modal */}
       {showBugReport && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => { if (!bugSubmitting) { setShowBugReport(false); setBugSubmitted(false); } }}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 2000, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => { if (!bugSubmitting) { setShowBugReport(false); setBugSubmitted(false); } }}>
           <div style={{ background: C.surfaceSolid, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 520, padding: "24px 20px 32px", maxHeight: "90vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             {bugSubmitted ? (
@@ -3322,6 +3435,8 @@ function Booking({ navigate }) {
   const [services, setServices] = useState([]);
   const [bizName, setBizName] = useState("Your Business");
   const [bizLocation, setBizLocation] = useState("");
+  const [depositTypeSetting, setDepositTypeSetting] = useState("percent");
+  const [depositValueSetting, setDepositValueSetting] = useState("30");
   const [loadingServices, setLoadingServices] = useState(true);
 
   // Get owner ID from URL param (public booking page) or from session (in-app)
@@ -3338,10 +3453,22 @@ function Booking({ navigate }) {
       if (!ownerId) { setLoadingServices(false); return; }
 
       const [profRes, svcRes] = await Promise.all([
-        supabase.from("business_profiles").select("biz_name,location").eq("user_id", ownerId).single(),
+        supabase.from("business_profiles").select("biz_name,location,settings").eq("user_id", ownerId).single(),
         supabase.from("services").select("*").eq("owner_id", ownerId).eq("active", true).order("created_at", { ascending: true })
       ]);
-      if (profRes.data) { setBizName(profRes.data.biz_name || "Your Business"); setBizLocation(profRes.data.location || ""); }
+      if (profRes.data) {
+        setBizName(profRes.data.biz_name || "Your Business");
+        setBizLocation(profRes.data.location || "");
+
+        let s = {};
+        try { s = typeof profRes.data.settings === "string" ? JSON.parse(profRes.data.settings) : profRes.data.settings; } catch { s = {}; }
+        if (s && typeof s === "object" && !Array.isArray(s)) {
+          const dt = s.depositType || (s.depositPct !== undefined ? "percent" : "percent");
+          setDepositTypeSetting(dt);
+          const dv = dt === "fixed" ? (s.depositAmount ?? 30) : (s.depositPct ?? s.depositAmount ?? 30);
+          setDepositValueSetting(String(dv));
+        }
+      }
       setServices((svcRes.data || []).map(s => ({ id: s.id, name: s.name, price: Number(s.price), duration: s.duration, icon: s.icon || "✨", desc: s.description || "" })));
       setLoadingServices(false);
     };
@@ -3357,8 +3484,14 @@ function Booking({ navigate }) {
   })();
   const times = ["9:00 AM", "10:30 AM", "12:00 PM", "1:30 PM", "3:00 PM", "4:30 PM", "6:00 PM"];
   const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
-  const depositAmount = Math.round(totalPrice * 0.3);
+  const depositValueNum = Math.max(0, parseFloat(String(depositValueSetting).replace(/[^0-9.]/g, "")) || 0);
+  const depositAmount = depositTypeSetting === "fixed"
+    ? Math.round(depositValueNum)
+    : Math.round(totalPrice * (depositValueNum / 100));
   const depositStr = "$" + depositAmount;
+  const depositPctDisplay = depositTypeSetting === "percent" ? Math.round(depositValueNum) : null;
+  const depositRowLabel = depositTypeSetting === "fixed" ? "Deposit (Fixed)" : `Deposit (${depositPctDisplay}%)`;
+  const depositSummaryText = depositTypeSetting === "fixed" ? `Secure your spot with a $${depositValueNum} deposit` : `Secure your spot with a ${depositPctDisplay}% deposit`;
 
   const toggleService = (s) => {
     setSelectedServices(prev =>
@@ -3630,12 +3763,12 @@ function Booking({ navigate }) {
         {step === 3 && (
           <div className="fade-in">
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Pay deposit</div>
-            <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>Secure your spot with a 30% deposit</div>
+            <div style={{ fontSize: 13, color: C.mid, marginBottom: 20 }}>{depositSummaryText}</div>
             <Card style={{ padding: 16, marginBottom: 20 }}>
-              {[["Services", selectedServices.map(s => s.name).join(", ")], ["Date & Time", selectedDate + " at " + selectedTime], ["Total estimate", "$" + totalPrice + "+"], ["Deposit (30%)", depositStr]].map(([k, v]) => (
-                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: k !== "Deposit (30%)" ? "1px solid " + C.border : "none", gap: 12 }}>
+              {[["Services", selectedServices.map(s => s.name).join(", ")], ["Date & Time", selectedDate + " at " + selectedTime], ["Total estimate", "$" + totalPrice + "+"], [depositRowLabel, depositStr]].map(([k, v]) => (
+                <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: k !== depositRowLabel ? "1px solid " + C.border : "none", gap: 12 }}>
                   <span style={{ fontSize: 13, color: C.mid, flexShrink: 0 }}>{k}</span>
-                  <span style={{ fontSize: 13, fontWeight: k === "Deposit (30%)" ? 800 : 600, color: k === "Deposit (30%)" ? C.green : C.text, textAlign: "right" }}>{v}</span>
+                  <span style={{ fontSize: 13, fontWeight: k === depositRowLabel ? 800 : 600, color: k === depositRowLabel ? C.green : C.text, textAlign: "right" }}>{v}</span>
                 </div>
               ))}
             </Card>
@@ -4013,7 +4146,7 @@ function Staff({ navigate, userRole, staffOwnerId }) {
         )}
       </div>
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 2000, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 430, padding: "24px 20px 40px" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add Staff Member</div>
@@ -4027,7 +4160,7 @@ function Staff({ navigate, userRole, staffOwnerId }) {
 
       {/* Invite to App Modal */}
       {showInvite && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => { setShowInvite(false); setGeneratedCode(""); setInviteName(""); }}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 2000, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => { setShowInvite(false); setGeneratedCode(""); setInviteName(""); }}>
           <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 440, padding: "24px 20px 32px" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             {generatedCode ? (
@@ -4144,7 +4277,7 @@ function Waitlist({ navigate }) {
       </div>
 
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 2000, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Add to Waitlist</div>
@@ -4748,7 +4881,7 @@ function Packages({ navigate }) {
       </div>
 
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 100, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
+        <div style={{ position: "fixed", inset: 0, background: "#000c", zIndex: 2000, display: "flex", alignItems: window.innerWidth >= 768 ? "center" : "flex-end", justifyContent: "center" }} onClick={() => setShowAdd(false)}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: window.innerWidth >= 768 ? 24 : "24px 24px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px 40px", animation: "slideUp 0.3s ease" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, background: C.border, borderRadius: 2, margin: "0 auto 20px", display: window.innerWidth >= 768 ? "none" : "block" }} />
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>Create Package</div>
