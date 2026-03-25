@@ -288,6 +288,7 @@ function Login({ navigate, setUserRole, setStaffOwnerId }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
   const [bizName, setBizName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [joinMode, setJoinMode] = useState(false);
@@ -395,7 +396,10 @@ function Login({ navigate, setUserRole, setStaffOwnerId }) {
               ))}
             </div>
             <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
-            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: mode === "signup" ? 12 : 20 }} />
+            <input type={showPass ? "text" : "password"} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", paddingRight: 48, fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: mode === "signup" ? 12 : 20, position: "relative" }} />
+            <div onClick={() => setShowPass(p => !p)} style={{ position: "absolute", right: 30, marginTop: mode === "signup" ? -36 : -44, cursor: "pointer", color: C.dim, padding: 4, zIndex: 2 }}>
+              {showPass ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22"/></svg> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
+            </div>
             {mode === "signup" && (
               <div style={{ marginBottom: 20 }}>
                 <div onClick={() => setJoinMode(!joinMode)} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: joinMode ? 12 : 0 }}>
@@ -537,15 +541,15 @@ function Onboarding({ navigate }) {
       <div style={{ flex: 1, padding: "0 24px", overflowY: "auto", width: "100%", maxWidth: 640 }}>
         {step === 0 && (
           <div className="fade-in">
-            <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Step 1 of 5</div>
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Tell us about<br />your business</div>
-            <div style={{ fontSize: 14, color: C.mid, marginBottom: 28 }}>We'll set everything up around you.</div>
+            <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>ABOUT YOU</div>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>{ownerName ? `Hey ${ownerName}! 👋` : "Let's get started 👋"}</div>
+            <div style={{ fontSize: 14, color: C.mid, marginBottom: 28 }}>Tell us about you and your business. Takes about 2 minutes.</div>
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>YOUR NAME</div>
             <input placeholder="Your name" value={ownerName} onChange={e => setOwnerName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 16 }} />
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>YOUR PHONE</div>
             <input placeholder="(555) 123-4567" type="tel" value={ownerPhone} onChange={e => setOwnerPhone(handlePhoneInput(e.target.value))} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 16 }} />
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>BUSINESS NAME</div>
-            <input placeholder="e.g. Luxe Hair Studio" value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 16 }} />
+            <input placeholder="e.g. Omar's Studio, Bright Consulting..." value={bizName} onChange={e => setBizName(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 16 }} />
             <div style={{ fontSize: 12, color: C.mid, fontWeight: 600, marginBottom: 8 }}>TYPE</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
               {BUSINESS_TYPES.map(t => <div key={t} onClick={() => setBizType(t)} style={{ padding: "9px 16px", borderRadius: 100, background: bizType === t ? C.accentSoft : C.surface, border: `1px solid ${bizType === t ? C.accent : C.border}`, fontSize: 13, color: bizType === t ? C.accent : C.mid, cursor: "pointer", fontWeight: bizType === t ? 600 : 400, transition: "all 0.2s" }}>{t}</div>)}
@@ -563,9 +567,9 @@ function Onboarding({ navigate }) {
         )}
         {step === 1 && (
           <div className="fade-in">
-            <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Step 2 of 5</div>
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>What services<br />do you offer?</div>
-            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>AI will use these to answer pricing questions.</div>
+            <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>YOUR SERVICES</div>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>What do you offer? 💼</div>
+            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Add your services so clients know what to book and how much it costs.</div>
             {services.map(s => (
               <div key={s.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "12px 16px", marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{s.name}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>${s.price} · {s.duration}</div></div>
@@ -587,9 +591,9 @@ function Onboarding({ navigate }) {
         )}
         {step === 2 && (
           <div className="fade-in">
-            <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Step 3 of 5</div>
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>When are you<br />available?</div>
-            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Tap a day to toggle it. Set custom hours for each day.</div>
+            <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>AVAILABILITY</div>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>When can clients find you? 🗓️</div>
+            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Tap a day to toggle. Clients can only book within these hours.</div>
             <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
               {DAYS.map(d => <div key={d} onClick={() => setWorkDays(p => p.includes(d) ? p.filter(x => x !== d) : [...p, d])} style={{ flex: 1, height: 44, borderRadius: 12, background: workDays.includes(d) ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surface, border: `1px solid ${workDays.includes(d) ? "transparent" : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: workDays.includes(d) ? "#fff" : C.dim, cursor: "pointer", transition: "all 0.2s" }}>{d}</div>)}
             </div>
@@ -609,9 +613,9 @@ function Onboarding({ navigate }) {
         )}
         {step === 3 && (
           <div className="fade-in">
-            <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Step 4 of 5</div>
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Connect your<br />accounts</div>
-            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>This is where your clients reach you.</div>
+            <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>CONNECT</div>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Where do clients message you? 🔗</div>
+            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Connect your accounts so spool can auto-reply and book for you.</div>
             {PLATFORMS.map(p => (
               <div key={p.id} onClick={() => setConnectedPlatforms(prev => prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id])} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: connectedPlatforms.includes(p.id) ? `${C.accentSoft}` : C.surface, border: `1px solid ${connectedPlatforms.includes(p.id) ? C.accent + "22" : C.border}`, borderRadius: 14, marginBottom: 10, cursor: "pointer", transition: "all 0.2s" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -625,9 +629,9 @@ function Onboarding({ navigate }) {
         )}
         {step === 4 && (
           <div className="fade-in">
-            <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Step 5 of 5</div>
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Set up your<br />AI assistant</div>
-            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Choose what spool handles on its own.</div>
+            <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>ALMOST THERE</div>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Meet your AI ✨</div>
+            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Pick what spool handles automatically. You can change these anytime in settings.</div>
             {AI_PERMISSIONS.map(p => (
               <div key={p.id} onClick={() => setAiPerms(prev => prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id])} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: aiPerms.includes(p.id) ? C.accentSoft : C.surface, border: `1px solid ${aiPerms.includes(p.id) ? C.accent + "22" : C.border}`, borderRadius: 14, marginBottom: 10, cursor: "pointer" }}>
                 <div style={{ flex: 1, marginRight: 12 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{p.label}</div><div style={{ fontSize: 12, color: C.dim, marginTop: 3 }}>{p.sub}</div></div>
@@ -644,9 +648,10 @@ function Onboarding({ navigate }) {
       </div>
       <div style={{ padding: "16px 24px 36px", background: `linear-gradient(0deg,${C.bg} 80%,transparent)`, position: "sticky", bottom: 0, width: "100%", maxWidth: 640 }}>
         <BtnPrimary disabled={!canContinue()} onClick={() => step < totalSteps - 1 ? setStep(p => p + 1) : setDone(true)} style={{ width: "100%", padding: 16 }}>
-          {step === totalSteps - 1 ? "Launch spool 🚀" : "Continue"}
+          {step === 0 ? "Let's go →" : step === totalSteps - 1 ? "Launch spool 🚀" : "Continue →"}
         </BtnPrimary>
-        {step === 0 && <div style={{ textAlign: "center", fontSize: 12, color: C.dim, marginTop: 12 }}>Takes less than 3 minutes</div>}
+        {step === 0 && <div style={{ textAlign: "center", fontSize: 12, color: C.dim, marginTop: 12 }}>Takes about 2 minutes</div>}
+        {step === 3 && <div onClick={() => setStep(4)} style={{ textAlign: "center", fontSize: 13, color: C.accent, marginTop: 12, cursor: "pointer" }}>Skip for now →</div>}
       </div>
     </div>
   );
@@ -2227,6 +2232,8 @@ function Settings({ navigate, userRole, staffOwnerId }) {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPaymentSetup, setSavingPaymentSetup] = useState(false);
   const [showBugReport, setShowBugReport] = useState(false);
+  const [showDangerZone, setShowDangerZone] = useState(false);
+  const [settingsQ, setSettingsQ] = useState("");
   const [bugText, setBugText] = useState("");
   const [bugCategory, setBugCategory] = useState("bug");
   const [bugScreenshot, setBugScreenshot] = useState("");
@@ -2327,6 +2334,10 @@ function Settings({ navigate, userRole, staffOwnerId }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BackBtn onBack={() => navigate("home")} />
           <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("settings")}</div>
+          <div style={{ position: "relative", marginTop: 16 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth="2" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input placeholder="Search settings..." value={settingsQ} onChange={e => setSettingsQ(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px 12px 40px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
+          </div>
           {autoSaveMsg && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginLeft: "auto" }}>✓ {autoSaveMsg}</div>}
         </div>
       </div>
@@ -2442,25 +2453,34 @@ function Settings({ navigate, userRole, staffOwnerId }) {
             else alert("Password updated!");
           }} style={{ width: "100%", padding: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.text, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }}>{t("changePassword")}</button>
           <button onClick={async () => { await supabase.auth.signOut(); navigate("login"); }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }}>{t("signOut")}</button>
-          {userRole === "owner" && <button onClick={async () => {
-            if (!window.confirm("Are you sure you want to delete your account? ALL your data will be permanently lost.")) return;
-            if (!window.confirm("This is your last chance. Type 'DELETE' below to confirm.")) return;
-            const typed = prompt("Type DELETE to confirm:");
-            if (typed !== "DELETE") return;
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
-            const uid = session.user.id;
-            await Promise.all([
-              supabase.from("appointments").delete().eq("owner_id", uid),
-              supabase.from("clients").delete().eq("owner_id", uid),
-              supabase.from("services").delete().eq("owner_id", uid),
-              supabase.from("business_profiles").delete().eq("user_id", uid),
-              supabase.from("staff_members").delete().eq("owner_id", uid),
-              supabase.from("ai_memories").delete().eq("owner_id", uid),
-            ]);
-            await supabase.auth.signOut();
-            navigate("login");
-          }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.red}33`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>{t("deleteAccount")}</button>}
+          {userRole === "owner" && <div style={{ marginTop: 8 }}>
+            <div onClick={() => setShowDangerZone(p => !p)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 14, cursor: "pointer" }}>
+              <span style={{ fontSize: 13, color: C.dim }}>Danger Zone</span>
+              <span style={{ fontSize: 12, color: C.dim, transform: showDangerZone ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s", display: "inline-block" }}>▾</span>
+            </div>
+            {showDangerZone && <div style={{ marginTop: 8, padding: 16, background: "rgba(244,63,94,0.04)", border: `1px solid ${C.red}22`, borderRadius: 14 }}>
+              <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginBottom: 8 }}>Permanent Actions</div>
+              <div style={{ fontSize: 12, color: C.dim, marginBottom: 12, lineHeight: 1.5 }}>This cannot be undone. All your data will be permanently deleted.</div>
+              <button onClick={async () => {
+                if (!window.confirm("Are you sure? ALL your data will be permanently lost.")) return;
+                const typed = prompt("Type DELETE to confirm:");
+                if (typed !== "DELETE") return;
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+                const uid = session.user.id;
+                await Promise.all([
+                  supabase.from("appointments").delete().eq("owner_id", uid),
+                  supabase.from("clients").delete().eq("owner_id", uid),
+                  supabase.from("services").delete().eq("owner_id", uid),
+                  supabase.from("business_profiles").delete().eq("user_id", uid),
+                  supabase.from("staff_members").delete().eq("owner_id", uid),
+                  supabase.from("ai_memories").delete().eq("owner_id", uid),
+                ]);
+                await supabase.auth.signOut();
+                navigate("login");
+              }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.red}44`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>{t("deleteAccount")}</button>
+            </div>}
+          </div>}
         </div>
         </div>{/* end col 1 */}
         {userRole === "owner" && <div>{/* col 2 */}
