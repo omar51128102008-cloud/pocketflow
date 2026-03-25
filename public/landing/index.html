@@ -53,7 +53,7 @@ nav.scrolled{background:rgba(5,4,10,0.85);backdrop-filter:blur(28px);-webkit-bac
 @keyframes pu{0%,100%{opacity:1;box-shadow:0 0 12px var(--ac)}50%{opacity:.3;box-shadow:0 0 4px var(--ac)}}
 .hero-badge span{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--ac);letter-spacing:2px;text-transform:uppercase}
 .hero h1{font-size:clamp(42px,8vw,88px);font-weight:900;line-height:1.02;letter-spacing:-.05em;max-width:820px;margin-bottom:24px}
-.gt{background:linear-gradient(135deg,#c4b5fd,#e879f9,var(--ac),#c4b5fd);background-size:300% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gs 5s ease infinite}
+.gt{background:linear-gradient(135deg,#c4b5fd,#e879f9,var(--ac),#c4b5fd);background-size:300% auto;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gs 5s ease infinite}
 @keyframes gs{0%,100%{background-position:0% center}50%{background-position:300% center}}
 .hero p{font-size:clamp(16px,1.8vw,20px);color:var(--mid);max-width:540px;line-height:1.7;margin-bottom:40px;font-weight:400}
 .hc{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:80px}
@@ -355,5 +355,13 @@ var aiD=document.getElementById('aidemo');if(aiD)aiObs.observe(aiD);
 // PWA Service Worker Registration
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){
-    navigator.serviceWorker.register('/sw-notify.js',{scope:'/'}).then(function(r){
-      con
+    navigator.serviceWorker.register('/sw-notify.js',{scope:'/'}).then(function(registration){
+      console.log('Service Worker registered successfully');
+    }).catch(function(error){
+      console.log('Service Worker registration failed:', error);
+    });
+  });
+}
+</script>
+</body>
+</html>
