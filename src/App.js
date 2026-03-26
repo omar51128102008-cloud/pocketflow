@@ -760,7 +760,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.2 }}>{greetText},<br /><span style={{ background: `linear-gradient(135deg,${C.accent},#e0b3ff)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{userName || "there"}</span></div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <div className="mobile-only" onClick={() => setMobileDrawer(true)} style={{ width: 44, height: 44, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2" strokeLinecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></div>
+            <div className="mobile-only" onClick={() => window.dispatchEvent(new CustomEvent("open_drawer"))} style={{ width: 44, height: 44, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2" strokeLinecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></div>
             <div style={{ position: "relative", cursor: "pointer" }} onClick={() => navigate("notifications")}>
             <div style={{ width: 44, height: 44, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="1.8" strokeLinecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg></div>
             {unread.length > 0 && <div style={{ position: "absolute", top: -4, right: -4, width: 20, height: 20, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", border: `2px solid ${C.bg}`, boxShadow: "0 0 12px rgba(139,92,246,0.4)" }}>{unread.length}</div>}
@@ -909,26 +909,6 @@ function Home({ navigate, userRole, staffOwnerId }) {
           </div>
         </div>
 
-        {/* Mobile-only grid */}
-        <div className="mobile-only" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
-          {[
-            { icon: "✦", label: t("services"), screen: "services", color: C.accent, ownerOnly: true },
-            { icon: "▬", label: t("payments"), screen: "payments", color: C.gold, ownerOnly: true },
-            { icon: "⚙", label: t("settings"), screen: "settings", color: C.mid },
-            { icon: "♡", label: t("loyalty"), screen: "loyalty", color: "#f472b6", ownerOnly: true },
-            { icon: "⬡", label: t("packages"), screen: "packages", color: "#a78bfa", ownerOnly: true },
-            { icon: "▥", label: t("analytics"), screen: "analytics", color: C.blue, ownerOnly: true },
-            { icon: "⚡", label: t("promotions"), screen: "promotions", color: "#fb923c", ownerOnly: true },
-            { icon: "⊞", label: t("staff"), screen: "staff", color: C.green },
-            { icon: "⏳", label: t("waitlist"), screen: "waitlist", color: C.yellow, ownerOnly: true },
-            { icon: "↗", label: getLang() === "ar" ? "رابط الحجز" : "Share Link", screen: "sharelink", color: C.accent, ownerOnly: true },
-          ].filter(i => userRole === "owner" || !i.ownerOnly).map(item => (
-            <Card key={item.screen} onClick={() => navigate(item.screen)} style={{ padding: "16px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }} className="card-press">
-              <div style={{ width: 38, height: 38, borderRadius: 12, background: `${item.color}15`, border: `1px solid ${item.color}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
-              <span style={{ fontSize: 14, fontWeight: 600 }}>{item.label}</span>
-            </Card>
-          ))}
-        </div>
       </div>
 
       {selectedAppt && (
