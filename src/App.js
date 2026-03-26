@@ -1394,8 +1394,8 @@ function Clients({ navigate, userRole, staffOwnerId }) {
 
   if (selectedClient) return (
     <div style={{ paddingBottom: 100 }}>
-      <div style={{ background: `linear-gradient(180deg,#16103a,${C.bg})`, padding: "48px 24px 24px", textAlign: "center" }}>
-        <div onClick={() => setSelectedClient(null)} style={{ position: "absolute", top: 52, left: 20, width: 38, height: 38, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+      <div style={{ background: `linear-gradient(180deg,#16103a,${C.bg})`, padding: "48px 24px 24px", textAlign: "center", position: "relative" }}>
+        <div onClick={() => setSelectedClient(null)} style={{ position: "absolute", top: 16, left: 20, width: 38, height: 38, background: "rgba(255,255,255,0.06)", border: `1px solid ${C.border}`, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 5 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         </div>
         <div style={{ width: 80, height: 80, borderRadius: 24, background: C.accentSoft, border: `1px solid ${C.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, color: C.accent, margin: "0 auto 12px" }}>{selectedClient.avatar}</div>
@@ -1527,7 +1527,7 @@ function Clients({ navigate, userRole, staffOwnerId }) {
         <div style={{ fontSize: 13, color: C.mid }}>{clients.length} total clients</div>
       </div>
       <div style={{ padding: "0 20px" }}>
-        <div style={{ display: isDesktop ? "grid" : "block", gridTemplateColumns: isDesktop ? "340px 1fr" : undefined, gap: isDesktop ? 24 : undefined, alignItems: "start" }}>
+        <div style={{ display: isDesktop ? "grid" : "block", gridTemplateColumns: isDesktop ? "1fr 1fr" : undefined, gap: isDesktop ? 24 : undefined, alignItems: "start" }}>
         <div>
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "10px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1537,12 +1537,17 @@ function Clients({ navigate, userRole, staffOwnerId }) {
           <div style={{ padding: "16px 0" }}>{[1,2,3].map(i => <div key={i} style={{ height: 68, background: C.surface, borderRadius: 18, marginBottom: 10, animation: "shimmer 1.5s infinite", backgroundImage: `linear-gradient(90deg,${C.surface},${C.surfaceHigh},${C.surface})`, backgroundSize: "200% 100%" }} />)}</div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: C.mid }}>No clients found</div>
-        ) : <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, maxHeight: "calc(100vh - 220px)", overflowY: "auto", paddingBottom: 8 }}>{filtered.map((c, idx) => (
-          <div key={c.id} onClick={() => selectClient(c)} style={{ background: selectedClient?.id === c.id ? C.accentSoft : "rgba(14,14,22,0.6)", border: `1px solid ${selectedClient?.id === c.id ? C.accent + "33" : "rgba(255,255,255,0.06)"}`, borderRadius: 16, padding: "16px 14px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 6 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 14, background: C.accentSoft, border: `1px solid ${C.accent}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: C.accent }}>{c.avatar}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>{c.name}</div>
-            <div style={{ fontSize: 11, color: C.dim }}>{c.totalVisits} visits</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: C.gold }}>{c.totalSpent}</div>
+        ) : <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, overflowY: "auto", paddingBottom: 8 }}>{filtered.map((c, idx) => (
+          <div key={c.id} onClick={() => selectClient(c)} style={{ background: selectedClient?.id === c.id ? "rgba(139,92,246,0.08)" : "rgba(14,14,22,0.5)", border: `1px solid ${selectedClient?.id === c.id ? "rgba(139,92,246,0.2)" : "rgba(255,255,255,0.05)"}`, borderRadius: 18, padding: "18px 14px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8, transition: "all 0.25s", backdropFilter: "blur(8px)" }}>
+            <div style={{ width: 48, height: 48, borderRadius: 16, background: `linear-gradient(135deg,rgba(139,92,246,0.12),rgba(139,92,246,0.04))`, border: "1px solid rgba(139,92,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, color: C.accent }}>{c.avatar}</div>
+            <div style={{ width: "100%" }}>
+              <div style={{ fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
+              <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>{c.totalVisits} visits · {c.phone || "No phone"}</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ fontSize: 15, fontWeight: 800, color: C.gold }}>{c.totalSpent}</span>
+              {c.badge && <span style={{ fontSize: 8, fontWeight: 700, color: C.gold, background: "#f59e0b18", border: "1px solid #f59e0b33", borderRadius: 100, padding: "1px 6px" }}>{c.badge}</span>}
+            </div>
           </div>
         ))}
         </div>}
@@ -5028,57 +5033,60 @@ function Sidebar({ active, navigate, userRole, staffOwnerId }) {
   ].filter(i => userRole === "owner" || !i.ownerOnly);
 
   return (
-    <div style={{ width: 240, background: "rgba(10,10,16,0.9)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", borderRight: "1px solid rgba(255,255,255,0.06)", height: "100vh", position: "fixed", left: 0, top: 0, display: "flex", flexDirection: "column", padding: "24px 0", zIndex: 100 }}>
-      {/* Logo */}
-      <div style={{ padding: "0 20px 28px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    <div style={{ width: 250, background: "rgba(8,7,16,0.75)", backdropFilter: "blur(32px)", WebkitBackdropFilter: "blur(32px)", borderRight: "1px solid rgba(255,255,255,0.04)", height: "100vh", position: "fixed", left: 0, top: 0, display: "flex", flexDirection: "column", zIndex: 100 }}>
+      {/* Logo area - gradient top */}
+      <div style={{ padding: "28px 20px 24px", background: "linear-gradient(180deg,rgba(139,92,246,0.06) 0%,transparent 100%)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {logoUrl ? (
-            <img src={logoUrl} alt="" style={{ width: 36, height: 36, borderRadius: 11, objectFit: "cover" }} />
+            <img src={logoUrl} alt="" style={{ width: 40, height: 40, borderRadius: 13, objectFit: "cover" }} />
           ) : (
-            <div style={{ width: 36, height: 36, borderRadius: 11, boxShadow: "0 0 20px rgba(139,92,246,0.25)", overflow: "hidden" }}><img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 11 }} /></div>
+            <div style={{ width: 40, height: 40, borderRadius: 13, overflow: "hidden", boxShadow: "0 0 24px rgba(139,92,246,0.2)" }}><img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 13 }} /></div>
           )}
           <div>
-            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 16, fontWeight: 800, color: C.text }}>{bizName}</div>
-            <div style={{ fontSize: 10, color: C.mid }}>{userName || "Owner"}</div>
+            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 16, fontWeight: 800, color: C.text, lineHeight: 1.2 }}>{bizName}</div>
+            <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>{userName || "Owner"}</div>
           </div>
         </div>
       </div>
 
-      {/* Main nav */}
-      <div style={{ padding: "16px 12px 0", flex: 1, overflowY: "auto" }}>
-        <div style={{ fontSize: 10, color: C.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", padding: "0 8px", marginBottom: 8 }}>Main</div>
+      {/* Nav items */}
+      <div style={{ padding: "8px 10px", flex: 1, overflowY: "auto" }}>
+        <div style={{ fontSize: 9, color: C.dim, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", padding: "8px 12px 6px" }}>Main</div>
         {mainNav.map(item => (
-          <div key={item.id} onClick={() => navigate(item.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, background: active === item.id ? C.accentSoft : "transparent", border: `1px solid ${active === item.id ? C.accent + "33" : "transparent"}`, cursor: "pointer", marginBottom: 4, transition: "all 0.2s" }}>
-            <span style={{ fontSize: 16, color: active === item.id ? C.accent : C.mid }}>{item.icon}</span>
-            <span style={{ fontSize: 14, fontWeight: active === item.id ? 700 : 500, color: active === item.id ? C.accent : C.mid }}>{item.label}</span>
-            {item.id === "inbox" && <div style={{ marginLeft: "auto", width: 8, height: 8, borderRadius: "50%", background: C.red }} />}
+          <div key={item.id} onClick={() => navigate(item.id)} onMouseEnter={e => { if (active !== item.id) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }} onMouseLeave={e => { if (active !== item.id) e.currentTarget.style.background = "transparent"; }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 14, background: active === item.id ? "rgba(139,92,246,0.1)" : "transparent", border: active === item.id ? "1px solid rgba(139,92,246,0.15)" : "1px solid transparent", cursor: "pointer", marginBottom: 2, transition: "all 0.2s" }}>
+            <span style={{ fontSize: 16, width: 20, textAlign: "center", color: active === item.id ? C.accent : C.dim }}>{item.icon}</span>
+            <span style={{ fontSize: 13, fontWeight: active === item.id ? 700 : 500, color: active === item.id ? C.accent : C.mid, flex: 1 }}>{item.label}</span>
+            {active === item.id && <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.accent, boxShadow: "0 0 8px rgba(139,92,246,0.5)" }} />}
           </div>
         ))}
 
-        {secondaryNav.length > 0 && <div style={{ fontSize: 10, color: C.dim, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", padding: "0 8px", marginBottom: 8, marginTop: 20 }}>Manage</div>}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.04)", margin: "12px 12px 8px" }} />
+        <div style={{ fontSize: 9, color: C.dim, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", padding: "8px 12px 6px" }}>Manage</div>
         {secondaryNav.map(item => (
-          <div key={item.id} onClick={() => navigate(item.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, background: active === item.id ? C.accentSoft : "transparent", border: `1px solid ${active === item.id ? C.accent + "33" : "transparent"}`, cursor: "pointer", marginBottom: 4, transition: "all 0.2s" }}>
-            <span style={{ fontSize: 14 }}>{item.icon}</span>
-            <span style={{ fontSize: 14, fontWeight: active === item.id ? 700 : 500, color: active === item.id ? C.accent : C.mid }}>{item.label}</span>
+          <div key={item.id} onClick={() => navigate(item.id)} onMouseEnter={e => { if (active !== item.id) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }} onMouseLeave={e => { if (active !== item.id) e.currentTarget.style.background = "transparent"; }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 14, background: active === item.id ? "rgba(139,92,246,0.1)" : "transparent", border: active === item.id ? "1px solid rgba(139,92,246,0.15)" : "1px solid transparent", cursor: "pointer", marginBottom: 2, transition: "all 0.2s" }}>
+            <span style={{ fontSize: 14, width: 20, textAlign: "center", color: active === item.id ? C.accent : C.dim }}>{item.icon}</span>
+            <span style={{ fontSize: 13, fontWeight: active === item.id ? 700 : 500, color: active === item.id ? C.accent : C.mid, flex: 1 }}>{item.label}</span>
+            {active === item.id && <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.accent, boxShadow: "0 0 8px rgba(139,92,246,0.5)" }} />}
           </div>
         ))}
       </div>
 
-      {/* Bottom */}
-      <div style={{ padding: "16px 12px 0", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <div onClick={() => navigate("settings")} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12, background: active === "settings" ? C.accentSoft : "transparent", cursor: "pointer", marginBottom: 8 }}>
-          <span style={{ fontSize: 14 }}>⚙️</span>
-          <span style={{ fontSize: 14, fontWeight: 500, color: active === "settings" ? C.accent : C.mid }}>Settings</span>
+      {/* Bottom - Settings + Profile */}
+      <div style={{ padding: "12px 10px", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+        <div onClick={() => navigate("settings")} onMouseEnter={e => { if (active !== "settings") e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }} onMouseLeave={e => { if (active !== "settings") e.currentTarget.style.background = "transparent"; }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 14, background: active === "settings" ? "rgba(139,92,246,0.1)" : "transparent", cursor: "pointer", marginBottom: 8, transition: "all 0.2s" }}>
+          <span style={{ fontSize: 14, color: active === "settings" ? C.accent : C.dim }}>⚙</span>
+          <span style={{ fontSize: 13, fontWeight: active === "settings" ? 700 : 500, color: active === "settings" ? C.accent : C.mid }}>Settings</span>
+          {active === "settings" && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: C.accent, boxShadow: "0 0 8px rgba(139,92,246,0.5)" }} />}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 14, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
           {profilePic ? (
-            <img src={profilePic} alt="" style={{ width: 32, height: 32, borderRadius: 10, objectFit: "cover" }} />
+            <img src={profilePic} alt="" style={{ width: 34, height: 34, borderRadius: 11, objectFit: "cover" }} />
           ) : (
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: C.accentSoft, border: `1px solid ${C.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: C.accent }}>{initials}</div>
+            <div style={{ width: 34, height: 34, borderRadius: 11, background: "linear-gradient(135deg,rgba(139,92,246,0.15),rgba(139,92,246,0.05))", border: "1px solid rgba(139,92,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: C.accent }}>{initials}</div>
           )}
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{userName || bizName}</div>
-            <div style={{ fontSize: 11, color: C.mid }}>{bizName}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userName || bizName}</div>
+            <div style={{ fontSize: 10, color: C.dim }}>{bizName}</div>
           </div>
         </div>
       </div>
@@ -6150,7 +6158,7 @@ export default function App() {
         </div>
       )}
       <div style={{
-        marginLeft: showSidebar ? 240 : 0,
+        marginLeft: showSidebar ? 250 : 0,
         marginRight: showAISidebar && !aiSidebarCollapsed ? 360 : 0,
         minHeight: "100vh",
       }}>
