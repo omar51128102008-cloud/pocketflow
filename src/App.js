@@ -54,7 +54,7 @@ function isRTL() { return getLang() === "ar"; }
 
 const GLOBAL_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;scroll-behavior:smooth;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;scroll-behavior:smooth;}html{--sab:env(safe-area-inset-bottom,0px);--sat:env(safe-area-inset-top,0px)}
   ::-webkit-scrollbar{width:4px;}
   ::-webkit-scrollbar-track{background:transparent;}
   ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:4px;}
@@ -149,7 +149,7 @@ const BottomNav = ({ active, navigate }) => {
     { id: "clients", label: t("clients"), d: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
   ];
   return (
-    <div className="mobile-only" style={{ position: "fixed", bottom: 0, left: 0, width: "100%", background: "rgba(6,6,10,0.92)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", padding: "10px 0 24px", zIndex: 50 }}>
+    <div className="mobile-only" style={{ position: "fixed", bottom: 0, left: 0, width: "100%", background: "rgba(6,6,10,0.92)", backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", padding: "10px 0 calc(24px + var(--sab, 0px))", zIndex: 50 }}>
       {items.map(item => {
         const isActive = active === item.id;
         return (
@@ -421,7 +421,7 @@ function Login({ navigate, setUserRole, setStaffOwnerId }) {
           </>
         )}
       </div>
-      <div style={{ textAlign: "center", fontSize: 12, color: C.dim, marginTop: 24 }}>By continuing you agree to our <span onClick={() => alert("Terms of Service will be available at launch.")} style={{ color: C.accent, cursor: "pointer" }}>Terms</span> & <span onClick={() => alert("Privacy Policy will be available at launch.")} style={{ color: C.accent, cursor: "pointer" }}>Privacy Policy</span></div>
+      <div style={{ textAlign: "center", fontSize: 12, color: C.dim, marginTop: 24 }}>By continuing you agree to our <span onClick={() => showToast("Terms of Service — coming soon")} style={{ color: C.accent, cursor: "pointer" }}>Terms</span> & <span onClick={() => showToast("Privacy Policy — coming soon")} style={{ color: C.accent, cursor: "pointer" }}>Privacy Policy</span></div>
     </div>
   );
 }
@@ -950,7 +950,7 @@ function Home({ navigate, userRole, staffOwnerId }) {
             </Card>
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => { if (confirm(`Cancel this appointment and let ${selectedAppt.name} rebook?\n\nThis will mark the appointment as cancelled.`)) { supabase.from("appointments").update({ status: "cancelled" }).eq("id", selectedAppt.id).then(() => { setAppts(p => p.map(a => a.id === selectedAppt.id ? { ...a, status: "cancelled" } : a)); setSelectedAppt(null); }); } }} style={{ flex: 1, padding: 13, background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>Reschedule</button>
-              <BtnPrimary onClick={() => { const msg = `Hi ${selectedAppt.name}! Just a reminder about your appointment tomorrow. See you then! 😊`; if (confirm(`Send this reminder?\n\n"${msg}"`)) { fetch("https://pocketflow-proxy-production.up.railway.app/send-reminder", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client_name: selectedAppt.name, client_phone: selectedAppt.client_phone || selectedAppt.phone, service: selectedAppt.service, date: selectedAppt.day, time: selectedAppt.time, biz_name: bizName }) }).then(() => alert("Reminder sent!")).catch(() => alert("Failed to send.")); } }} style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
+              <BtnPrimary onClick={() => { const msg = `Hi ${selectedAppt.name}! Just a reminder about your appointment tomorrow. See you then! 😊`; if (confirm(`Send this reminder?\n\n"${msg}"`)) { fetch("https://pocketflow-proxy-production.up.railway.app/send-reminder", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client_name: selectedAppt.name, client_phone: selectedAppt.client_phone || selectedAppt.phone, service: selectedAppt.service, date: selectedAppt.day, time: selectedAppt.time, biz_name: bizName }) }).then(() => showToast("Reminder sent!")).catch(() => showToast("Failed to send", "error")); } }} style={{ flex: 1, padding: 13 }}>Send Reminder</BtnPrimary>
             </div>
           </div>
         </div>
@@ -1555,17 +1555,15 @@ function Clients({ navigate, userRole, staffOwnerId }) {
           <div style={{ padding: "16px 0" }}>{[1,2,3].map(i => <div key={i} style={{ height: 68, background: C.surface, borderRadius: 18, marginBottom: 10, animation: "shimmer 1.5s infinite", backgroundImage: `linear-gradient(90deg,${C.surface},${C.surfaceHigh},${C.surface})`, backgroundSize: "200% 100%" }} />)}</div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: C.mid }}>No clients found</div>
-        ) : <div style={{ background: "rgba(14,14,22,0.6)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, maxHeight: "calc(100vh - 220px)", overflowY: "auto" }}>{filtered.map((c, idx) => (
-          <div key={c.id} onClick={() => selectClient(c)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", cursor: "pointer", borderBottom: idx < filtered.length - 1 ? `1px solid ${C.border}` : "none", background: selectedClient?.id === c.id ? C.accentSoft : "transparent", borderRadius: idx === 0 ? "14px 14px 0 0" : idx === filtered.length - 1 ? "0 0 14px 14px" : 0 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: C.accentSoft, border: `1px solid ${C.accentSoft}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.accent, flexShrink: 0 }}>{c.avatar}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
-                {c.badge && <span style={{ fontSize: 9, fontWeight: 700, color: C.gold, background: "#f59e0b18", border: "1px solid #f59e0b33", borderRadius: 100, padding: "1px 6px", flexShrink: 0 }}>{c.badge}</span>}
-              </div>
-              <div style={{ fontSize: 11, color: C.dim, marginTop: 1 }}>{c.totalVisits} visits</div>
+        ) : <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, maxHeight: "calc(100vh - 220px)", overflowY: "auto", paddingBottom: 8 }}>{filtered.map((c, idx) => (
+          <div key={c.id} onClick={() => selectClient(c)} style={{ background: selectedClient?.id === c.id ? C.accentSoft : "rgba(14,14,22,0.6)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: `1px solid ${selectedClient?.id === c.id ? C.accent + "33" : "rgba(255,255,255,0.06)"}`, borderRadius: 16, padding: "16px 14px", cursor: "pointer", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: C.accentSoft, border: `1px solid ${C.accent}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: C.accent }}>{c.avatar}</div>
+            <div style={{ width: "100%" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
+              <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>{c.totalVisits} visits</div>
             </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.gold, flexShrink: 0 }}>{c.totalSpent}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: C.gold }}>{c.totalSpent}</div>
+            {c.badge && <span style={{ fontSize: 9, fontWeight: 700, color: C.gold, background: "#f59e0b18", border: "1px solid #f59e0b33", borderRadius: 100, padding: "1px 8px" }}>{c.badge}</span>}
           </div>
         ))}
         </div>}
@@ -2451,8 +2449,8 @@ function Settings({ navigate, userRole, staffOwnerId }) {
             const newPass = prompt("Enter new password (min 6 characters):");
             if (!newPass || newPass.length < 6) { if (newPass) alert("Password must be at least 6 characters."); return; }
             const { error } = await supabase.auth.updateUser({ password: newPass });
-            if (error) alert("Error: " + error.message);
-            else alert("Password updated!");
+            if (error) showToast("Error: " + error.message, "error");
+            else showToast("Password updated!");
           }} style={{ width: "100%", padding: 12, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.text, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }}>{t("changePassword")}</button>
           <button onClick={async () => { await supabase.auth.signOut(); navigate("login"); }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.border}`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.mid, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 8 }}>{t("signOut")}</button>
           {userRole === "owner" && <div style={{ marginTop: 8 }}>
@@ -5046,6 +5044,7 @@ function Sidebar({ active, navigate, userRole, staffOwnerId }) {
   const secondaryNav = [
     { id: "services", icon: "✦", label: "Services", ownerOnly: true },
     { id: "payments", icon: "▬", label: "Payments", ownerOnly: true },
+    { id: "packages", icon: "⬡", label: "Packages", ownerOnly: true },
     { id: "analytics", icon: "▥", label: "Analytics", ownerOnly: true },
     { id: "promotions", icon: "⚡", label: "Promotions", ownerOnly: true },
     { id: "loyalty", icon: "♡", label: "Loyalty", ownerOnly: true },
@@ -5151,6 +5150,7 @@ function AISidebarPanel({ navigate, isMobile }) {
   const animFrameRef = useRef(null);
   const smoothRef = useRef(1);
   const inputRef = useRef(null);
+  const [draftMsg, setDraftMsg] = useState(null); // {to, text, type}
 
   const [chatHistory, setChatHistory] = useState(() => {
     try {
@@ -5367,6 +5367,11 @@ SETTINGS ACTIONS:
 - ACTION:setDepositPct:number — set deposit percentage
 FORMAT: ACTION:command:params on its own line, then your normal reply on the next line.
 IMPORTANT: Only use actions the user explicitly asks for. Never change things unprompted.
+DRAFT MESSAGES:
+- When the user asks you to send a message, reply, reminder, or promo to someone, DO NOT send it directly.
+- Instead, use DRAFT:recipient:message on its own line so the user can review and edit before sending.
+- Example: "send a reminder to Jonathan" → DRAFT:Jonathan:Hi Jonathan! Just a friendly reminder about your upcoming appointment. Looking forward to seeing you!
+- The user will see the draft and can edit, send, or cancel it.
 Examples:
 - "change your name to Luna" → ACTION:changeAIName:Luna\nDone! I'm Luna now.
 - "add Sarah as a new client" → ACTION:addClient:Sarah\nSarah has been added!
@@ -5498,6 +5503,16 @@ THINGS TO BE GREAT AT:
       });
       text = text.replace(/^MEMORY:.+$/gim, "").trim();
       if (!text) text = "I've saved that. What else can I help with?";
+    }
+
+    // Handle DRAFT: messages (show for user review before sending)
+    const draftMatch = text.match(/^DRAFT:([^:]+):(.+)$/im);
+    if (draftMatch) {
+      const to = draftMatch[1].trim();
+      const msg = draftMatch[2].trim();
+      setDraftMsg({ to, text: msg, type: "message" });
+      text = text.replace(/^DRAFT:.+$/gim, "").trim();
+      if (!text) text = `I've drafted a message to **${to}**. Review it below — you can edit, send, or cancel.`;
     }
 
     // Handle ACTION: commands
@@ -5784,6 +5799,25 @@ THINGS TO BE GREAT AT:
             </div>
           </div>
         )}
+        {draftMsg && (
+          <div style={{ margin: "8px 0", padding: 14, background: `${C.accent}08`, border: `1px solid ${C.accent}22`, borderRadius: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, marginBottom: 8 }}>DRAFT TO {draftMsg.to.toUpperCase()}</div>
+            <textarea value={draftMsg.text} onChange={e => setDraftMsg(p => ({ ...p, text: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", resize: "vertical", minHeight: 60, lineHeight: 1.5 }} />
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <button onClick={async () => {
+                try {
+                  await fetch("https://pocketflow-proxy-production.up.railway.app/send-reminder", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ client_name: draftMsg.to, message: draftMsg.text })
+                  });
+                  showToast("Message sent to " + draftMsg.to);
+                } catch { showToast("Failed to send", "error"); }
+                setDraftMsg(null);
+              }} style={{ flex: 1, padding: 10, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Send</button>
+              <button onClick={() => setDraftMsg(null)} style={{ padding: "10px 16px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.dim, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Cancel</button>
+            </div>
+          </div>
+        )}
         <div ref={chatEndRef}/>
       </div>
 
@@ -5844,6 +5878,14 @@ export default function App() {
   const [userRole, setUserRole] = useState("owner");
   const [staffOwnerId, setStaffOwnerId] = useState(null);
   const [toasts, setToasts] = useState([]);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  useEffect(() => {
+    const on = () => setIsOffline(false);
+    const off = () => { setIsOffline(true); showToast("You're offline", "error"); };
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+  }, []);
   const lastApptCountRef = useRef(null);
   const [cmdPalette, setCmdPalette] = useState(false);
   const [cmdSearch, setCmdSearch] = useState("");
@@ -6187,7 +6229,7 @@ export default function App() {
       {showAISidebar && <AISidebarPanel navigate={navigate} />}
       {/* Mobile AI floating button */}
       {!isDesktop && !isAuthScreen && !mobileAIOpen && (
-        <div onClick={() => setMobileAIOpen(true)} style={{ position: "fixed", bottom: 85, right: 16, width: 52, height: 52, borderRadius: 16, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, zIndex: 45, cursor: "pointer", boxShadow: "0 4px 24px rgba(139,92,246,0.4)" }}>✦</div>
+        <div onClick={() => setMobileAIOpen(true)} style={{ position: "fixed", bottom: "calc(85px + var(--sab, 0px))", right: 16, width: 52, height: 52, borderRadius: 16, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, zIndex: 45, cursor: "pointer", boxShadow: "0 4px 24px rgba(139,92,246,0.4)" }}>✦</div>
       )}
       {/* Mobile AI chat overlay */}
       {!isDesktop && mobileAIOpen && (
