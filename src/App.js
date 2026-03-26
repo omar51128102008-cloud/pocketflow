@@ -16,7 +16,7 @@ const C = {
   text: "#f0eeff", mid: "#8b8ba8", dim: "#5c5c7a",
 };
 
-const SPOOL_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAABAGlDQ1BpY2MAABiVY2BgPMEABCwGDAy5eSVFQe5OChGRUQrsDxgYgRAMEpOLCxhwA6Cqb9cgai/r4lGHC3CmpBYnA+kPQKxSBLQcaKQIkC2SDmFrgNhJELYNiF1eUlACZAeA2EUhQc5AdgqQrZGOxE5CYicXFIHU9wDZNrk5pckIdzPwpOaFBgNpDiCWYShmCGJwZ3AC+R+iJH8RA4PFVwYG5gkIsaSZDAzbWxkYJG4hxFQWMDDwtzAwbDuPEEOESUFiUSJYiAWImdLSGBg+LWdg4I1kYBC+wMDAFQ0LCBxuUwC7zZ0hHwjTGXIYUoEingx5DMkMekCWEYMBgyGDGQCm1j8/yRb+6wAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAABmJLR0QA/wD/AP+gvaeTAAAAB3RJTUUH6gMaABIKmy7GogAADk9JREFUeNrtnWtsXMd1x/9n5t59c/nSg6KiVy1KjBybdJXIkmwlKSQ7cJDEKeA4TZAGQZIWhVo4rfupSdEGTWr3S90iaAtIddOH0za1XLSB4CiSU1uJLdi19bAjy6osWpYrSiJlkVySy93l7p05/TB3yeVD4i7Jeymyc76IS4KjmfObOWfOmTNDenTrcVhZOBFWBRaABWDFArAArFgAFoAVC8ACsGIBWABWLAALwIoFYAFYsQAsACsWgAVgxQKwAKxYABaAFQvAArBiAVgAViwAC8CKBWABzEKYb/YxfOGJPeDQOyRCHqqUIILWrBUTQcqFGXaZPQtJJKAVK4+ZIR0ChdofEdZomQQByGZUIedFYhRJ0GhOZTMeABIUMgNmJgIR5YZUIauiSZFqkoAe7vdUiYUMrz9OOKMVglSJtda7vtj0kU81L1sTJ+D65cLxZ/tffuY6kXAipBUTUXizgZHPer/8QMOuz69ouS3hRGi4v/TWS5nnv9+b6fViKRlOfyjoK0rMIAHtsYzgq09s2HJPM2uGGReDBL396sCT33hndARuLAwGvvY1RvPe57+9ZtfDraY/RGANEjR4vbD/d95+7xejsZQIoT+BmyAiJqBUVL/27bVb7mn2SpoZYIDBDFXSm7Y17t23MZrkUiHwtT+m/ULe+9Jj63c93GpMv+kMA15J1y+Lfe2JtvoV0isasxmsLQoWADNIUCGrNu+o+/ADy7Vi6ZCQBAKISEK6pDxef2fD3v1t0VSwDCq1/+uPr9/+2ZXKYyFh+kMEIjiu8Eq6qTW+64vLR3NKiMD3acECMKPyPL79ow0AjQ2GiIhAILPxUB6vv6Nh775N0RQCYjBB+4+t3/6gr30iYgaRmRHEzEISgC33NkQTQissdhPEzBASzasjhscUQsTMZQb1e/e1BcFgsvY/O0n7E/pjPqWXucYHBG2ig/cBADOKeY0bWNNpGMyrPxjXfm4G7aMiIikWtFfiEDZlQfsAAgGMi6dHAIB9dc/AYP+8MajU/pcen1n7RKQ1AHSfHckNKuEETiBgHwBojWhCvnFkYPD9UemQ1lwFg4Z5YTBJ+zuq0L4J0AB97MA1QQIIehMUtAkisGYnQgNXvQOPXwQ0AA6Fwey0rxWEpMP7L599MRurE1qVQ5bFCgAgIq04US+PH8z84x90ETEHz2CC9h+rQfvSoef/6fKPnrgSTzusEUIkLHe0/mYYDDTHkk7X8exAT75jTzPDD4PN4KcyEJKUx02r4m13J08d7ivm4UTIYKtZ+79ai/afunzgu92JtAPG1L4tVgBlY1Rm0Fvo2N1UA4NtqeoZzFX73+lO1oen/fAAEIF51gxibXdXxaAcUmE0P3vtc4jaD3MFhMGAiE3m4+E/Wnvv51pufe0j5BMxIjBDK51ujhx7uu+pb3WRQNU+uX7v/k038cnG+OSHVOf96Y99YdVNtY9bRPsI/0jSaGScwTe7SPC8MCAiMEjwzodWwE9Dje3rp84D//xrYbWPBTmUJyJmKjPof+qb79TGYN8NGSiPU03O6k2JMS1Pp1A2vyUEjjzZ/e+PdSfSDmNhtI+Fqoow/kArnW52a2Zw5w0ZmEntuAIAaPpdPJcbLI2WXj14nTVJB1VucJcOgBswwBwZSEm5YTV4vWRgTBu7kUk7a3ajkUe+377m9thIRkmXeIEKNMLbBY2tfyIABMCY6PK+aCTTk+/Y08hM1e6LpsQHwkEuo5atc2+7K609FlJMa1iMu9aaY0n3zt31//Nypr+7FE0IvRDrIDwARhdCmgkIAkgSCYChmeNJ5/zxkUxvYS4MABKSrr6d6/xEQ7I+ohWLmzQiSCuOp9w79zT4DJIitMKAsAGMlaXkh1SpqJ0oGFwYVl6R3agASGuOp5zzr82VgXQpO6DffWOo8/7GSNypkkHHwjEIA4A/VI+9kv7IZxoffHT1fV9vveeh5e07U8rj7nM56VBZF87510YyPbNnoBVH4uLau8Wuk4Od91XLILZw6yBwAL7B9VhG8PW/3HDf19YsXxNPNbqpRrdlQ+LDn1y2fK3z+nMZkJCyzGButkgrjibltQu1MZhgi0L0B4EDMOfvpYL+8p+t79i93CuNZ9hZgzXWfLBuVZt78tAAkRCyYh3MhYFXZnDqVmcQLABzIp/Pqts/nv7MN9Ypj6UDIczAIUydqELrxtSqNvdEQAxmtQ4yVz03KkKID4IFQMSCaDSv7/uNlrVbUqxBolyTQsRMAEjccgzad9Qd/0lfKeeXqCxuEwSQ1vpXvrxy2eo42E/RlIcNwi3HQJV0qinqldSZnw2FYIiCj4QJzPBG+UY/NQyEhPK4c8+Krz6x3vM8rSAEKU+nm92X/q3/B9/qmnWuQpV0stG5cCL/N791LjdUNGhv0ghJAnDHxxtjqcVfmGVSwaqES2/lUJEHnonBBq+kFoiBn7uuX+Em6qXyFnlhFoFYIxITJw71FwuedGh69ZWTE+MM/mLSOogYBiJgBn7hMKA81gohbEQD9gEEZnYior+7WCqqLfc2mlGVM/VUOfX8tTC+L4pM8QfZTG++c09TQP7AX6AaJOh/38y+9MP33ahY5ADKGonE5bmXhyFU+/YGrW/MgE2yssxgk3vi0MCEGG2+GSiPSYx3gBmmNOjZv7p06UzBjQnWwa6DUHJBDIAicXH66CBNZjCpNhZgTGJwMjAGHXsaownHxIPMYA0A0qHXftx76K+vxlIOOHArFFJdEDMDFE3I0y/4DFj7ufnpGYDG9qatmyInDvXPM4OEeP9i8eyxzNo74o0rY0QgASFJa/7Zv1w58N1LjiOnrtFFuwImMTg6SORt3t54MwYYZ7BqY3L+GSiOJsRAj/fKf/RdPD18vbtw6ezIycPX//PPu195pt+NOSRpiRVmTWDw5tEhhte+Y64MBq8VOnY3ma3LLBi4USEEXXm7cPbY8JmfD104OVIY1rE6CSy5wqypDM4cHWao9h0NMzAo+4MbMBgZvJbv2F1LnHz3BAZE5MZENCGicRGNCyn9+u0lWJhVoQ4AiCbEmaNDMzPgahgUZs3AnKOZA2Q/N7UkT8QmqgM1M6iwRWZfNCk+mCMDc0cMCyELAGA2DCr8gZ+z+3EQDP7fAKhgwNGEnA2DTVPzpouSQZgAeKwqqoIBzZ5B27wwSC4sgzDLUkCChCStYa5/mpdKTPw5Owat0+UqamQQX1gG4ZWlCEmqyPkh5UaRqJcg5DKeV+RITIAJXNs6EAJKYdUN4uRFxCCsshRJhWFV3+J8+vdWP/joB3Z/ZdXOh5Zv3pnODxcvnyuY0iAwRxNO1QxQZpBc1AzCKEsx2t+4LfHI37dv2taQbHCjcRlLOivWJbZ9elk0idPPD7qRWhnQ0mAQMAAGCfJGuWm1/O2/ba9riqpSOb3L0BqssXFrfbJRvP5cpvZ1MIGBnzfFXHzyAjAI+kCGhaR8Vn3qkdWbtzd6Je3XjgMgCOmHuL/UmU42iF/8V8aZAwOzLzp1eIBIGLXGkrNisC156kh/qQDhLIVsKGmNSJwe/P01qUbXBJtUFjM8n8FdaTeON18YjMQEa9SyNy0z8NDalmpYKU4dHjAnWbNmsLo9dvzZPiHEUsiGasXJRrH7Ky2RmMTETEslA9bYuDX93unhK+cLkZhgfZP4YLqzTMDsaNfeXvfem8NXzpvDLL/2vRYGUB5Wrk/0Xc6/eyoXiQd+IhbCTXl4o1wa1cbuT73Y5V9YBADa+bkV5dQPmIk1Uk3Os9/rOfi994Qk1uO3Gyf9F+Y82Xx76wNNrEwjPHYX6sUf9v3gD9+p4kzfV/ddn2gWcqzxxQxAOpTt9y6fqyxLwTRTjwDgA+2JRL2jvTEGqIEBw5zuttyWcOPGjlHFPRzDYIa6CvjLCcvWRqMpoVXQ6gm+LggE1nTswDWYl+KYp5185h83JpxI5cNaNTCY2BhXsqlg0F8VA4A1I5Q7S4E/Wcaa42n5+nODR//5spSklVkH09TjABjuKxWyqrIis0oGxnSYT70X8qUCCzGOoUoGvmMoN1LIKmOFFrcJMqY8nnQO/Gn3sQNXpDPGwPcH/jNJigGcPZYpZLWQE1zFtAy0GlefuXc2VlN18if9JIgBMM24DvSERswXAPDawT7z60Hf3QuhLsi/o+G44tSRTEOLWPehtFbA2OOhDOWx44qB3vy//vFFXSIShImblDItmnB+wPBttInpGNKhV37U89Mnr8VTkqfckK98K2FsXwQIrdi8WcnlRv77YO+Rfb3xlOSlVJbiMzicSTXTho60MdZmyUtHDPUV/u53u3q6ipGEYM1TDwYrzpPFWz8fyg0VN29POxHpvzgpSEgce6bn6e90O640O6Kpu/hKBu+cGLnSNbJ5e10s6dB4I/zS0z1P/8klxxUIpSwl8JdzK2yR/2BwYcTrvL/+o19YuWpjQrqUHSi99WLm+X+4NnC1NOODwX7cIJAbVC0bI1s/2bTmg0npUO/Fwhs/HTj/ajaWcEjOcPHaWD4pKTek0iuczvsb130o4USor7t4+oXMhVMjsaRDIqTb2+EBmKC+ISUE1zW70qXckMoNqlhCOtGqni5mBoiFoFJBj+a1uWajPDguxVJyzD9X0xkhSZW4kFUggMAKblREk6L6RuYuDkIUPwjQnEhLMApZzQwhqa7JMac01YzZhF1asRMVkbgwTrLsqH3EVXZGKxaSUk2OcSQg/9oaQnw3IlQAleozl7bNN5VXLsqthSU0Kz9PYEIHrrEN30koDyYSN+ej5hHd0BQSNoDKkd/o42xaKWeEZj0nKr8IU+zfkFlgsQAsAAvAigVgAVixACwAKxaABWDFArAArFgAFoAVC8ACsGIBWABWLAALwIoFYAFYsQAsACsWgAVgxQKwAKxYABaAlXmS/wNshGhq4441BwAAAB50RVh0aWNjOmNvcHlyaWdodABHb29nbGUgSW5jLiAyMDE2rAszOAAAABR0RVh0aWNjOmRlc2NyaXB0aW9uAHNSR0K6kHMHAAAAAElFTkSuQmCC";
+const SPOOL_LOGO = "data:image/png;base64,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";
 
 const LANGS = {
   en: {
@@ -81,7 +81,7 @@ const GLOBAL_STYLES = `
   @keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(139,92,246,0.15)}50%{box-shadow:0 0 40px rgba(139,92,246,0.3)}}
   @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
   @keyframes scaleIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}
-  @keyframes slideRight{from{transform:translateX(-12px);opacity:0}to{transform:translateX(0);opacity:1}}
+  @keyframes slideRight{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
   @keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
   @keyframes glow{0%,100%{box-shadow:0 0 8px rgba(196,181,253,0.15)}50%{box-shadow:0 0 24px rgba(196,181,253,0.3)}}
   input:focus,textarea:focus,select:focus{outline:none;border-color:rgba(196,181,253,0.4) !important;box-shadow:0 0 0 3px rgba(139,92,246,0.1) !important;}
@@ -274,7 +274,7 @@ function Splash() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: C.bg }}>
       <div style={{ position: "relative", marginBottom: 28 }}>
         <div style={{ position: "absolute", inset: -20, borderRadius: "50%", background: `radial-gradient(circle, rgba(139,92,246,0.35) 0%, rgba(139,92,246,0.08) 50%, transparent 70%)`, animation: "glowPulse 2s ease-in-out infinite", filter: "blur(12px)" }} />
-        <div style={{ position: "relative", width: 88, height: 88, borderRadius: 24, overflow: "hidden" }}>
+        <div style={{ position: "relative", width: 80, height: 80, borderRadius: 24, overflow: "hidden" }}>
           <img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 24 }} />
         </div>
       </div>
@@ -375,7 +375,7 @@ function Login({ navigate, setUserRole, setStaffOwnerId }) {
       <div style={{ position: "absolute", top: "-20%", left: "50%", transform: "translateX(-50%)", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 400, margin: "0 auto", width: "100%", position: "relative" }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ width: 80, height: 80, borderRadius: 22, margin: "0 auto 16px", boxShadow: "0 0 60px rgba(139,92,246,0.35)", animation: "glowPulse 3s ease-in-out infinite", overflow: "hidden" }}><img src={SPOOL_LOGO} alt="spool" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 22 }} /></div>
+          <div style={{ width: 72, height: 72, borderRadius: 22, margin: "0 auto 16px", boxShadow: "0 0 60px rgba(139,92,246,0.35)", animation: "glowPulse 3s ease-in-out infinite", overflow: "hidden", padding: 14 }}><img src={SPOOL_LOGO} alt="spool" style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: 22 }} /></div>
           <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 34, fontWeight: 800, letterSpacing: "-0.02em" }}>spool</div>
           <div style={{ fontSize: 14, color: C.mid, marginTop: 8, fontWeight: 400 }}>AI-powered business management</div>
         </div>
@@ -396,12 +396,8 @@ function Login({ navigate, setUserRole, setStaffOwnerId }) {
               ))}
             </div>
             <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: 12 }} />
-            <div style={{ position: "relative", marginBottom: mode === "signup" ? 12 : 20 }}>
-              <input type={showPass ? "text" : "password"} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", paddingRight: 48, fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
-              <div onClick={() => setShowPass(p => !p)} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: C.dim, padding: 4 }}>
-                {showPass ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22"/></svg> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
-              </div>
-            </div>
+            <input type={showPass ? "text" : "password"} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAuth()} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", marginBottom: mode === "signup" ? 12 : 20, paddingRight: 48 }} />
+            <div onClick={() => setShowPass(p => !p)} style={{ position: "absolute", right: 30, marginTop: -38, cursor: "pointer", color: showPass ? C.accent : C.dim, padding: 4, zIndex: 2 }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">{showPass ? <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22"/> : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}</svg></div>
             {mode === "signup" && (
               <div style={{ marginBottom: 20 }}>
                 <div onClick={() => setJoinMode(!joinMode)} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: joinMode ? 12 : 0 }}>
@@ -482,7 +478,7 @@ function Onboarding({ navigate }) {
 
   if (done) return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
-      <div style={{ width: 90, height: 90, borderRadius: 28, marginBottom: 28, boxShadow: `0 0 60px ${C.accentDark}44`, animation: "pop 0.5s cubic-bezier(0.34,1.56,0.64,1)", overflow: "hidden" }}><img src={SPOOL_LOGO} alt="spool" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 28 }} /></div>
+      <div style={{ width: 90, height: 90, borderRadius: 28, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, marginBottom: 28, boxShadow: `0 0 60px ${C.accentDark}44`, animation: "pop 0.5s cubic-bezier(0.34,1.56,0.64,1)", overflow: "hidden", padding: 18 }}><img src={SPOOL_LOGO} alt="spool" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
       <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 30, fontWeight: 800, marginBottom: 12, lineHeight: 1.2 }}>{bizName || "Your business"} is<br />live on spool.</div>
       <div style={{ fontSize: 15, color: C.mid, lineHeight: 1.6, marginBottom: 36 }}>Your AI assistant is running.<br />Sit back — we've got you.</div>
       <Card style={{ padding: "20px 24px", width: "100%", textAlign: "left", marginBottom: 28 }}>
@@ -571,7 +567,7 @@ function Onboarding({ navigate }) {
           <div className="fade-in">
             <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>YOUR SERVICES</div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>What do you offer? 💼</div>
-            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Add your services so clients know what to book and how much it costs.</div>
+            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>AI will use these to answer pricing questions.</div>
             {services.map(s => (
               <div key={s.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "12px 16px", marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{s.name}</div><div style={{ fontSize: 12, color: C.mid, marginTop: 2 }}>${s.price} · {s.duration}</div></div>
@@ -595,7 +591,7 @@ function Onboarding({ navigate }) {
           <div className="fade-in">
             <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>AVAILABILITY</div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>When can clients find you? 🗓️</div>
-            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Tap a day to toggle. Clients can only book within these hours.</div>
+            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Tap a day to toggle it. Set custom hours for each day.</div>
             <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
               {DAYS.map(d => <div key={d} onClick={() => setWorkDays(p => p.includes(d) ? p.filter(x => x !== d) : [...p, d])} style={{ flex: 1, height: 44, borderRadius: 12, background: workDays.includes(d) ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : C.surface, border: `1px solid ${workDays.includes(d) ? "transparent" : C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: workDays.includes(d) ? "#fff" : C.dim, cursor: "pointer", transition: "all 0.2s" }}>{d}</div>)}
             </div>
@@ -617,7 +613,7 @@ function Onboarding({ navigate }) {
           <div className="fade-in">
             <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>CONNECT</div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Where do clients message you? 🔗</div>
-            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Connect your accounts so spool can auto-reply and book for you.</div>
+            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>This is where your clients reach you.</div>
             {PLATFORMS.map(p => (
               <div key={p.id} onClick={() => setConnectedPlatforms(prev => prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id])} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: connectedPlatforms.includes(p.id) ? `${C.accentSoft}` : C.surface, border: `1px solid ${connectedPlatforms.includes(p.id) ? C.accent + "22" : C.border}`, borderRadius: 14, marginBottom: 10, cursor: "pointer", transition: "all 0.2s" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -633,7 +629,7 @@ function Onboarding({ navigate }) {
           <div className="fade-in">
             <div style={{ fontSize: 12, color: C.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>ALMOST THERE</div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>Meet your AI ✨</div>
-            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Pick what spool handles automatically. You can change these anytime in settings.</div>
+            <div style={{ fontSize: 14, color: C.mid, marginBottom: 24 }}>Choose what spool handles on its own.</div>
             {AI_PERMISSIONS.map(p => (
               <div key={p.id} onClick={() => setAiPerms(prev => prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id])} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: aiPerms.includes(p.id) ? C.accentSoft : C.surface, border: `1px solid ${aiPerms.includes(p.id) ? C.accent + "22" : C.border}`, borderRadius: 14, marginBottom: 10, cursor: "pointer" }}>
                 <div style={{ flex: 1, marginRight: 12 }}><div style={{ fontSize: 14, fontWeight: 600 }}>{p.label}</div><div style={{ fontSize: 12, color: C.dim, marginTop: 3 }}>{p.sub}</div></div>
@@ -757,15 +753,18 @@ function Home({ navigate, userRole, staffOwnerId }) {
     <div style={{ paddingBottom: 80 }}>
       {/* Header */}
       <div style={{ padding: "40px 20px 20px", background: "linear-gradient(180deg,rgba(139,92,246,0.08) 0%,transparent 100%)", position: "relative" }}>
-        <div style={{ position: "absolute", top: 0, right: 0, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: 0, right: -50, width: 250, height: 250, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
           <div>
             <div style={{ fontSize: 12, color: C.dim, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, fontWeight: 500 }}>{new Date().toLocaleDateString(getLang() === "ar" ? "ar-SA" : "en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.2 }}>{greetText},<br /><span style={{ background: `linear-gradient(135deg,${C.accent},#e0b3ff)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{userName || "there"}</span></div>
           </div>
-          <div style={{ position: "relative", cursor: "pointer" }} onClick={() => navigate("notifications")}>
-            <div style={{ width: 44, height: 44, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700 }}>⊕</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div className="mobile-only" onClick={() => setMobileDrawer(true)} style={{ width: 44, height: 44, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2" strokeLinecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></div>
+            <div style={{ position: "relative", cursor: "pointer" }} onClick={() => navigate("notifications")}>
+            <div style={{ width: 44, height: 44, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="1.8" strokeLinecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg></div>
             {unread.length > 0 && <div style={{ position: "absolute", top: -4, right: -4, width: 20, height: 20, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", border: `2px solid ${C.bg}`, boxShadow: "0 0 12px rgba(139,92,246,0.4)" }}>{unread.length}</div>}
+            </div>
           </div>
         </div>
 
@@ -1556,14 +1555,11 @@ function Clients({ navigate, userRole, staffOwnerId }) {
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: C.mid }}>No clients found</div>
         ) : <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, maxHeight: "calc(100vh - 220px)", overflowY: "auto", paddingBottom: 8 }}>{filtered.map((c, idx) => (
-          <div key={c.id} onClick={() => selectClient(c)} style={{ background: selectedClient?.id === c.id ? C.accentSoft : "rgba(14,14,22,0.6)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: `1px solid ${selectedClient?.id === c.id ? C.accent + "33" : "rgba(255,255,255,0.06)"}`, borderRadius: 16, padding: "16px 14px", cursor: "pointer", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: C.accentSoft, border: `1px solid ${C.accent}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: C.accent }}>{c.avatar}</div>
-            <div style={{ width: "100%" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</div>
-              <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>{c.totalVisits} visits</div>
-            </div>
+          <div key={c.id} onClick={() => selectClient(c)} style={{ background: selectedClient?.id === c.id ? C.accentSoft : "rgba(14,14,22,0.6)", border: `1px solid ${selectedClient?.id === c.id ? C.accent + "33" : "rgba(255,255,255,0.06)"}`, borderRadius: 16, padding: "16px 14px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 6 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 14, background: C.accentSoft, border: `1px solid ${C.accent}22`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: C.accent }}>{c.avatar}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>{c.name}</div>
+            <div style={{ fontSize: 11, color: C.dim }}>{c.totalVisits} visits</div>
             <div style={{ fontSize: 14, fontWeight: 800, color: C.gold }}>{c.totalSpent}</div>
-            {c.badge && <span style={{ fontSize: 9, fontWeight: 700, color: C.gold, background: "#f59e0b18", border: "1px solid #f59e0b33", borderRadius: 100, padding: "1px 8px" }}>{c.badge}</span>}
           </div>
         ))}
         </div>}
@@ -2334,10 +2330,7 @@ function Settings({ navigate, userRole, staffOwnerId }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <BackBtn onBack={() => navigate("home")} />
           <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{t("settings")}</div>
-          <div style={{ position: "relative", marginTop: 16 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth="2" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input placeholder="Search settings..." value={settingsQ} onChange={e => setSettingsQ(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px 12px 40px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} />
-          </div>
+          <div style={{ position: "relative", marginTop: 16 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.dim} strokeWidth="2" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input placeholder="Search settings..." value={settingsQ} onChange={e => setSettingsQ(e.target.value)} style={{ width: "100%", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 14px 12px 40px", fontSize: 14, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }} /></div>
           {autoSaveMsg && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginLeft: "auto" }}>✓ {autoSaveMsg}</div>}
         </div>
       </div>
@@ -2460,25 +2453,24 @@ function Settings({ navigate, userRole, staffOwnerId }) {
             </div>
             {showDangerZone && <div style={{ marginTop: 8, padding: 16, background: "rgba(244,63,94,0.04)", border: `1px solid ${C.red}22`, borderRadius: 14 }}>
               <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginBottom: 8 }}>Permanent Actions</div>
-              <div style={{ fontSize: 12, color: C.dim, marginBottom: 12, lineHeight: 1.5 }}>This cannot be undone. All your data will be permanently deleted.</div>
               <button onClick={async () => {
-                if (!window.confirm("Are you sure? ALL your data will be permanently lost.")) return;
-                const typed = prompt("Type DELETE to confirm:");
-                if (typed !== "DELETE") return;
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) return;
-                const uid = session.user.id;
-                await Promise.all([
-                  supabase.from("appointments").delete().eq("owner_id", uid),
-                  supabase.from("clients").delete().eq("owner_id", uid),
-                  supabase.from("services").delete().eq("owner_id", uid),
-                  supabase.from("business_profiles").delete().eq("user_id", uid),
-                  supabase.from("staff_members").delete().eq("owner_id", uid),
-                  supabase.from("ai_memories").delete().eq("owner_id", uid),
-                ]);
-                await supabase.auth.signOut();
-                navigate("login");
-              }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.red}44`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>{t("deleteAccount")}</button>
+            if (!window.confirm("Are you sure? ALL data will be permanently lost.")) return;
+            const typed = prompt("Type DELETE to confirm:");
+            if (typed !== "DELETE") return;
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+            const uid = session.user.id;
+            await Promise.all([
+              supabase.from("appointments").delete().eq("owner_id", uid),
+              supabase.from("clients").delete().eq("owner_id", uid),
+              supabase.from("services").delete().eq("owner_id", uid),
+              supabase.from("business_profiles").delete().eq("user_id", uid),
+              supabase.from("staff_members").delete().eq("owner_id", uid),
+              supabase.from("ai_memories").delete().eq("owner_id", uid),
+            ]);
+            await supabase.auth.signOut();
+            navigate("login");
+          }} style={{ width: "100%", padding: 12, background: "transparent", border: `1px solid ${C.red}33`, borderRadius: 14, fontSize: 13, fontWeight: 600, color: C.red, cursor: "pointer", fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif" }}>{t("deleteAccount")}</button>
             </div>}
           </div>}
         </div>
@@ -3682,7 +3674,7 @@ function Booking({ navigate }) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.mid} strokeWidth="2.5" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           </div>
         )}
-        <div style={{ width: 80, height: 80, borderRadius: 22, margin: "0 auto 14px", boxShadow: "0 0 40px " + C.accentDark + "55", overflow: "hidden" }}><img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 22 }} /></div>
+        <div style={{ width: 72, height: 72, borderRadius: 22, background: "linear-gradient(135deg," + C.accentDark + "," + C.accent + ")", margin: "0 auto 14px", boxShadow: "0 0 40px " + C.accentDark + "55", overflow: "hidden", padding: 14 }}><img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
         <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800 }}>{bizName}</div>
         <div style={{ fontSize: 13, color: C.mid, marginTop: 5 }}>{bizLocation || "Book an appointment"}</div>
       </div>
@@ -5060,7 +5052,7 @@ function Sidebar({ active, navigate, userRole, staffOwnerId }) {
           {logoUrl ? (
             <img src={logoUrl} alt="" style={{ width: 36, height: 36, borderRadius: 11, objectFit: "cover" }} />
           ) : (
-            <div style={{ width: 36, height: 36, borderRadius: 11, boxShadow: "0 0 20px rgba(139,92,246,0.25)", overflow: "hidden" }}><img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 11 }} /></div>
+            <div style={{ width: 36, height: 36, borderRadius: 11, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, boxShadow: "0 0 20px rgba(139,92,246,0.25)", overflow: "hidden", padding: 6 }}><img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></div>
           )}
           <div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 16, fontWeight: 800, color: C.text }}>{bizName}</div>
@@ -5150,7 +5142,6 @@ function AISidebarPanel({ navigate, isMobile }) {
   const animFrameRef = useRef(null);
   const smoothRef = useRef(1);
   const inputRef = useRef(null);
-  const [draftMsg, setDraftMsg] = useState(null); // {to, text, type}
 
   const [chatHistory, setChatHistory] = useState(() => {
     try {
@@ -5367,11 +5358,6 @@ SETTINGS ACTIONS:
 - ACTION:setDepositPct:number — set deposit percentage
 FORMAT: ACTION:command:params on its own line, then your normal reply on the next line.
 IMPORTANT: Only use actions the user explicitly asks for. Never change things unprompted.
-DRAFT MESSAGES:
-- When the user asks you to send a message, reply, reminder, or promo to someone, DO NOT send it directly.
-- Instead, use DRAFT:recipient:message on its own line so the user can review and edit before sending.
-- Example: "send a reminder to Jonathan" → DRAFT:Jonathan:Hi Jonathan! Just a friendly reminder about your upcoming appointment. Looking forward to seeing you!
-- The user will see the draft and can edit, send, or cancel it.
 Examples:
 - "change your name to Luna" → ACTION:changeAIName:Luna\nDone! I'm Luna now.
 - "add Sarah as a new client" → ACTION:addClient:Sarah\nSarah has been added!
@@ -5503,16 +5489,6 @@ THINGS TO BE GREAT AT:
       });
       text = text.replace(/^MEMORY:.+$/gim, "").trim();
       if (!text) text = "I've saved that. What else can I help with?";
-    }
-
-    // Handle DRAFT: messages (show for user review before sending)
-    const draftMatch = text.match(/^DRAFT:([^:]+):(.+)$/im);
-    if (draftMatch) {
-      const to = draftMatch[1].trim();
-      const msg = draftMatch[2].trim();
-      setDraftMsg({ to, text: msg, type: "message" });
-      text = text.replace(/^DRAFT:.+$/gim, "").trim();
-      if (!text) text = `I've drafted a message to **${to}**. Review it below — you can edit, send, or cancel.`;
     }
 
     // Handle ACTION: commands
@@ -5799,25 +5775,6 @@ THINGS TO BE GREAT AT:
             </div>
           </div>
         )}
-        {draftMsg && (
-          <div style={{ margin: "8px 0", padding: 14, background: `${C.accent}08`, border: `1px solid ${C.accent}22`, borderRadius: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, marginBottom: 8 }}>DRAFT TO {draftMsg.to.toUpperCase()}</div>
-            <textarea value={draftMsg.text} onChange={e => setDraftMsg(p => ({ ...p, text: e.target.value }))} style={{ width: "100%", background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 14px", fontSize: 13, color: C.text, fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", resize: "vertical", minHeight: 60, lineHeight: 1.5 }} />
-            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-              <button onClick={async () => {
-                try {
-                  await fetch("https://pocketflow-proxy-production.up.railway.app/send-reminder", {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ client_name: draftMsg.to, message: draftMsg.text })
-                  });
-                  showToast("Message sent to " + draftMsg.to);
-                } catch { showToast("Failed to send", "error"); }
-                setDraftMsg(null);
-              }} style={{ flex: 1, padding: 10, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Send</button>
-              <button onClick={() => setDraftMsg(null)} style={{ padding: "10px 16px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 12, fontSize: 13, fontWeight: 600, color: C.dim, cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>Cancel</button>
-            </div>
-          </div>
-        )}
         <div ref={chatEndRef}/>
       </div>
 
@@ -5878,14 +5835,6 @@ export default function App() {
   const [userRole, setUserRole] = useState("owner");
   const [staffOwnerId, setStaffOwnerId] = useState(null);
   const [toasts, setToasts] = useState([]);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  useEffect(() => {
-    const on = () => setIsOffline(false);
-    const off = () => { setIsOffline(true); showToast("You're offline", "error"); };
-    window.addEventListener("online", on);
-    window.addEventListener("offline", off);
-    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
-  }, []);
   const lastApptCountRef = useRef(null);
   const [cmdPalette, setCmdPalette] = useState(false);
   const [cmdSearch, setCmdSearch] = useState("");
@@ -6137,9 +6086,11 @@ export default function App() {
   }, []);
 
   const [mobileAIOpen, setMobileAIOpen] = useState(false);
+  const [mobileDrawer, setMobileDrawer] = useState(false);
+  useEffect(() => { const h = () => setMobileDrawer(true); window.addEventListener("open_drawer", h); return () => window.removeEventListener("open_drawer", h); }, []);
 
   return (
-    <div style={{ fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", background: C.bg, minHeight: "100vh", color: C.text, direction: isRTL() ? "rtl" : "ltr" }}>
+    <div style={{ fontFamily: "'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif", background: C.bg, minHeight: "100vh", color: C.text, direction: isRTL() ? "rtl" : "ltr", maxWidth: "100vw", overflowX: "hidden" }}>
       <style>{GLOBAL_STYLES}</style>
       {/* Toast Notifications */}
       <div style={{ position: "fixed", top: 12, left: "50%", transform: "translateX(-50%)", zIndex: 9999, display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 400, padding: "0 16px", pointerEvents: "none" }}>
@@ -6200,7 +6151,7 @@ export default function App() {
       {needsPaywall && (
         <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, padding: "36px 28px", maxWidth: 400, width: "100%", textAlign: "center" }}>
-            <div style={{ width: 80, height: 80, margin: "0 auto 16px", overflow: "hidden" }}><img src={SPOOL_LOGO} alt="spool" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 18 }} /></div>
+            <div style={{ width: 72, height: 72, margin: "0 auto 16px" }}><img src={SPOOL_LOGO} alt="spool" style={{ width: "100%", height: "100%", borderRadius: 14 }} /></div>
             <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 26, fontWeight: 800, marginBottom: 10 }}>Start your free trial</div>
             <div style={{ fontSize: 14, color: C.mid, lineHeight: 1.7, marginBottom: 24 }}>
               Get 14 days free — no credit card required.<br />
@@ -6220,16 +6171,61 @@ export default function App() {
         marginRight: showAISidebar && !aiSidebarCollapsed ? 360 : 0,
         minHeight: "100vh",
       }}>
-        <div style={{ maxWidth: showSidebar ? "none" : isDesktop ? 720 : 480, margin: "0 auto", padding: showSidebar ? "0 24px" : isDesktop ? "0 24px" : "0", width: "100%", overflowX: "hidden" }}>
+        <div style={{ maxWidth: showSidebar ? "none" : isDesktop ? 720 : "100%", margin: "0 auto", padding: showSidebar ? "0 24px" : isDesktop ? "0 24px" : "0", width: "100%", overflowX: "hidden" }}>
           <div key={screen} className="page-enter">
             <Screen navigate={navigate} userRole={userRole} staffOwnerId={staffOwnerId} setUserRole={setUserRole} setStaffOwnerId={setStaffOwnerId} />
           </div>
         </div>
       </div>
       {showAISidebar && <AISidebarPanel navigate={navigate} />}
+
+      {/* Mobile Drawer */}
+      {mobileDrawer && !isDesktop && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 300 }}>
+          <div onClick={() => setMobileDrawer(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }} />
+          <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 280, background: C.surfaceSolid, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", animation: "slideRight 0.25s ease" }}>
+            <div style={{ padding: "52px 20px 20px", borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 11, overflow: "hidden" }}><img src={SPOOL_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 11 }} /></div>
+                <span style={{ fontSize: 18, fontWeight: 800 }}>spool</span>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 10px" }}>
+              {[
+                { icon: "⌂", label: t("home"), screen: "home" },
+                { icon: "▪", label: t("schedule"), screen: "schedule" },
+                { icon: "✉", label: t("inbox"), screen: "inbox" },
+                { icon: "◎", label: t("clients"), screen: "clients" },
+                ...(userRole === "owner" ? [
+                  { icon: "✦", label: t("services"), screen: "services" },
+                  { icon: "▬", label: t("payments"), screen: "payments" },
+                  { icon: "⬡", label: t("packages"), screen: "packages" },
+                  { icon: "▥", label: t("analytics"), screen: "analytics" },
+                  { icon: "⚡", label: t("promotions"), screen: "promotions" },
+                  { icon: "♡", label: t("loyalty"), screen: "loyalty" },
+                  { icon: "⏳", label: t("waitlist"), screen: "waitlist" },
+                ] : []),
+                { icon: "⊞", label: t("staff"), screen: "staff" },
+                { icon: "⚙", label: t("settings"), screen: "settings" },
+              ].map(item => (
+                <div key={item.screen} onClick={() => { navigate(item.screen); setMobileDrawer(false); }} style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 14px", borderRadius: 12, cursor: "pointer", background: screen === item.screen ? C.accentSoft : "transparent", marginBottom: 2 }}>
+                  <span style={{ fontSize: 18, width: 24, textAlign: "center", color: screen === item.screen ? C.accent : C.dim }}>{item.icon}</span>
+                  <span style={{ fontSize: 14, fontWeight: screen === item.screen ? 700 : 500, color: screen === item.screen ? C.accent : C.mid }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: "12px 14px", borderTop: `1px solid ${C.border}` }}>
+              <div onClick={async () => { await supabase.auth.signOut(); setMobileDrawer(false); navigate("login"); }} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", borderRadius: 12, cursor: "pointer" }}>
+                <span style={{ fontSize: 14, color: C.red }}>↪</span>
+                <span style={{ fontSize: 14, fontWeight: 500, color: C.red }}>{t("signOut")}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Mobile AI floating button */}
       {!isDesktop && !isAuthScreen && !mobileAIOpen && (
-        <div onClick={() => setMobileAIOpen(true)} style={{ position: "fixed", bottom: "calc(85px + var(--sab, 0px))", right: 16, width: 52, height: 52, borderRadius: 16, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, zIndex: 45, cursor: "pointer", boxShadow: "0 4px 24px rgba(139,92,246,0.4)" }}>✦</div>
+        <div onClick={() => setMobileAIOpen(true)} style={{ position: "fixed", bottom: 85, right: 16, width: 52, height: 52, borderRadius: 16, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, zIndex: 45, cursor: "pointer", boxShadow: "0 4px 24px rgba(139,92,246,0.4)" }}>✦</div>
       )}
       {/* Mobile AI chat overlay */}
       {!isDesktop && mobileAIOpen && (
